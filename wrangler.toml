@@ -1,0 +1,75 @@
+name = "bypostmaker-worker"
+main = "worker/src/index.ts"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+# ── Assets (served from frontend/dist) ──────────────────────
+[assets]
+directory = "./frontend/dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+run_worker_first = ["/api/*"]
+
+# ── D1 Database ──────────────────────────────────────────────
+[[d1_databases]]
+binding = "DB"
+database_name = "postmaker-db"
+database_id = "REPLACE_WITH_YOUR_D1_ID"
+migrations_dir = "db/migrations"
+
+# ── Cron Triggers ────────────────────────────────────────────
+[triggers]
+crons = [
+  "0 9 * * *",   # Daily 9AM UTC: data retention check + DB health
+  "0 0 * * *",   # Midnight UTC: usage period reset check
+]
+
+# ── Dev Environment ──────────────────────────────────────────
+[env.development]
+name = "bypostmaker-worker-dev"
+vars = { ENVIRONMENT = "development", DOMAIN = "localhost:5173" }
+
+[[env.development.d1_databases]]
+binding = "DB"
+database_name = "postmaker-db-dev"
+database_id = "REPLACE_WITH_DEV_D1_ID"
+migrations_dir = "db/migrations"
+
+# ── Staging Environment ──────────────────────────────────────
+[env.staging]
+name = "bypostmaker-worker-staging"
+vars = { ENVIRONMENT = "staging", DOMAIN = "staging.bypostmaker.com" }
+
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "postmaker-db-staging"
+database_id = "REPLACE_WITH_STAGING_D1_ID"
+migrations_dir = "db/migrations"
+
+# ── Production Environment ───────────────────────────────────
+[env.production]
+name = "bypostmaker-worker"
+vars = { ENVIRONMENT = "production", DOMAIN = "bypostmaker.com" }
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "postmaker-db"
+database_id = "REPLACE_WITH_YOUR_D1_ID"
+migrations_dir = "db/migrations"
+
+# ── Secrets (set via: wrangler secret put SECRET_NAME) ───────
+# GROQ_API_KEY
+# GEMINI_API_KEY
+# RAZORPAY_KEY_ID
+# RAZORPAY_KEY_SECRET
+# RAZORPAY_WEBHOOK_SECRET
+# RAZORPAY_PLAN_STARTER_USD
+# RAZORPAY_PLAN_STARTER_INR
+# RAZORPAY_PLAN_PRO_USD
+# RAZORPAY_PLAN_PRO_INR
+# RAZORPAY_PLAN_BUSINESS_USD
+# RAZORPAY_PLAN_BUSINESS_INR
+# RESEND_API_KEY
+# GOOGLE_CLIENT_ID
+# GOOGLE_CLIENT_SECRET
+# JWT_SECRET

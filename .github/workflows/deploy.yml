@@ -1,0 +1,118 @@
+name: Deploy PostMaker
+
+on:
+  push:
+    branches: [main, staging]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ── Type check on every PR ────────────────────────────────────
+  typecheck:
+    name: Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install root deps
+        run: npm ci
+
+      - name: Install worker deps
+        run: npm ci
+        working-directory: worker
+
+      - name: Install frontend deps
+        run: npm ci
+        working-directory: frontend
+
+      - name: Type check worker
+        run: npm run type-check
+        working-directory: worker
+
+      - name: Type check frontend
+        run: npm run type-check
+        working-directory: frontend
+
+  # ── Deploy to staging on push to staging branch ──────────────
+  deploy-staging:
+    name: Deploy (Staging)
+    runs-on: ubuntu-latest
+    needs: typecheck
+    if: github.ref == 'refs/heads/staging' && github.event_name == 'push'
+    environment: staging
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install all deps
+        run: |
+          npm ci
+          npm ci --prefix worker
+          npm ci --prefix frontend
+
+      - name: Build frontend
+        run: npm run build
+        env:
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+          VITE_POSTHOG_KEY: ${{ secrets.VITE_POSTHOG_KEY }}
+          VITE_POSTHOG_HOST: ${{ vars.VITE_POSTHOG_HOST || 'https://app.posthog.com' }}
+
+      - name: Run DB migrations (staging)
+        run: ./worker/node_modules/.bin/wrangler d1 migrations apply postmaker-db-staging --env staging --remote
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Deploy worker (staging)
+        run: ./worker/node_modules/.bin/wrangler deploy --env staging
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+  # ── Deploy to production on push to main ─────────────────────
+  deploy-production:
+    name: Deploy (Production)
+    runs-on: ubuntu-latest
+    needs: typecheck
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install all deps
+        run: |
+          npm ci
+          npm ci --prefix worker
+          npm ci --prefix frontend
+
+      - name: Build frontend
+        run: npm run build
+        env:
+          VITE_SENTRY_DSN: ${{ secrets.VITE_SENTRY_DSN }}
+          VITE_POSTHOG_KEY: ${{ secrets.VITE_POSTHOG_KEY }}
+          VITE_POSTHOG_HOST: ${{ vars.VITE_POSTHOG_HOST || 'https://app.posthog.com' }}
+
+      - name: Run DB migrations (production)
+        run: ./worker/node_modules/.bin/wrangler d1 migrations apply postmaker-db --env production --remote
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Deploy worker + assets (production)
+        run: ./worker/node_modules/.bin/wrangler deploy --env production
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

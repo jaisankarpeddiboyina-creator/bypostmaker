@@ -1,0 +1,28 @@
+{
+  "name": "bypostmaker-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@sentry/react": "^8.20.0",
+    "lucide-react": "^0.383.0",
+    "posthog-js": "^1.148.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.24.0",
+    "zustand": "^5.0.14"
+  },
+  "devDependencies": {
+    "@sentry/vite-plugin": "^2.22.0",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "typescript": "^5.5.3",
+    "vite": "^5.3.3"
+  }
+}

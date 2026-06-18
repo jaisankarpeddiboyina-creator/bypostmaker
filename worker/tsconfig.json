@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "ES2022",
+    "moduleResolution": "node",
+    "baseUrl": ".",
+    "paths": {
+      "@ailink/sdk": ["node_modules/@ailink/sdk"],
+      "ai": ["node_modules/ai"],
+      "@ai-sdk/groq": ["node_modules/@ai-sdk/groq"],
+      "@ai-sdk/google": ["node_modules/@ai-sdk/google"]
+    },
+    "skipLibCheck": true,
+    "noEmit": true,
+    "strict": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "types": ["@cloudflare/workers-types"]
+  },
+  "include": ["src", "../config"]
+}

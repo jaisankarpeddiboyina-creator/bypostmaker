@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#080808"/>
+
+  <!-- Grid lines -->
+  <line x1="0" y1="210" x2="1200" y2="210" stroke="#161616" stroke-width="1"/>
+  <line x1="0" y1="420" x2="1200" y2="420" stroke="#161616" stroke-width="1"/>
+  <line x1="400" y1="0" x2="400" y2="630" stroke="#161616" stroke-width="1"/>
+  <line x1="800" y1="0" x2="800" y2="630" stroke="#161616" stroke-width="1"/>
+
+  <!-- Glow -->
+  <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#7c3aed" stop-opacity="0.18"/>
+    <stop offset="100%" stop-color="#7c3aed" stop-opacity="0"/>
+  </radialGradient>
+  <rect width="1200" height="630" fill="url(#glow)"/>
+
+  <!-- Logo mark -->
+  <rect x="88" y="200" width="16" height="72" rx="4" fill="#7c3aed"/>
+  <path d="M104 200h20a20 20 0 0 1 0 40h-20v-40z" fill="#7c3aed"/>
+  <circle cx="156" cy="272" r="10" fill="#a855f7"/>
+
+  <!-- Wordmark -->
+  <text x="176" y="254" font-family="system-ui, -apple-system, sans-serif" font-size="52" font-weight="800" letter-spacing="-2" fill="#f5f5f5">Post</text>
+  <text x="306" y="254" font-family="system-ui, -apple-system, sans-serif" font-size="52" font-weight="800" letter-spacing="-2" fill="#7c3aed">Maker</text>
+
+  <!-- Tagline -->
+  <text x="88" y="300" font-family="system-ui, -apple-system, sans-serif" font-size="22" fill="#525252" letter-spacing="-0.5">One prompt. Every platform. Download your kit.</text>
+
+  <!-- Platform pills -->
+  <g transform="translate(88, 340)">
+    <!-- Pill group -->
+    <rect x="0" y="0" width="90" height="28" rx="14" fill="#161616" stroke="#222" stroke-width="1"/>
+    <text x="45" y="19" font-family="system-ui" font-size="12" fill="#a3a3a3" text-anchor="middle">Twitter</text>
+
+    <rect x="98" y="0" width="96" height="28" rx="14" fill="#161616" stroke="#222" stroke-width="1"/>
+    <text x="146" y="19" font-family="system-ui" font-size="12" fill="#a3a3a3" text-anchor="middle">LinkedIn</text>
+
+    <rect x="202" y="0" width="104" height="28" rx="14" fill="#161616" stroke="#222" stroke-width="1"/>
+    <text x="254" y="19" font-family="system-ui" font-size="12" fill="#a3a3a3" text-anchor="middle">Instagram</text>
+
+    <rect x="314" y="0" width="80" height="28" rx="14" fill="#161616" stroke="#222" stroke-width="1"/>
+    <text x="354" y="19" font-family="system-ui" font-size="12" fill="#a3a3a3" text-anchor="middle">Reddit</text>
+
+    <rect x="402" y="0" width="80" height="28" rx="14" fill="#161616" stroke="#222" stroke-width="1"/>
+    <text x="442" y="19" font-family="system-ui" font-size="12" fill="#a3a3a3" text-anchor="middle">TikTok</text>
+
+    <rect x="490" y="0" width="100" height="28" rx="14" fill="#1a1127" stroke="rgba(124,58,237,0.4)" stroke-width="1"/>
+    <text x="540" y="19" font-family="system-ui" font-size="12" fill="#7c3aed" text-anchor="middle">+28 more</text>
+  </g>
+
+  <!-- Right side - mock card -->
+  <rect x="760" y="100" width="360" height="200" rx="12" fill="#111111" stroke="#222222" stroke-width="1"/>
+  <rect x="776" y="116" width="80" height="10" rx="3" fill="#222"/>
+  <rect x="776" y="136" width="328" height="8" rx="3" fill="#1a1a1a"/>
+  <rect x="776" y="152" width="280" height="8" rx="3" fill="#1a1a1a"/>
+  <rect x="776" y="168" width="310" height="8" rx="3" fill="#1a1a1a"/>
+  <rect x="776" y="184" width="240" height="8" rx="3" fill="#1a1a1a"/>
+  <rect x="776" y="270" width="60" height="14" rx="4" fill="#7c3aed"/>
+
+  <rect x="760" y="320" width="360" height="200" rx="12" fill="#111111" stroke="#222222" stroke-width="1"/>
+  <rect x="776" y="336" width="100" height="10" rx="3" fill="#222"/>
+  <rect x="776" y="356" width="328" height="8" rx="3" fill="#1a1a1a"/>
+  <rect x="776" y="372" width="260" height="8" rx="3" fill="#1a1a1a"/>
+  <rect x="776" y="388" width="295" height="8" rx="3" fill="#1a1a1a"/>
+
+  <!-- Accent line bottom -->
+  <rect x="0" y="622" width="1200" height="8" fill="#7c3aed" opacity="0.6"/>
+</svg>

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Background -->
+  <rect width="32" height="32" rx="8" fill="#080808"/>
+  <!-- P mark — stylized, bold -->
+  <rect x="7" y="7" width="4" height="18" rx="1.5" fill="#7c3aed"/>
+  <path d="M11 7h5a5 5 0 0 1 0 10h-5V7z" fill="#7c3aed"/>
+  <!-- Dot accent -->
+  <circle cx="24" cy="25" r="2.5" fill="#a855f7"/>
+</svg>

@@ -1,0 +1,14 @@
+node_modules/
+frontend/node_modules/
+worker/node_modules/
+
+frontend/dist/
+.wrangler/
+
+.dev.vars
+.env
+.env.*
+!.env.example
+!.dev.vars.example
+
+npm-debug.log*
