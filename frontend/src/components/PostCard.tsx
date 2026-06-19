@@ -3,6 +3,7 @@ import { Copy, Download, MessageSquare, Check, AlertCircle, Heart, Repeat, Share
 import { PLATFORM_MAP } from '../config/platforms'
 import { useAppStore, type PlatformPost } from '../store/app'
 import { api } from '../lib/api'
+import { PlatformIcon } from './PlatformIcon'
 
 interface ExtraField {
   key: string
@@ -261,7 +262,7 @@ export function PostCard({ platformId, post, campaignId, imageFiles, videoFile, 
       {platform && (
         <div className="pc-profile-row">
           <div className="pc-avatar" style={{ background: platform.brandColor }}>
-            {platform.name.charAt(0).toUpperCase()}
+            <PlatformIcon id={platformId} size={16} color="#ffffff" />
           </div>
           <div className="pc-profile-info">
             <span className="pc-profile-name">Your Name</span>
