@@ -35,7 +35,7 @@ export interface Campaign {
   platforms: string[]
   posts: Record<string, PlatformPost>
   videoUrl: string | null
-  imageFile: File | null
+  imageFiles: File[]
   videoFile: File | null
 }
 
@@ -57,9 +57,9 @@ interface AppStore {
 
   prompt: string
   setPrompt: (p: string) => void
-  imageFile: File | null
+  imageFiles: File[]
   videoFile: File | null
-  setImageFile: (f: File | null) => void
+  setImageFiles: (f: File[]) => void
   setVideoFile: (f: File | null) => void
 
   isGenerating: boolean
@@ -99,9 +99,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   prompt: '',
   setPrompt: (p) => set({ prompt: p }),
-  imageFile: null,
+  imageFiles: [],
   videoFile: null,
-  setImageFile: (f) => set({ imageFile: f }),
+  setImageFiles: (f) => set({ imageFiles: f }),
   setVideoFile: (f) => set({ videoFile: f }),
 
   isGenerating: false,

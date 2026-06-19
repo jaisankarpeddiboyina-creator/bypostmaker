@@ -6,6 +6,7 @@ import { PostCard } from '../components/PostCard'
 import { RefinementChat } from '../components/RefinementChat'
 import { UpgradeModal } from '../components/UpgradeModal'
 import { api } from '../lib/api'
+import { PLATFORM_MAP } from '../config/platforms'
 
 const VIDEO_MAX_MB = 100
 
@@ -14,7 +15,7 @@ export default function AppPage() {
     user, usage,
     prompt, setPrompt,
     selectedPlatforms,
-    imageFile, setImageFile,
+    imageFiles, setImageFiles,
     videoFile, setVideoFile,
     isGenerating, setIsGenerating,
     campaign, setCampaign,
@@ -48,12 +49,12 @@ export default function AppPage() {
 
     setCampaign({
       id: '', prompt: prompt.trim(), platforms: selectedPlatforms,
-      posts: initialPosts, videoUrl: null, imageFile, videoFile,
+      posts: initialPosts, videoUrl: null, imageFiles, videoFile,
     })
     setIsGenerating(true)
 
     abortRef.current = api.generate.stream(
-      prompt.trim(), selectedPlatforms, imageFile, videoFile,
+      prompt.trim(), selectedPlatforms, imageFiles, videoFile,
       (event, data: unknown) => {
         const d = data as Record<string, unknown>
         switch (event) {
@@ -101,7 +102,7 @@ export default function AppPage() {
         }
       }
     )
-  }, [prompt, selectedPlatforms, imageFile, videoFile, usage])
+  }, [prompt, selectedPlatforms, imageFiles, videoFile, usage])
 
   const handleStop = () => {
     abortRef.current?.abort()
@@ -112,7 +113,7 @@ export default function AppPage() {
   const handleDownloadAll = async () => {
     if (!campaign?.id) return
     try {
-      await api.download.kit(campaign.id, imageFile, videoFile)
+      await api.download.kit(campaign.id, imageFiles, videoFile)
     } catch {
       addToast('Download failed', 'error')
     }
@@ -169,15 +170,38 @@ export default function AppPage() {
             </div>
 
             <div className="media-row">
-              <input ref={imageInputRef} type="file" accept="image/*" style={{ display: 'none' }}
-                onChange={e => setImageFile(e.target.files?.[0] ?? null)} />
-              <button className={`media-btn ${imageFile ? 'active' : ''}`}
+              <input ref={imageInputRef} type="file" accept="image/*" multiple style={{ display: 'none' }}
+                onChange={e => {
+                  const files = Array.from(e.target.files ?? [])
+                  const imageSupportedPlatforms = selectedPlatforms
+                    .map(id => PLATFORM_MAP[id])
+                    .filter(p => p && p.maxImages > 0)
+                  
+                  if (imageSupportedPlatforms.length === 0) {
+                    setImageFiles([])
+                    addToast('None of the selected platforms support images', 'error')
+                    e.target.value = ''
+                    return
+                  }
+                  
+                  const maxAllowed = Math.max(...imageSupportedPlatforms.map(p => p.maxImages))
+                  const cappedArray = files.slice(0, maxAllowed)
+                  setImageFiles(cappedArray)
+                }} />
+              <button className={`media-btn ${imageFiles.length > 0 ? 'active' : ''}`}
                 onClick={() => imageInputRef.current?.click()} disabled={isGenerating}>
                 <ImageIcon size={14} />
-                {imageFile ? imageFile.name.slice(0, 14) + '…' : 'Add image'}
+                {imageFiles.length > 1
+                  ? `${imageFiles.length} images`
+                  : imageFiles.length === 1
+                  ? imageFiles[0].name.slice(0, 14) + '…'
+                  : 'Add image'}
               </button>
-              {imageFile && (
-                <button className="media-clear" onClick={() => setImageFile(null)} title="Remove image">
+              {imageFiles.length > 0 && (
+                <button className="media-clear" onClick={() => {
+                  setImageFiles([])
+                  if (imageInputRef.current) imageInputRef.current.value = ''
+                }} title="Remove image">
                   <X size={12} />
                 </button>
               )}
@@ -242,7 +266,7 @@ export default function AppPage() {
                     platformId={id}
                     post={post}
                     campaignId={campaign.id}
-                    imageFile={imageFile}
+                    imageFiles={imageFiles}
                     videoFile={videoFile}
                     onOpenRefinement={() => setActivePlatformId(activePlatformId === id ? null : id)}
                   />

@@ -52,7 +52,7 @@ export const api = {
     stream: (
       prompt: string,
       platformIds: string[],
-      imageFile: File | null,
+      imageFiles: File[],
       videoFile: File | null,
       onEvent: (event: string, data: unknown) => void
     ): AbortController => {
@@ -61,7 +61,7 @@ export const api = {
       const formData = new FormData()
       formData.append('prompt', prompt)
       formData.append('platforms', JSON.stringify(platformIds))
-      if (imageFile) formData.append('image', imageFile)
+      imageFiles.forEach(f => formData.append('image', f))
       if (videoFile) formData.append('video', videoFile)
 
       ;(async () => {
@@ -137,7 +137,7 @@ export const api = {
   download: {
     kit: async (
       campaignId: string,
-      imageFile: File | null,
+      imageFiles: File[],
       videoFile: File | null,
       platformId?: string
     ): Promise<void> => {
@@ -145,13 +145,14 @@ export const api = {
       if (platformId) params.set('platform', platformId)
 
       const formData = new FormData()
-      if (imageFile) formData.append('image', imageFile)
+      imageFiles.forEach(f => formData.append('image', f))
       if (videoFile) formData.append('video', videoFile)
 
+      const hasMedia = imageFiles.length > 0 || videoFile
       const res = await fetch(`${BASE}/download?${params}`, {
-        method: imageFile || videoFile ? 'POST' : 'GET',
+        method: hasMedia ? 'POST' : 'GET',
         credentials: 'include',
-        body: imageFile || videoFile ? formData : undefined,
+        body: hasMedia ? formData : undefined,
       })
 
       if (!res.ok) throw new Error('Download failed')

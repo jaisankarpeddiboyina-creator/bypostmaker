@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from 'react'
-import { Copy, Download, MessageSquare, Check, AlertCircle } from 'lucide-react'
+import { useState, useRef, useEffect, useMemo } from 'react'
+import { Copy, Download, MessageSquare, Check, AlertCircle, Heart, Repeat, Share2, ThumbsUp, ChevronUp, ChevronDown, BookOpen, PlayCircle, Mic, Bookmark, Send } from 'lucide-react'
 import { PLATFORM_MAP } from '../config/platforms'
 import { useAppStore, type PlatformPost } from '../store/app'
 import { api } from '../lib/api'
@@ -20,15 +20,125 @@ interface PostCardProps {
   platformId: string
   post: PlatformPost
   campaignId: string
-  imageFile: File | null
+  imageFiles: File[]
   videoFile: File | null
   onOpenRefinement: () => void
 }
 
-export function PostCard({ platformId, post, campaignId, imageFile, videoFile, onOpenRefinement }: PostCardProps) {
+export function PostCard({ platformId, post, campaignId, imageFiles, videoFile, onOpenRefinement }: PostCardProps) {
   const { updatePost, addToast } = useAppStore()
   const platform = PLATFORM_MAP[platformId]
   const extraFieldDefs = PLATFORM_EXTRA_FIELDS[platformId] ?? []
+
+  const urls = useMemo(() => {
+    if (!platform || platform.maxImages === 0 || platform.imagePosition === 'none') return []
+    return imageFiles.slice(0, platform.maxImages).map(f => URL.createObjectURL(f))
+  }, [imageFiles, platform])
+
+  useEffect(() => {
+    return () => {
+      urls.forEach(url => URL.revokeObjectURL(url))
+    }
+  }, [urls])
+
+  const renderImageGrid = () => {
+    if (!platform || platform.maxImages === 0 || platform.imagePosition === 'none') return null
+    if (imageFiles.length === 0 || urls.length === 0) return null
+
+    const count = urls.length
+    const showOverlay = imageFiles.length > 4 && platform.maxImages > 4
+    const overlayText = `+${imageFiles.length - 4} more`
+    const gridClass = `pc-image-grid grid-${Math.min(count, 4)}`
+    const itemsToRender = urls.slice(0, 4)
+
+    return (
+      <div className="pc-image-container">
+        <div className={gridClass}>
+          {itemsToRender.map((url, index) => {
+            const isFourth = index === 3
+            return (
+              <div key={index} className="pc-img-wrapper">
+                <img src={url} alt={`Upload ${index + 1}`} className="pc-img" />
+                {isFourth && showOverlay && (
+                  <div className="pc-img-overlay">
+                    {overlayText}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
+
+  const renderChromeActions = () => {
+    if (!platform) return null
+    const iconProps = { size: 14 }
+    
+    switch (platform.group) {
+      case 'shortform':
+        return (
+          <div className="pc-chrome-actions">
+            <span className="action-item"><Heart {...iconProps} /> 0</span>
+            <span className="action-item"><Repeat {...iconProps} /></span>
+            <span className="action-item"><Share2 {...iconProps} /></span>
+          </div>
+        )
+      case 'professional':
+        return (
+          <div className="pc-chrome-actions">
+            <span className="action-item"><ThumbsUp {...iconProps} /> Like</span>
+            <span className="action-item"><MessageSquare {...iconProps} /> Comment</span>
+            <span className="action-item"><Share2 {...iconProps} /> Share</span>
+          </div>
+        )
+      case 'community':
+        return (
+          <div className="pc-chrome-actions">
+            <span className="action-item"><ChevronUp {...iconProps} /></span>
+            <span className="action-separator">·</span>
+            <span className="action-item"><ChevronDown {...iconProps} /></span>
+            <span className="action-item"><MessageSquare {...iconProps} /> Comments</span>
+          </div>
+        )
+      case 'longform': {
+        const readingTime = Math.ceil(post.content.split(' ').length / 200)
+        return (
+          <div className="pc-chrome-actions">
+            <span className="action-item"><BookOpen {...iconProps} /> {readingTime} min read</span>
+          </div>
+        )
+      }
+      case 'video':
+        return (
+          <div className="pc-chrome-actions">
+            <span className="action-item"><PlayCircle {...iconProps} /> Preview</span>
+          </div>
+        )
+      case 'audio':
+        return (
+          <div className="pc-chrome-actions">
+            <span className="action-item"><Mic {...iconProps} /> Listen</span>
+          </div>
+        )
+      case 'design':
+        return (
+          <div className="pc-chrome-actions">
+            <span className="action-item"><Heart {...iconProps} /> Appreciate</span>
+            <span className="action-item"><Bookmark {...iconProps} /> Save</span>
+          </div>
+        )
+      case 'messaging':
+        return (
+          <div className="pc-chrome-actions">
+            <span className="action-item"><Send {...iconProps} /> Send</span>
+          </div>
+        )
+      default:
+        return null
+    }
+  }
 
   const [copied, setCopied] = useState(false)
   const [downloading, setDownloading] = useState(false)
@@ -56,7 +166,7 @@ export function PostCard({ platformId, post, campaignId, imageFile, videoFile, o
     if (!campaignId || downloading) return
     setDownloading(true)
     try {
-      await api.download.kit(campaignId, imageFile, videoFile, platformId)
+      await api.download.kit(campaignId, imageFiles, videoFile, platformId)
     } catch {
       addToast('Download failed. Try again.', 'error')
     } finally {
@@ -93,11 +203,30 @@ export function PostCard({ platformId, post, campaignId, imageFile, videoFile, o
   if (post.status === 'error') return <CardError name={platform?.name ?? platformId} message={post.errorMessage ?? 'Generation failed'} />
 
   return (
-    <div className={`post-card ${isEditing ? 'editing' : ''}`}>
+    <div
+      className={`post-card ${isEditing ? 'editing' : ''}`}
+      style={{ borderTop: platform?.brandColor ? `3px solid ${platform.brandColor}` : undefined }}
+    >
       {/* Header */}
       <div className="pc-header">
         <div className="pc-platform">
-          <span className="pc-name">{platform?.name ?? platformId}</span>
+          {platform?.brandColor && (
+            <span
+              className="pc-brand-dot"
+              style={{
+                width: '6px',
+                height: '6px',
+                borderRadius: '50%',
+                backgroundColor: platform.brandColor,
+                display: 'inline-block',
+                marginRight: '6px',
+                flexShrink: 0
+              }}
+            />
+          )}
+          <span className="pc-name" style={{ color: platform?.brandColor }}>
+            {platform?.name ?? platformId}
+          </span>
           {post.edited && <span className="pc-edited">edited</span>}
         </div>
         <div className="pc-actions">
@@ -128,6 +257,9 @@ export function PostCard({ platformId, post, campaignId, imageFile, videoFile, o
         </div>
       )}
 
+      {/* Image above content */}
+      {platform?.imagePosition === 'above' && renderImageGrid()}
+
       {/* Content — click to edit */}
       <div className="pc-content" onClick={() => !isEditing && setIsEditing(true)} title="Click to edit">
         {isEditing ? (
@@ -145,6 +277,12 @@ export function PostCard({ platformId, post, campaignId, imageFile, videoFile, o
           <p className="pc-text">{post.content}</p>
         )}
       </div>
+
+      {/* Image below content */}
+      {platform?.imagePosition === 'below' && renderImageGrid()}
+
+      {/* Chrome actions row */}
+      {renderChromeActions()}
 
       {/* Footer */}
       <div className="pc-footer">
@@ -175,6 +313,91 @@ export function PostCard({ platformId, post, campaignId, imageFile, videoFile, o
         }
         .post-card:hover { border-color: var(--border-light); }
         .post-card.editing { border-color: var(--accent); }
+
+        .pc-brand-dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          display: inline-block;
+          margin-right: 6px;
+          flex-shrink: 0;
+        }
+        .pc-image-container {
+          width: 100%;
+          overflow: hidden;
+          position: relative;
+        }
+        .pc-image-grid {
+          display: grid;
+          gap: 2px;
+          width: 100%;
+          aspect-ratio: 16 / 9;
+          background: var(--border);
+          overflow: hidden;
+        }
+        .pc-image-grid.grid-1 {
+          grid-template-columns: 1fr;
+          grid-template-rows: 1fr;
+        }
+        .pc-image-grid.grid-2 {
+          grid-template-columns: 1fr 1fr;
+          grid-template-rows: 1fr;
+        }
+        .pc-image-grid.grid-3 {
+          grid-template-columns: 1fr 1fr;
+          grid-template-rows: 1fr 1fr;
+        }
+        .pc-image-grid.grid-3 .pc-img-wrapper:nth-child(1) {
+          grid-row: span 2;
+        }
+        .pc-image-grid.grid-4 {
+          grid-template-columns: 1fr 1fr;
+          grid-template-rows: 1fr 1fr;
+        }
+        .pc-img-wrapper {
+          position: relative;
+          width: 100%;
+          height: 100%;
+          overflow: hidden;
+        }
+        .pc-img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          display: block;
+        }
+        .pc-img-overlay {
+          position: absolute;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.6);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #fff;
+          font-size: 14px;
+          font-weight: 700;
+          backdrop-filter: blur(2px);
+        }
+        .pc-chrome-actions {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          padding: 8px 14px;
+          border-top: 1px solid var(--border);
+          opacity: 0.35;
+          pointer-events: none;
+          font-size: 11px;
+          color: var(--text-2);
+          user-select: none;
+        }
+        .pc-chrome-actions .action-item {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }
+        .pc-chrome-actions .action-separator {
+          color: var(--text-4);
+        }
 
         .pc-header {
           display: flex;
