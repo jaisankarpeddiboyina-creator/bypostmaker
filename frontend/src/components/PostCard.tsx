@@ -16,6 +16,23 @@ const PLATFORM_EXTRA_FIELDS: Record<string, ExtraField[]> = {
   stackoverflow:[{ key: 'url', placeholder: 'https://stackoverflow.com/...', label: 'Question URL' }],
 }
 
+import type { Platform } from '../config/platforms'
+
+function getProfileSub(platform: Platform | undefined): string {
+  if (!platform) return ''
+  switch (platform.group) {
+    case 'shortform':    return '@yourhandle · just now'
+    case 'professional': return 'Your Title · 1st · just now'
+    case 'community':    return 'u/yourhandle · just now'
+    case 'longform':     return 'yourhandle · just now · 1 min read'
+    case 'video':        return '@yourchannel · just now'
+    case 'audio':        return '@yourhandle · just now'
+    case 'design':       return '@yourhandle · just now'
+    case 'messaging':    return '@yourhandle'
+    default:             return '@yourhandle · just now'
+  }
+}
+
 interface PostCardProps {
   platformId: string
   post: PlatformPost
@@ -30,26 +47,27 @@ export function PostCard({ platformId, post, campaignId, imageFiles, videoFile, 
   const platform = PLATFORM_MAP[platformId]
   const extraFieldDefs = PLATFORM_EXTRA_FIELDS[platformId] ?? []
 
-  const urls = useMemo(() => {
-    if (!platform || platform.maxImages === 0 || platform.imagePosition === 'none') return []
-    return imageFiles.slice(0, platform.maxImages).map(f => URL.createObjectURL(f))
-  }, [imageFiles, platform])
+  const [imageUrls, setImageUrls] = useState<string[]>([])
 
   useEffect(() => {
-    return () => {
-      urls.forEach(url => URL.revokeObjectURL(url))
+    if (!platform || platform.maxImages === 0 || platform.imagePosition === 'none' || imageFiles.length === 0) {
+      setImageUrls([])
+      return
     }
-  }, [urls])
+    const urls = imageFiles.slice(0, platform.maxImages).map(f => URL.createObjectURL(f))
+    setImageUrls(urls)
+    return () => { urls.forEach(url => URL.revokeObjectURL(url)) }
+  }, [imageFiles, platform])
 
   const renderImageGrid = () => {
     if (!platform || platform.maxImages === 0 || platform.imagePosition === 'none') return null
-    if (imageFiles.length === 0 || urls.length === 0) return null
+    if (imageFiles.length === 0 || imageUrls.length === 0) return null
 
-    const count = urls.length
+    const count = imageUrls.length
     const showOverlay = imageFiles.length > 4 && platform.maxImages > 4
     const overlayText = `+${imageFiles.length - 4} more`
     const gridClass = `pc-image-grid grid-${Math.min(count, 4)}`
-    const itemsToRender = urls.slice(0, 4)
+    const itemsToRender = imageUrls.slice(0, 4)
 
     return (
       <div className="pc-image-container">
@@ -240,6 +258,18 @@ export function PostCard({ platformId, post, campaignId, imageFiles, videoFile, 
         </div>
       </div>
 
+      {platform && (
+        <div className="pc-profile-row">
+          <div className="pc-avatar" style={{ background: platform.brandColor }}>
+            {platform.name.charAt(0).toUpperCase()}
+          </div>
+          <div className="pc-profile-info">
+            <span className="pc-profile-name">Your Name</span>
+            <span className="pc-profile-sub">{getProfileSub(platform)}</span>
+          </div>
+        </div>
+      )}
+
       {/* Extra fields — inside the card, belongs to this platform */}
       {extraFieldDefs.length > 0 && (
         <div className="pc-extra-fields">
@@ -314,6 +344,42 @@ export function PostCard({ platformId, post, campaignId, imageFiles, videoFile, 
         .post-card:hover { border-color: var(--border-light); }
         .post-card.editing { border-color: var(--accent); }
 
+        .pc-profile-row {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 10px 14px 0;
+        }
+        .pc-avatar {
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 13px;
+          font-weight: 700;
+          color: #fff;
+          flex-shrink: 0;
+        }
+        .pc-profile-info {
+          display: flex;
+          flex-direction: column;
+          gap: 1px;
+        }
+        .pc-profile-name {
+          font-size: 12px;
+          font-weight: 600;
+          color: var(--text-1);
+        }
+        .pc-profile-sub {
+          font-size: 10px;
+          color: var(--text-3);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
         .pc-brand-dot {
           width: 6px;
           height: 6px;
@@ -384,7 +450,7 @@ export function PostCard({ platformId, post, campaignId, imageFiles, videoFile, 
           gap: 16px;
           padding: 8px 14px;
           border-top: 1px solid var(--border);
-          opacity: 0.35;
+          opacity: 0.5;
           pointer-events: none;
           font-size: 11px;
           color: var(--text-2);
