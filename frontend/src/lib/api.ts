@@ -119,6 +119,12 @@ export const api = {
 
       return ctrl
     },
+
+    retry: (campaignId: string, platformId: string) =>
+      request<{ content: string; platformId: string }>('/generate/retry', {
+        method: 'POST',
+        body: JSON.stringify({ campaignId, platformId }),
+      }),
   },
 
   // ── Refinement ──────────────────────────────────────────────

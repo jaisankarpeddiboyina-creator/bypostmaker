@@ -4,6 +4,7 @@ import { withRateLimit } from './middleware/rateLimit'
 import { withCors } from './middleware/cors'
 import { handleAuth } from './routes/auth'
 import { handleGenerate } from './routes/generate'
+import { handleRetry } from './routes/retry'
 import { handleDownload } from './routes/download'
 import { handleRefinement } from './routes/refinement'
 import { handlePayments } from './routes/payments'
@@ -49,6 +50,9 @@ export default {
       // ── Protected routes ────────────────────────────────────
       if (path === '/api/generate' && request.method === 'POST')
         return withCors(await handleGenerate(request, env, userId, userPlan, ctx), env)
+
+      if (path === '/api/generate/retry' && request.method === 'POST')
+        return withCors(await handleRetry(request, env, userId, userPlan), env)
 
       if (path.startsWith('/api/refine'))
         return withCors(await handleRefinement(request, env, userId, userPlan), env)

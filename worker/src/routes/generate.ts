@@ -125,13 +125,13 @@ export async function handleGenerate(
             // Any platforms in this group that got no content → error
             for (const id of ids) {
               if (!parsed[id]) {
-                await send('error', { platformId: id, message: 'No content generated. Click retry.' })
+                await send('error', { platformId: id, message: 'This one slipped through — tap retry to generate it!' })
               }
             }
           } catch (err) {
             console.error(`Group ${group} failed:`, err)
             for (const id of ids) {
-              await send('error', { platformId: id, message: 'Generation failed. Click retry.' })
+              await send('error', { platformId: id, message: 'AI was momentarily busy handling all platforms at once — tap retry!' })
             }
           }
         })

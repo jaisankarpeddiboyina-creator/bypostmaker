@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from 'react'
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { Copy, Download, MessageSquare, Check, AlertCircle, Heart, Repeat, Share2, ThumbsUp, ChevronUp, ChevronDown, BookOpen, PlayCircle, Mic, Bookmark, Send } from 'lucide-react'
 import { PLATFORM_MAP } from '../config/platforms'
 import { useAppStore, type PlatformPost } from '../store/app'
@@ -212,6 +212,19 @@ export function PostCard({ platformId, post, campaignId, imageFiles, videoFile, 
     updatePost(platformId, { extraFields: { ...extraFields, [key]: value } })
   }
 
+  const handleRetry = useCallback(async () => {
+    updatePost(platformId, { status: 'generating', content: '', errorMessage: undefined })
+    try {
+      const result = await api.generate.retry(campaignId, platformId)
+      updatePost(platformId, { content: result.content, status: 'done' })
+    } catch (err: any) {
+      updatePost(platformId, {
+        status: 'error',
+        errorMessage: err.message ?? 'Could not generate — try again!',
+      })
+    }
+  }, [platformId, campaignId, updatePost])
+
   const shareUrl = platform?.shareUrl(post.content, extraFields)
   const charLimit = platform?.charLimit
   const charCount = post.content.length
@@ -219,7 +232,7 @@ export function PostCard({ platformId, post, campaignId, imageFiles, videoFile, 
 
   if (post.status === 'pending') return <CardSkeleton />
   if (post.status === 'generating') return <CardGenerating name={platform?.name ?? platformId} />
-  if (post.status === 'error') return <CardError name={platform?.name ?? platformId} message={post.errorMessage ?? 'Generation failed'} />
+  if (post.status === 'error') return <CardError name={platform?.name ?? platformId} message={post.errorMessage ?? 'Generation failed'} brandColor={platform?.brandColor} onRetry={handleRetry} />
 
   return (
     <div
@@ -592,13 +605,76 @@ function CardGenerating({ name }: { name: string }) {
   )
 }
 
-function CardError({ name, message }: { name: string; message: string }) {
+function CardError({ name, message, brandColor, onRetry }: {
+  name: string
+  message: string
+  brandColor?: string
+  onRetry?: () => void
+}) {
+  const [retrying, setRetrying] = useState(false)
+
+  const handleClick = async () => {
+    if (!onRetry || retrying) return
+    setRetrying(true)
+    await onRetry()
+  }
+
   return (
-    <div style={{ background: 'var(--card)', border: '1px solid var(--error)', borderRadius: 'var(--radius-lg)', padding: 14, minWidth: 280, maxWidth: 340, flexShrink: 0 }}>
-      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>{name}</div>
-      <div style={{ display: 'flex', gap: 6, alignItems: 'center', color: 'var(--error)', fontSize: 12 }}>
-        <AlertCircle size={13} /><span>{message}</span>
+    <div style={{
+      background: 'var(--card)',
+      border: '1px solid var(--border)',
+      borderTop: `3px solid ${brandColor ?? 'var(--error)'}`,
+      borderRadius: 'var(--radius-lg)',
+      padding: 14,
+      minWidth: 280,
+      maxWidth: 340,
+      flexShrink: 0,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 12,
+    }}>
+      <div style={{
+        fontSize: 11,
+        fontWeight: 700,
+        color: brandColor ?? 'var(--text-3)',
+        textTransform: 'uppercase',
+        letterSpacing: '0.06em',
+      }}>
+        {name}
       </div>
+      <div style={{
+        display: 'flex',
+        gap: 6,
+        alignItems: 'flex-start',
+        color: 'var(--text-2)',
+        fontSize: 12,
+        lineHeight: 1.5,
+      }}>
+        <AlertCircle size={14} style={{ flexShrink: 0, marginTop: 1, color: 'var(--error)' }} />
+        <span>{message}</span>
+      </div>
+      {onRetry && (
+        <button
+          onClick={handleClick}
+          disabled={retrying}
+          style={{
+            alignSelf: 'flex-start',
+            padding: '6px 14px',
+            borderRadius: 'var(--radius)',
+            border: `1px solid ${brandColor ?? 'var(--accent)'}`,
+            background: 'transparent',
+            color: brandColor ?? 'var(--accent)',
+            fontSize: 12,
+            fontWeight: 600,
+            cursor: retrying ? 'not-allowed' : 'pointer',
+            opacity: retrying ? 0.5 : 1,
+            fontFamily: 'var(--font-body)',
+            transition: 'opacity 150ms ease',
+          }}
+        >
+          {retrying ? 'Retrying…' : 'Try again'}
+        </button>
+      )}
     </div>
   )
 }
