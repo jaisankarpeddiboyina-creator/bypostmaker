@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Users, TrendingUp, Tag, Shield, Search, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Users, TrendingUp, Tag, Shield, Search, ChevronLeft, ChevronRight, BarChart2 } from 'lucide-react'
 import { useAppStore } from '../store/app'
 import { api } from '../lib/api'
 
@@ -9,6 +9,7 @@ interface Stats {
   subscriptions: { total: number; active: number; usd: number; inr: number }
   campaigns: { total: number; today: number }
   usage: { total: number }
+  topPlatforms: Array<{ platform_id: string; count: number }>
 }
 
 interface AdminUser {
@@ -19,6 +20,17 @@ interface AdminUser {
 interface Promo {
   code: string; description: string; discount_pct: number
   max_uses: number | null; uses: number; active: number
+}
+
+const PLATFORM_NAMES: Record<string, string> = {
+  instagram: 'Instagram',
+  twitter: 'Twitter',
+  linkedin: 'LinkedIn',
+  facebook: 'Facebook',
+  pinterest: 'Pinterest',
+  tiktok: 'TikTok',
+  threads: 'Threads',
+  youtube: 'YouTube',
 }
 
 export default function AdminPage() {
@@ -154,6 +166,28 @@ export default function AdminPage() {
                 ))}
               </div>
             </div>
+            <div className="stat-group">
+              <h3 className="stat-group-title"><BarChart2 size={14} /> Top Platforms</h3>
+              <div className="platform-list">
+                {stats.topPlatforms && stats.topPlatforms.length > 0 ? (
+                  stats.topPlatforms.map((p, idx) => (
+                    <div key={p.platform_id} className="platform-row">
+                      <div className="platform-rank">#{idx + 1}</div>
+                      <div className="platform-name">
+                        {PLATFORM_NAMES[p.platform_id.toLowerCase()] || p.platform_id}
+                      </div>
+                      <div className="platform-count">
+                        <span className="platform-count-value">{p.count}</span> generations
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div style={{ fontSize: 13, color: 'var(--text-3)', padding: '12px 0' }}>
+                    No completed campaigns found.
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )}
 
@@ -285,6 +319,13 @@ export default function AdminPage() {
         .stat-value { font-family: var(--font-display); font-size: 24px; font-weight: 700; color: var(--text-1); }
         .stat-label { font-size: 11px; color: var(--text-3); margin-top: 2px; }
         .admin-stats { display: flex; flex-direction: column; gap: 16px; }
+        .platform-list { display: flex; flex-direction: column; gap: 8px; }
+        .platform-row { display: flex; align-items: center; padding: 12px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); gap: 16px; transition: transform var(--transition), border-color var(--transition); }
+        .platform-row:hover { transform: translateX(4px); border-color: var(--accent); }
+        .platform-rank { font-family: var(--font-display); font-size: 14px; font-weight: 700; color: var(--accent); width: 28px; }
+        .platform-name { font-size: 14px; font-weight: 600; color: var(--text-1); flex: 1; }
+        .platform-count { font-size: 13px; color: var(--text-3); }
+        .platform-count-value { font-weight: 600; color: var(--text-1); }
         .admin-search { display: flex; align-items: center; gap: 8px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 6px 12px; }
         .admin-search input { flex: 1; background: none; border: none; outline: none; color: var(--text-1); font-size: 13px; font-family: var(--font-body); }
         .admin-table { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }

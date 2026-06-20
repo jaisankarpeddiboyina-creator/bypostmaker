@@ -22,7 +22,7 @@ export async function handleAdmin(
 
   // ── GET /api/admin/stats ──────────────────────────────────
   if (path === '/api/admin/stats') {
-    const [users, subs, campaigns, usage] = await Promise.all([
+    const [users, subs, campaigns, usage, topPlatformsResult] = await Promise.all([
       env.DB.prepare(`SELECT
         COUNT(*) as total,
         SUM(CASE WHEN plan = 'free' THEN 1 ELSE 0 END) as free,
@@ -46,9 +46,21 @@ export async function handleAdmin(
         FROM campaigns WHERE status = 'completed'`).first(),
       env.DB.prepare(`SELECT COALESCE(SUM(generations), 0) as total
         FROM usage WHERE period_start > unixepoch() - 2592000`).first(),
+      env.DB.prepare(`SELECT json_each.value as platform_id, COUNT(*) as count 
+        FROM campaigns, json_each(campaigns.platforms) 
+        WHERE campaigns.status = 'completed' 
+        GROUP BY platform_id 
+        ORDER BY count DESC 
+        LIMIT 10`).all(),
     ])
 
-    return json({ users, subscriptions: subs, campaigns, usage })
+    return json({
+      users,
+      subscriptions: subs,
+      campaigns,
+      usage,
+      topPlatforms: topPlatformsResult?.results ?? [],
+    })
   }
 
   // ── GET /api/admin/users ──────────────────────────────────
