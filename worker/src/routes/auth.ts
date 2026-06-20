@@ -221,7 +221,7 @@ function getCurrentPeriod(): { periodStart: number; periodEnd: number } {
 function getRedirectUri(env: Env): string {
   return env.ENVIRONMENT === 'development'
     ? 'http://localhost:8787/api/auth/callback'
-    : `https://api.${env.DOMAIN}/api/auth/callback`
+    : `https://${env.DOMAIN}/api/auth/callback`
 }
 
 function getAppUrl(env: Env): string {
