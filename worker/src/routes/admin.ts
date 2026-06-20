@@ -47,7 +47,7 @@ export async function handleAdmin(
       env.DB.prepare(`SELECT COALESCE(SUM(generations), 0) as total
         FROM usage WHERE period_start > unixepoch() - 2592000`).first(),
       env.DB.prepare(`SELECT json_each.value as platform_id, COUNT(*) as count 
-        FROM campaigns, json_each(campaigns.platforms) 
+        FROM campaigns, json_each(CASE WHEN json_valid(campaigns.platforms) = 1 THEN campaigns.platforms ELSE '[]' END) 
         WHERE campaigns.status = 'completed' 
         GROUP BY platform_id 
         ORDER BY count DESC 

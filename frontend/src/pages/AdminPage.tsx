@@ -56,7 +56,16 @@ export default function AdminPage() {
   const loadStats = async () => {
     try {
       const res = await fetch('/api/admin/stats', { credentials: 'include' })
-      setStats(await res.json())
+      if (!res.ok) {
+        addToast('Failed to load stats', 'error')
+        return
+      }
+      const data = await res.json()
+      if (data.error) {
+        addToast(data.error, 'error')
+        return
+      }
+      setStats(data)
     } catch { addToast('Failed to load stats', 'error') }
   }
 
