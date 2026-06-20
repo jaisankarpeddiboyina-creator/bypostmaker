@@ -54,7 +54,7 @@ export async function handlePayments(
       body: JSON.stringify({
         plan_id: planId,
         quantity: 1,
-        total_count: 12,  // 12 months
+        total_count: 120,  // 10 years = effectively continuous
         customer_notify: 1,
       }),
     })

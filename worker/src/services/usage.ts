@@ -17,7 +17,7 @@ export async function checkUsageLimit(
   const limit = TIER_LIMITS[plan].generations
 
   // Business plan = unlimited
-  if (limit === Infinity) {
+  if (limit === Infinity || limit >= 1000) {
     return { allowed: true, used: 0, limit: -1, remaining: -1 }
   }
 

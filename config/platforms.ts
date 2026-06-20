@@ -775,7 +775,7 @@ export const TIER_LIMITS: Record<PlatformTier, { generations: number; platforms:
   free:     { generations: 5,   platforms: PLATFORMS_BY_TIER.free.length },
   starter:  { generations: 50,  platforms: PLATFORMS_BY_TIER.starter.length },
   pro:      { generations: 200, platforms: PLATFORMS_BY_TIER.pro.length },
-  business: { generations: Infinity, platforms: PLATFORMS.length },
+  business: { generations: 1000, platforms: PLATFORMS.length },
 }
 
 export function getPlatformsForTier(tier: PlatformTier): Platform[] {

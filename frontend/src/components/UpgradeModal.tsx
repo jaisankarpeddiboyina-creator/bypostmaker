@@ -5,9 +5,9 @@ import { api } from '../lib/api'
 import { trackEvent } from '../lib/monitoring'
 
 const PLANS = {
-  starter:  { name: 'Starter',  usd: 9,   inr: 749,   gens: 50,  platforms: 13, features: ['50 generations/month','13 platforms','30-day history','AI refinement'] },
-  pro:      { name: 'Pro',      usd: 19,  inr: 1499,  gens: 200, platforms: 20, features: ['200 generations/month','20 platforms','90-day history','Priority generation'] },
-  business: { name: 'Business', usd: 49,  inr: 3999,  gens: -1,  platforms: 33, features: ['Unlimited generations','All 33 platforms','1-year history','API access (v2)'] },
+  starter:  { name: 'Starter',  usd: 9,   inr: 299,   gens: 50,  platforms: 33, features: ['50 generations/month','All 33 platforms','30-day history','AI refinement'] },
+  pro:      { name: 'Pro',      usd: 19,  inr: 799,   gens: 200, platforms: 33, features: ['200 generations/month','All 33 platforms','90-day history','Priority generation'] },
+  business: { name: 'Business', usd: 49,  inr: 1999,  gens: 1000, platforms: 33, features: ['1,000 generations/month','All 33 platforms','1-year history','API access (v2)'] },
 }
 
 export function UpgradeModal() {
@@ -61,10 +61,10 @@ export function UpgradeModal() {
         handler: () => {
           const p = PLANS[plan as keyof typeof PLANS]
           const msg = plan === 'business'
-            ? 'Welcome to Business! All 33 platforms unlocked.'
+            ? 'Welcome to Business! 1,000 generations/month unlocked.'
             : plan === 'pro'
-            ? 'Welcome to Pro! 20 platforms unlocked.'
-            : 'Welcome to Starter! 13 platforms unlocked.'
+            ? 'Welcome to Pro! 200 generations/month unlocked.'
+            : 'Welcome to Starter! 50 generations/month unlocked.'
           addToast(msg, 'success')
           trackEvent('subscription_created', { plan, currency })
           setShowUpgradeModal(false)

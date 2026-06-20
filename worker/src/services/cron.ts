@@ -105,7 +105,7 @@ async function runUsageAlerts(env: Env): Promise<void> {
             COALESCE(us.generations, 0) as generations
      FROM users u
      LEFT JOIN usage us ON u.id = us.user_id AND us.period_start = ?
-     WHERE u.plan != 'business'`  // business = unlimited, no alerts
+     WHERE u.plan != 'business'`  // business = high limit, skip alerts
   ).bind(periodStart).all<{
     id: string
     email: string
