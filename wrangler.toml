@@ -38,7 +38,7 @@ migrations_dir = "db/migrations"
 # ── Staging Environment ──────────────────────────────────────
 [env.staging]
 name = "bypostmaker-worker-staging"
-vars = { ENVIRONMENT = "staging", DOMAIN = "staging.bypostmaker.com" }
+vars = { ENVIRONMENT = "staging", DOMAIN = "staging.bypostamaker.com" }
 
 [[env.staging.d1_databases]]
 binding = "DB"
@@ -49,7 +49,10 @@ migrations_dir = "db/migrations"
 # ── Production Environment ───────────────────────────────────
 [env.production]
 name = "bypostmaker-worker"
-vars = { ENVIRONMENT = "production", DOMAIN = "bypostmaker.com" }
+vars = { ENVIRONMENT = "production", DOMAIN = "bypostamaker.com" }
+routes = [
+  { pattern = "bypostamaker.com", custom_domain = true, zone_name = "bypostamaker.com" }
+]
 
 [[env.production.d1_databases]]
 binding = "DB"

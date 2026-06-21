@@ -74,7 +74,7 @@ export default function LandingPage() {
           <div className="landing-nav-links">
             <a href="#features">Features</a>
             <a href="#pricing">Pricing</a>
-            <a href="mailto:support@bypostmaker.com">Support</a>
+            <a href="mailto:support@bypostamaker.com">Support</a>
           </div>
           <div className="landing-nav-cta">
             {user
@@ -265,7 +265,7 @@ export default function LandingPage() {
             <a href="/terms">Terms</a>
             <a href="/refund">Refund Policy</a>
             <a href="/cookies">Cookies</a>
-            <a href="mailto:support@bypostmaker.com">Support</a>
+            <a href="mailto:support@bypostamaker.com">Support</a>
           </div>
           <div className="footer-copy">© {new Date().getFullYear()} PostMaker. All rights reserved.</div>
         </div>
