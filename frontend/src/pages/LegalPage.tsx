@@ -4,7 +4,7 @@ import { ArrowLeft } from 'lucide-react'
 const COMPANY = 'PostMaker'
 const DOMAIN  = 'bypostamaker.com'
 const EMAIL   = 'support@bypostamaker.com'
-const UPDATED = 'June 2025'
+const UPDATED = 'June 2026'
 
 const CONTENT: Record<string, { title: string; body: string }> = {
   privacy: {
@@ -34,8 +34,6 @@ PostMaker uses the following services that may process your data:
 - **Groq / Google Gemini** — AI text generation (your prompts are sent to these APIs)
 - **Razorpay** — payment processing (we never see or store your card details)
 - **Resend** — transactional email delivery
-- **PostHog** — product analytics (anonymised usage events)
-- **Sentry** — error monitoring (no personal data in error reports)
 
 ## Data Retention
 
@@ -156,16 +154,6 @@ PostMaker uses a minimal number of cookies to operate.
 
 **pm_session** — This cookie keeps you signed in to PostMaker. It stores a secure, encrypted token that identifies your session. Without this cookie, you would be signed out on every page load. This cookie is httpOnly (cannot be accessed by JavaScript), Secure (only sent over HTTPS), and expires after 30 days.
 
-### Analytics Cookies (Optional)
-
-PostMaker uses PostHog for product analytics. PostHog may set cookies to track usage patterns such as which features are used and where users encounter issues. This data is anonymised and used only to improve the product. No personal data is included in analytics events.
-
-PostHog cookies: **ph_** prefixed cookies — session and distinct ID for event tracking.
-
-### Error Monitoring
-
-PostMaker uses Sentry for error monitoring. Sentry does not set persistent cookies but may use session storage to track error context within a single browser session.
-
 ## What We Don't Do
 
 We do not use advertising cookies. We do not use third-party tracking cookies. We do not sell cookie data. We do not use cookies to build advertising profiles.
@@ -173,8 +161,6 @@ We do not use advertising cookies. We do not use third-party tracking cookies. W
 ## Managing Cookies
 
 You can clear cookies from your browser at any time. Clearing the pm_session cookie will sign you out of PostMaker.
-
-To opt out of PostHog analytics, you can use a browser extension that blocks tracking scripts, or contact ${EMAIL} to request your data be excluded from analytics.
 
 ## Contact
 
@@ -188,20 +174,98 @@ export default function LegalPage({ page }: { page: 'privacy' | 'terms' | 'refun
   const content = CONTENT[page]
   if (!content) return null
 
-  // Parse simple markdown: ## heading, **bold**, \n\n paragraphs
-  const renderBody = (text: string) => {
-    return text.trim().split('\n\n').map((block, i) => {
-      if (block.startsWith('## ')) {
-        return <h2 key={i} className="legal-h2">{block.slice(3)}</h2>
-      }
-      // Inline bold
-      const parts = block.split(/\*\*(.*?)\*\*/g)
+  const lastUpdatedMatch = content.body.match(/^Last updated:.*$/m)
+  const lastUpdatedLine = lastUpdatedMatch ? lastUpdatedMatch[0] : null
+
+  const renderInline = (text: string) => {
+    if (text.trim() === EMAIL) {
       return (
-        <p key={i} className="legal-p">
-          {parts.map((part, j) => j % 2 === 1 ? <strong key={j}>{part}</strong> : part)}
-        </p>
+        <a href={`mailto:${EMAIL}`} className="legal-email-link">
+          {EMAIL}
+        </a>
       )
-    })
+    }
+    const parts = text.split(/\*\*(.*?)\*\*/g)
+    return parts.map((part, j) => j % 2 === 1 ? <strong key={j}>{part}</strong> : part)
+  }
+
+  // Parse simple markdown: ## heading, **bold**, \n\n paragraphs, list items, emails
+  const renderBody = (text: string) => {
+    return text
+      .trim()
+      .split('\n\n')
+      .filter(block => !block.trim().startsWith('Last updated:'))
+      .map((block, i) => {
+        const trimmedBlock = block.trim()
+
+        if (trimmedBlock.startsWith('## ')) {
+          return <h2 key={i} className="legal-h2">{trimmedBlock.slice(3)}</h2>
+        }
+
+        if (trimmedBlock.startsWith('### ')) {
+          return <h3 key={i} className="legal-h3">{trimmedBlock.slice(4)}</h3>
+        }
+
+        if (trimmedBlock === EMAIL) {
+          return (
+            <p key={i} className="legal-p">
+              <a href={`mailto:${EMAIL}`} className="legal-email-link">{EMAIL}</a>
+            </p>
+          )
+        }
+
+        // Bullet list support
+        if (trimmedBlock.split('\n').some(line => line.trim().startsWith('- '))) {
+          const lines = block.split('\n')
+          const elements: React.ReactNode[] = []
+          let currentListItems: React.ReactNode[] = []
+
+          const flushList = (key: string) => {
+            if (currentListItems.length > 0) {
+              elements.push(
+                <ul key={key} className="legal-ul">
+                  {currentListItems}
+                </ul>
+              )
+              currentListItems = []
+            }
+          }
+
+          lines.forEach((line, j) => {
+            const trimmedLine = line.trim()
+            if (trimmedLine.startsWith('- ')) {
+              const contentText = trimmedLine.slice(2)
+              currentListItems.push(
+                <li key={j} className="legal-li">
+                  {renderInline(contentText)}
+                </li>
+              )
+            } else {
+              flushList(`ul-${j}`)
+              if (trimmedLine) {
+                elements.push(
+                  <p key={j} className="legal-p">
+                    {renderInline(line)}
+                  </p>
+                )
+              }
+            }
+          })
+          flushList(`ul-end-${i}`)
+
+          return (
+            <div key={i} className="legal-block-group">
+              {elements}
+            </div>
+          )
+        }
+
+        return (
+          <p key={i} className="legal-p">
+            {renderInline(block)}
+          </p>
+        )
+      })
   }
 
   return (
@@ -217,6 +281,11 @@ export default function LegalPage({ page }: { page: 'privacy' | 'terms' | 'refun
 
       <div className="legal-body">
         <div className="legal-inner">
+          {lastUpdatedLine && (
+            <div className="legal-badge">
+              {lastUpdatedLine.trim()}
+            </div>
+          )}
           <h1 className="legal-title">{content.title}</h1>
           <div className="legal-content">{renderBody(content.body)}</div>
 
@@ -237,7 +306,7 @@ export default function LegalPage({ page }: { page: 'privacy' | 'terms' | 'refun
 
       <style>{`
         .legal-page { min-height: 100vh; background: var(--bg); }
-        .legal-nav { border-bottom: 1px solid var(--border); padding: 0 24px; }
+        .legal-nav { border-bottom: 1px solid var(--border); padding: 0 24px; background: var(--surface); }
         .legal-nav-inner { max-width: 720px; margin: 0 auto; height: 52px; display: flex; align-items: center; justify-content: space-between; }
         .legal-back { display: flex; align-items: center; gap: 6px; background: none; border: none; color: var(--text-3); cursor: pointer; font-size: 13px; font-family: var(--font-body); transition: color var(--transition); }
         .legal-back:hover { color: var(--text-1); }
@@ -245,14 +314,22 @@ export default function LegalPage({ page }: { page: 'privacy' | 'terms' | 'refun
         .legal-logo span { color: var(--accent); }
         .legal-body { padding: 48px 24px 80px; }
         .legal-inner { max-width: 720px; margin: 0 auto; }
-        .legal-title { font-family: var(--font-display); font-size: 36px; font-weight: 700; color: var(--text-1); letter-spacing: -0.03em; margin-bottom: 40px; }
-        .legal-content { display: flex; flex-direction: column; gap: 16px; }
-        .legal-h2 { font-family: var(--font-display); font-size: 18px; font-weight: 700; color: var(--text-1); margin-top: 16px; letter-spacing: -0.02em; }
+        .legal-badge { display: inline-block; font-size: 12px; color: var(--text-3); border: 1px solid var(--border); padding: 4px 10px; border-radius: 99px; margin-bottom: 20px; font-family: var(--font-body); background: var(--surface); width: fit-content; }
+        .legal-title { font-family: var(--font-display); font-size: 36px; font-weight: 700; color: var(--text-1); letter-spacing: -0.03em; margin-bottom: 40px; border-left: 3px solid var(--accent); padding-left: 16px; }
+        .legal-content { display: flex; flex-direction: column; gap: 24px; }
+        .legal-h2 { font-family: var(--font-display); font-size: 18px; font-weight: 700; color: var(--text-1); margin-top: 32px; letter-spacing: -0.02em; }
+        .legal-h3 { font-family: var(--font-display); font-size: 16px; font-weight: 700; color: var(--text-1); margin-top: 24px; letter-spacing: -0.01em; }
         .legal-p { font-size: 15px; color: var(--text-2); line-height: 1.8; }
         .legal-p strong { color: var(--text-1); }
-        .legal-footer-links { display: flex; gap: 20px; margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border); flex-wrap: wrap; }
-        .legal-footer-links a { font-size: 13px; color: var(--text-3); text-decoration: none; }
-        .legal-footer-links a:hover, .legal-footer-links a.active { color: var(--accent); }
+        .legal-ul { list-style: none; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; margin: 0; }
+        .legal-li { position: relative; font-size: 15px; color: var(--text-2); line-height: 1.8; }
+        .legal-li::before { content: "›"; position: absolute; left: -16px; color: var(--accent); font-weight: bold; }
+        .legal-email-link { color: var(--accent); text-decoration: none; font-weight: 500; transition: color var(--transition), text-decoration var(--transition); }
+        .legal-email-link:hover { text-decoration: underline; }
+        .legal-footer-links { display: flex; gap: 24px; margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border); flex-wrap: wrap; }
+        .legal-footer-links a { font-size: 14px; color: var(--text-3); text-decoration: none; transition: color var(--transition); }
+        .legal-footer-links a:hover { color: var(--accent); }
+        .legal-footer-links a.active { color: var(--accent); text-decoration: underline; text-underline-offset: 4px; font-weight: 500; }
       `}</style>
     </div>
   )
