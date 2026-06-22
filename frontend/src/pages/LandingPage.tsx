@@ -36,23 +36,23 @@ export default function LandingPage() {
       price: { usd: '$0', inr: '₹0' },
       gens: 5,
       platforms: 6,
-      features: ['5 generations/month', '6 platforms', 'Full content kit download', 'Image resizing'],
+      features: ['5 generations/month', '6 platforms', 'Full content kit download', 'Image resizing (beta)'],
     },
     {
       key: 'starter',
       name: 'Starter',
       price: { usd: '$9', inr: '₹299' },
       gens: 50,
-      platforms: 33,
-      features: ['50 generations/month', 'All 33 platforms', '30-day history', 'AI refinement'],
+      platforms: 30,
+      features: ['50 generations/month', 'All 30+ platforms', '30-day history', 'AI refinement'],
     },
     {
       key: 'pro',
       name: 'Pro',
       price: { usd: '$19', inr: '₹799' },
       gens: 200,
-      platforms: 33,
-      features: ['200 generations/month', 'All 33 platforms', '90-day history', 'Priority generation'],
+      platforms: 30,
+      features: ['200 generations/month', 'All 30+ platforms', '90-day history', 'Priority generation'],
       featured: true,
     },
     {
@@ -60,8 +60,8 @@ export default function LandingPage() {
       name: 'Business',
       price: { usd: '$49', inr: '₹1,999' },
       gens: 1000,
-      platforms: 33,
-      features: ['1,000 generations/month', 'All 33 platforms', '1-year history', 'API access (v2)'],
+      platforms: 30,
+      features: ['1,000 generations/month', 'All 30+ platforms', '1-year history', 'API access (coming soon)'],
     },
   ]
 
@@ -90,18 +90,18 @@ export default function LandingPage() {
         <div className="hero-inner">
           <div className="hero-badge">
             <Sparkles size={12} />
-            <span>33 platforms · One prompt</span>
+            <span>30+ platforms · One prompt</span>
           </div>
 
           <h1 className="hero-title">
             Write once.<br />
-            Post <span className="hero-accent">everywhere.</span>
+            Generate <span className="hero-accent">everywhere.</span>
           </h1>
 
           <p className="hero-sub">
             Describe what you want to share. PostMaker generates
             platform-perfect content for every social network
-            and packages it into a ready-to-post kit.
+            and packages it into a ready-to-use content kit.
           </p>
 
           <div className="hero-cta-row">
@@ -134,8 +134,8 @@ export default function LandingPage() {
               <div className="step-num">1</div>
               <h3 className="step-title">Pick your platforms</h3>
               <p className="step-desc">
-                Select from 33 social platforms. Mix and match — Twitter, LinkedIn,
-                Reddit, TikTok, and 29 more in one go.
+                Select from 30+ social platforms. Mix and match — Twitter, LinkedIn,
+                Reddit, TikTok, and more in one go.
               </p>
             </div>
             <div className="step-arrow"><ArrowRight size={18} /></div>
@@ -171,7 +171,7 @@ export default function LandingPage() {
               {
                 icon: <Zap size={18} />,
                 title: 'Parallel generation',
-                desc: 'All platforms generated simultaneously — full kit in under 15 seconds, not 15 minutes.',
+                desc: 'All platforms generated simultaneously — full kit in seconds, not minutes.',
               },
               {
                 icon: <Globe size={18} />,
@@ -181,12 +181,12 @@ export default function LandingPage() {
               {
                 icon: <Download size={18} />,
                 title: 'Download-ready kit',
-                desc: 'ZIP with folders per platform — post text, resized images, share URL. Open and post.',
+                desc: 'ZIP with folders per platform — post text and resized images, organised and ready to upload.',
               },
               {
                 icon: <Sparkles size={18} />,
                 title: 'AI refinement',
-                desc: 'Not happy with a post? Chat with AI to refine just that platform. One call, not all 33.',
+                desc: 'Not happy with a post? Chat with AI to refine just that platform. One call, not all 30+.',
               },
               {
                 icon: <Check size={18} />,
@@ -237,7 +237,7 @@ export default function LandingPage() {
                   {plan.key !== 'free' && <span className="pricing-period">/month</span>}
                 </div>
                 <div className="pricing-platforms">
-                  {plan.platforms} platforms · {plan.gens === -1 ? 'Unlimited' : plan.gens} gen/mo
+                  {plan.platforms === 6 ? plan.platforms : `${plan.platforms}+`} platforms · {plan.gens === -1 ? 'Unlimited' : plan.gens} gen/mo
                 </div>
                 <ul className="pricing-features">
                   {plan.features.map((f, i) => (
