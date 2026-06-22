@@ -5,9 +5,9 @@ import { api } from '../lib/api'
 import { trackEvent } from '../lib/monitoring'
 
 const PLANS = {
-  starter:  { name: 'Starter',  usd: 9,   inr: 299,   gens: 50,  platforms: 33, features: ['50 generations/month','All 33 platforms','30-day history','AI refinement'] },
-  pro:      { name: 'Pro',      usd: 19,  inr: 799,   gens: 200, platforms: 33, features: ['200 generations/month','All 33 platforms','90-day history','Priority generation'] },
-  business: { name: 'Business', usd: 49,  inr: 1999,  gens: 1000, platforms: 33, features: ['1,000 generations/month','All 33 platforms','1-year history','API access (v2)'] },
+  starter:  { name: 'Starter',  usd: 9,   inr: 299,   gens: 50,  platforms: 33, features: ['50 generations/month','All 30+ platforms','30-day history','AI refinement'] },
+  pro:      { name: 'Pro',      usd: 19,  inr: 799,   gens: 200, platforms: 33, features: ['200 generations/month','All 30+ platforms','90-day history','Priority generation'] },
+  business: { name: 'Business', usd: 49,  inr: 1999,  gens: 1000, platforms: 33, features: ['1,000 generations/month','All 30+ platforms','1-year history','API access (v2)'] },
 }
 
 export function UpgradeModal() {
