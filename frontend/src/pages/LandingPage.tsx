@@ -266,6 +266,8 @@ export default function LandingPage() {
             <a href="/refund">Refund Policy</a>
             <a href="/cookies">Cookies</a>
             <a href="mailto:support@bypostamaker.com">Support</a>
+            <a href="/contact">Contact Us</a>
+            <a href="/shipping">Delivery Policy</a>
           </div>
           <div className="footer-copy">© {new Date().getFullYear()} PostMaker. All rights reserved.</div>
         </div>

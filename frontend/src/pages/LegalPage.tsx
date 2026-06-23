@@ -109,9 +109,13 @@ ${EMAIL}
   },
 
   refund: {
-    title: 'Refund Policy',
+    title: 'Cancellation & Refund Policy',
     body: `
 Last updated: ${UPDATED}
+
+## Cancellation
+
+You may cancel your PostMaker subscription at any time from your account settings. Cancellation takes effect at the end of your current billing period. You will retain access to your plan until that date.
 
 ## No Refunds
 
@@ -167,9 +171,51 @@ You can clear cookies from your browser at any time. Clearing the pm_session coo
 ${EMAIL}
     `,
   },
+
+  shipping: {
+    title: 'Delivery Policy',
+    body: `
+Last updated: ${UPDATED}
+
+## Digital Delivery
+
+PostMaker is a software-as-a-service (SaaS) product. All plans and features are delivered digitally. Upon successful payment, access to your purchased plan is activated instantly on your account. No physical goods are shipped. No physical delivery address is required from you.
+
+## Access
+
+Your subscription begins immediately after payment confirmation. You can access all features of your plan by logging into your account at ${DOMAIN}.
+
+## Support
+
+If you face any issue accessing your plan after payment, contact us at ${EMAIL} and we will resolve it within 24 hours.
+    `,
+  },
+
+  contact: {
+    title: 'Contact Us',
+    body: `
+## Get in Touch
+
+We're here to help. Reach out for any questions about PostMaker, your subscription, billing, or technical support.
+
+## Support Email
+
+${EMAIL}
+
+## Business Address
+
+Potharlanka, Kollur Mandal,
+Guntur District, Andhra Pradesh - 522324,
+India
+
+## Response Time
+
+We respond to all queries within 24 hours on business days.
+    `,
+  },
 }
 
-export default function LegalPage({ page }: { page: 'privacy' | 'terms' | 'refund' | 'cookies' }) {
+export default function LegalPage({ page }: { page: 'privacy' | 'terms' | 'refund' | 'cookies' | 'shipping' | 'contact' }) {
   const navigate = useNavigate()
   const content = CONTENT[page]
   if (!content) return null

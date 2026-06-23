@@ -133,6 +133,8 @@ export default function App() {
       <Route path="/terms"    element={<LegalPage page="terms" />} />
       <Route path="/refund"   element={<LegalPage page="refund" />} />
       <Route path="/cookies"  element={<LegalPage page="cookies" />} />
+      <Route path="/shipping" element={<LegalPage page="shipping" />} />
+      <Route path="/contact"  element={<LegalPage page="contact" />} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </SentryRoutes>
