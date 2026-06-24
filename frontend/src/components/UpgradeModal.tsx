@@ -50,6 +50,10 @@ export function UpgradeModal() {
 
   const handleSubscribe = async (plan: string) => {
     if (!user) { window.location.href = '/api/auth/google'; return }
+    if (!window.Razorpay) {
+      addToast('Payment could not be loaded, please disable ad blockers or try a different browser.', 'error')
+      return
+    }
     setLoading(plan)
     trackEvent('checkout_started', { plan, currency })
     try {
