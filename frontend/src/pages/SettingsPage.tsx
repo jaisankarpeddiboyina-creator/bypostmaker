@@ -83,7 +83,7 @@ export default function SettingsPage() {
                   <span className={`badge badge-${user?.plan}`}>{user?.plan}</span>
                 </div>
               </div>
-              {user?.plan === 'free' && (
+              {user?.plan !== 'business' && (
                 <button
                   className="btn btn-primary settings-upgrade-btn"
                   onClick={() => { useAppStore.getState().setShowUpgradeModal(true) }}

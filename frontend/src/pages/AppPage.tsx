@@ -4,7 +4,6 @@ import { useAppStore } from '../store/app'
 import { PlatformRail } from '../components/PlatformRail'
 import { PostCard } from '../components/PostCard'
 import { RefinementChat } from '../components/RefinementChat'
-import { UpgradeModal } from '../components/UpgradeModal'
 import { api } from '../lib/api'
 import { PLATFORM_MAP } from '../config/platforms'
 
@@ -23,7 +22,6 @@ export default function AppPage() {
     activePlatformId, setActivePlatformId,
     addToast,
     setShowUpgradeModal, setUpgradeReason,
-    showUpgradeModal,
   } = useAppStore()
 
   const abortRef = useRef<AbortController | null>(null)
@@ -285,7 +283,6 @@ export default function AppPage() {
         )}
       </div>
 
-      {showUpgradeModal && <UpgradeModal />}
 
       <style>{`
         .app-layout { display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden; }

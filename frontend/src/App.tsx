@@ -12,8 +12,14 @@ import HistoryPage from './pages/HistoryPage'
 import SettingsPage from './pages/SettingsPage'
 import AdminPage from './pages/AdminPage'
 import LegalPage from './pages/LegalPage'
+import { UpgradeModal } from './components/UpgradeModal'
 
 const SentryRoutes = Sentry.withSentryReactRouterV6Routing(Routes)
+
+function UpgradeModalWrapper() {
+  const showUpgradeModal = useAppStore(s => s.showUpgradeModal)
+  return showUpgradeModal ? <UpgradeModal /> : null
+}
 
 function AppShell({ children }: { children: React.ReactNode }) {
   return (
@@ -21,6 +27,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
       <Navbar />
       <div style={{ flex: 1, overflow: 'hidden' }}>{children}</div>
       <Toasts />
+      <UpgradeModalWrapper />
     </div>
   )
 }
@@ -135,6 +142,7 @@ export default function App() {
       <Route path="/cookies"  element={<LegalPage page="cookies" />} />
       <Route path="/shipping" element={<LegalPage page="shipping" />} />
       <Route path="/contact"  element={<LegalPage page="contact" />} />
+      <Route path="/pricing" element={<Navigate to="/#pricing" replace />} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </SentryRoutes>

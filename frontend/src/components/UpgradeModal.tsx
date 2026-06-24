@@ -10,6 +10,8 @@ const PLANS = {
   business: { name: 'Business', usd: 49,  inr: 1999,  gens: 1000, platforms: 33, features: ['1,000 generations/month','All 30+ platforms','1-year history','API access (v2)'] },
 }
 
+const PLAN_ORDER = ['free', 'starter', 'pro', 'business']
+
 export function UpgradeModal() {
   const { setShowUpgradeModal, upgradeReason, currency, user, addToast } = useAppStore()
   const [loading, setLoading] = useState<string | null>(null)
@@ -92,7 +94,13 @@ export function UpgradeModal() {
         </div>
 
         <div className="upgrade-plans">
-          {Object.entries(PLANS).map(([key, plan]) => (
+          {Object.entries(PLANS)
+            .filter(([key]) => {
+              const userPlanIndex = PLAN_ORDER.indexOf(user?.plan ?? 'free')
+              const thisPlanIndex = PLAN_ORDER.indexOf(key)
+              return thisPlanIndex > userPlanIndex
+            })
+            .map(([key, plan]) => (
             <div key={key} className={`upgrade-plan ${key === 'pro' ? 'featured' : ''}`}>
               {key === 'pro' && <div className="upgrade-badge">Most popular</div>}
               <div className="up-name">{plan.name}</div>

@@ -36,12 +36,29 @@ export async function handlePayments(
     const planId = getRazorpayPlanId(env, plan, currency)
     if (!planId) return jsonError(`Missing Razorpay plan ID for ${plan}/${currency}`, 500)
 
-    // Check if user already has active subscription
     const existingSub = await env.DB.prepare(
-      `SELECT id FROM subscriptions WHERE user_id = ? AND status IN ('active','authenticated','created')`
-    ).bind(userId).first()
+      `SELECT id, razorpay_sub_id, plan FROM subscriptions 
+       WHERE user_id = ? AND status IN ('active','authenticated','created')`
+    ).bind(userId).first<{ id: string; razorpay_sub_id: string; plan: string }>()
 
-    if (existingSub) return jsonError('Active subscription exists', 409)
+    const PLAN_ORDER = ['starter', 'pro', 'business']
+    if (existingSub) {
+      const currentIndex = PLAN_ORDER.indexOf(existingSub.plan)
+      const newIndex = PLAN_ORDER.indexOf(plan)
+      if (newIndex <= currentIndex) {
+        return jsonError('Already on this plan or higher', 409)
+      }
+      // Cancel existing subscription immediately before creating new one
+      const rzpCredentials = btoa(`${env.RAZORPAY_KEY_ID}:${env.RAZORPAY_KEY_SECRET}`)
+      await fetch(`https://api.razorpay.com/v1/subscriptions/${existingSub.razorpay_sub_id}/cancel`, {
+        method: 'POST',
+        headers: { 'Authorization': `Basic ${rzpCredentials}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cancel_at_cycle_end: 0 }),
+      })
+      await env.DB.prepare(
+        `UPDATE subscriptions SET status = 'cancelled', updated_at = unixepoch() WHERE id = ?`
+      ).bind(existingSub.id).run()
+    }
 
     // Create Razorpay subscription
     const rzpCredentials = btoa(`${env.RAZORPAY_KEY_ID}:${env.RAZORPAY_KEY_SECRET}`)
