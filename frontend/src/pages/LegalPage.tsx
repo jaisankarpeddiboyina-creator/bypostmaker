@@ -2,8 +2,8 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 
 const COMPANY = 'PostMaker'
-const DOMAIN  = 'bypostamaker.com'
-const EMAIL   = 'support@bypostamaker.com'
+const DOMAIN  = 'bypostmaker.com'
+const EMAIL   = 'support@bypostmaker.com'
 const UPDATED = 'June 2026'
 
 const CONTENT: Record<string, { title: string; body: string }> = {

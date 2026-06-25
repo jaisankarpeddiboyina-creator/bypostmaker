@@ -1,6 +1,8 @@
 import type { Env } from '../../../config/ai'
 import { getJwtSecret, signJWT } from '../middleware/auth'
 import { generateId } from '../utils/id'
+import { sendEmail } from '../services/email'
+import { getCurrentPeriod } from '../utils/period'
 
 export async function handleAuth(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url)
@@ -88,7 +90,11 @@ export async function handleAuth(request: Request, env: Env): Promise<Response> 
       }
 
       // Upsert user in D1
-      const userId = await upsertUser(env.DB, profile)
+      const { userId, isNew } = await upsertUser(env.DB, profile)
+
+      if (isNew) {
+        await sendEmail(env, 'welcome', profile.email, profile.name, {})
+      }
 
       // Get user's current plan
       const user = await env.DB.prepare(
@@ -180,7 +186,7 @@ async function ensureUsageRecord(db: D1Database, userId: string): Promise<void> 
 async function upsertUser(
   db: D1Database,
   profile: { id: string; email: string; name: string; picture?: string }
-): Promise<string> {
+): Promise<{ userId: string; isNew: boolean }> {
   // Check if user exists
   const existing = await db.prepare(
     'SELECT id FROM users WHERE google_id = ?'
@@ -191,7 +197,7 @@ async function upsertUser(
     await db.prepare(
       'UPDATE users SET name = ?, avatar_url = ?, updated_at = unixepoch() WHERE id = ?'
     ).bind(profile.name, profile.picture ?? null, existing.id).run()
-    return existing.id
+    return { userId: existing.id, isNew: false }
   }
 
   // New user
@@ -208,15 +214,9 @@ async function upsertUser(
      VALUES (?, ?, ?, ?, 0)`
   ).bind(generateId(), id, periodStart, periodEnd).run()
 
-  return id
+  return { userId: id, isNew: true }
 }
 
-function getCurrentPeriod(): { periodStart: number; periodEnd: number } {
-  const now = new Date()
-  const periodStart = Math.floor(new Date(now.getFullYear(), now.getMonth(), 1).getTime() / 1000)
-  const periodEnd = Math.floor(new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).getTime() / 1000)
-  return { periodStart, periodEnd }
-}
 
 function getRedirectUri(env: Env): string {
   return env.ENVIRONMENT === 'development'

@@ -1,6 +1,7 @@
 import type { PlatformTier } from '../../../config/platforms'
 import { TIER_LIMITS } from '../../../config/platforms'
 import { generateId } from '../utils/id'
+import { getCurrentPeriod } from '../utils/period'
 
 interface UsageCheckResult {
   allowed: boolean
@@ -47,15 +48,18 @@ export async function checkUsageLimit(
   }
 }
 
-export async function incrementUsage(db: D1Database, userId: string): Promise<void> {
+export async function incrementUsage(db: D1Database, userId: string): Promise<number> {
   const { periodStart, periodEnd } = getCurrentPeriod()
 
-  await db.prepare(
+  const result = await db.prepare(
     `INSERT INTO usage (id, user_id, period_start, period_end, generations)
      VALUES (?, ?, ?, ?, 1)
      ON CONFLICT(user_id, period_start) DO UPDATE
-     SET generations = generations + 1, updated_at = unixepoch()`
-  ).bind(generateId(), userId, periodStart, periodEnd).run()
+     SET generations = generations + 1, updated_at = unixepoch()
+     RETURNING generations`
+  ).bind(generateId(), userId, periodStart, periodEnd).first<{ generations: number }>()
+
+  return result?.generations ?? 1
 }
 
 export async function getUsageSummary(db: D1Database, userId: string): Promise<{
@@ -81,13 +85,3 @@ export async function getUsageSummary(db: D1Database, userId: string): Promise<{
   }
 }
 
-function getCurrentPeriod(): { periodStart: number; periodEnd: number } {
-  const now = new Date()
-  const periodStart = Math.floor(
-    new Date(now.getFullYear(), now.getMonth(), 1).getTime() / 1000
-  )
-  const periodEnd = Math.floor(
-    new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).getTime() / 1000
-  )
-  return { periodStart, periodEnd }
-}

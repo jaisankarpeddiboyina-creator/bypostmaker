@@ -144,7 +144,10 @@ export async function handlePayments(
     const rzpCredentials = btoa(`${env.RAZORPAY_KEY_ID}:${env.RAZORPAY_KEY_SECRET}`)
     await fetch(`https://api.razorpay.com/v1/subscriptions/${sub.razorpay_sub_id}/cancel`, {
       method: 'POST',
-      headers: { 'Authorization': `Basic ${rzpCredentials}` },
+      headers: {
+        'Authorization': `Basic ${rzpCredentials}`,
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({ cancel_at_cycle_end: 1 }), // cancel at period end, not immediately
     })
 

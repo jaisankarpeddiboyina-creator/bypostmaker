@@ -8,6 +8,7 @@ import { createStreamingClient, detectLanguage, buildGroupSystemPrompt, parseGro
 import { PLATFORM_MAP, isPlatformAccessible, TIER_LIMITS } from '../../../config/platforms'
 import { generateId } from '../utils/id'
 import { checkUsageLimit, incrementUsage } from '../services/usage'
+import { sendEmail } from '../services/email'
 
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024 // 100MB
 
@@ -141,7 +142,23 @@ export async function handleGenerate(
         `UPDATE campaigns SET status = 'completed', generated_count = ?, updated_at = unixepoch() WHERE id = ?`
       ).bind(accessibleIds.length, campaignId).run()
 
-      await incrementUsage(env.DB, userId)
+      const newUsed = await incrementUsage(env.DB, userId)
+
+      if (userPlan !== 'business') {
+        const limit = TIER_LIMITS[userPlan].generations
+        if (newUsed === Math.floor(limit * 0.8) || newUsed === limit) {
+          const user = await env.DB.prepare(
+            'SELECT email, name FROM users WHERE id = ?'
+          ).bind(userId).first<{ email: string; name: string }>()
+          if (user) {
+            if (newUsed === Math.floor(limit * 0.8)) {
+              await sendEmail(env, 'usage_80', user.email, user.name, { used: newUsed, limit })
+            } else if (newUsed === limit) {
+              await sendEmail(env, 'usage_100', user.email, user.name, { limit })
+            }
+          }
+        }
+      }
 
       // Send video reference if present (stored by worker memory, included in ZIP on download)
       await send('done', {

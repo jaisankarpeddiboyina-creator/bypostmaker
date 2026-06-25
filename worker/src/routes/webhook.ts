@@ -7,6 +7,7 @@ import type { Env } from '../../../config/ai'
 import type { PlatformTier } from '../../../config/platforms'
 import { generateId } from '../utils/id'
 import { sendEmail } from '../services/email'
+import { getCurrentPeriod } from '../utils/period'
 
 export async function handleWebhook(
   request: Request,
@@ -58,6 +59,7 @@ async function processWebhookEvent(event: RazorpayWebhookEvent, env: Env): Promi
       const plan = getPlanFromRazorpayPlanId(sub.plan_id, env)
       const now = Math.floor(Date.now() / 1000)
       const periodEnd = sub.current_end ?? now + 30 * 24 * 60 * 60
+      const { periodStart, periodEnd: calendarPeriodEnd } = getCurrentPeriod()
 
       await env.DB.batch([
         env.DB.prepare(
@@ -72,7 +74,7 @@ async function processWebhookEvent(event: RazorpayWebhookEvent, env: Env): Promi
           `INSERT INTO usage (id, user_id, period_start, period_end, generations)
            VALUES (?, ?, ?, ?, 0)
            ON CONFLICT(user_id, period_start) DO UPDATE SET generations = 0, updated_at = unixepoch()`
-        ).bind(generateId(), userId, now, periodEnd),
+        ).bind(generateId(), userId, periodStart, calendarPeriodEnd),
       ])
 
       const user = await getUser(env.DB, userId)
@@ -91,6 +93,7 @@ async function processWebhookEvent(event: RazorpayWebhookEvent, env: Env): Promi
       const plan = getPlanFromRazorpayPlanId(sub.plan_id, env)
       const now = Math.floor(Date.now() / 1000)
       const periodEnd = sub.current_end ?? now + 30 * 24 * 60 * 60
+      const { periodStart, periodEnd: calendarPeriodEnd } = getCurrentPeriod()
 
       await env.DB.batch([
         env.DB.prepare(
@@ -105,7 +108,7 @@ async function processWebhookEvent(event: RazorpayWebhookEvent, env: Env): Promi
           `INSERT INTO usage (id, user_id, period_start, period_end, generations)
            VALUES (?, ?, ?, ?, 0)
            ON CONFLICT(user_id, period_start) DO UPDATE SET generations = 0, updated_at = unixepoch()`
-        ).bind(generateId(), userId, now, periodEnd),
+        ).bind(generateId(), userId, periodStart, calendarPeriodEnd),
       ])
       break
     }

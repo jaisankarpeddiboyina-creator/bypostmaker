@@ -1,17 +1,15 @@
 import type { Env } from '../../../config/ai'
-import { sendEmail } from './email'
 import { generateId } from '../utils/id'
 
 export async function runCronJobs(cron: string, env: Env): Promise<void> {
   console.log(`Cron triggered: ${cron}`)
 
   try {
-    // 9AM UTC — data retention + DB health + usage alerts
+    // 9AM UTC — data retention + DB health
     if (cron === '0 9 * * *') {
       await Promise.all([
         runDataRetention(env),
         runDBHealthCheck(env),
-        runUsageAlerts(env),
       ])
     }
 
@@ -91,49 +89,6 @@ async function runDBHealthCheck(env: Env): Promise<void> {
   }
 }
 
-// ── Usage Alerts ──────────────────────────────────────────────
-// Email users at 80% and 100% usage
-async function runUsageAlerts(env: Env): Promise<void> {
-  const now = Math.floor(Date.now() / 1000)
-  const periodStart = Math.floor(
-    new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime() / 1000
-  )
-
-  // Get all users with their usage and limits
-  const { results: usageData } = await env.DB.prepare(
-    `SELECT u.id, u.email, u.name, u.plan,
-            COALESCE(us.generations, 0) as generations
-     FROM users u
-     LEFT JOIN usage us ON u.id = us.user_id AND us.period_start = ?
-     WHERE u.plan != 'business'`  // business = high limit, skip alerts
-  ).bind(periodStart).all<{
-    id: string
-    email: string
-    name: string
-    plan: string
-    generations: number
-  }>()
-
-  const limits: Record<string, number> = { free: 5, starter: 50, pro: 200 }
-
-  for (const user of usageData ?? []) {
-    const limit = limits[user.plan] ?? 5
-    const pct = user.generations / limit
-
-    // 80% alert — send once (check if already sent via simple heuristic)
-    if (pct >= 0.8 && pct < 1.0) {
-      await sendEmail(env, 'usage_80', user.email, user.name, {
-        used: user.generations,
-        limit,
-      })
-    }
-
-    // 100% alert
-    if (pct >= 1.0) {
-      await sendEmail(env, 'usage_100', user.email, user.name, { limit })
-    }
-  }
-}
 
 // ── Period Reset Check ────────────────────────────────────────
 // Ensure usage records exist for current period for all users

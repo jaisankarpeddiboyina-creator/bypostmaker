@@ -10,8 +10,8 @@ type EmailType =
   | 'account_deleted'
 
 const FROM_NAME = 'PostMaker'
-const FROM_EMAIL = 'team@bypostamaker.com'
-const REPLY_TO = 'support@bypostamaker.com'
+const FROM_EMAIL = 'team@bypostmaker.com'
+const REPLY_TO = 'support@bypostmaker.com'
 
 const PLAN_LABELS: Record<string, string> = {
   starter: 'Starter',
@@ -187,9 +187,9 @@ function baseTemplate(body: string, appUrl: string): string {
     ${body}
     <hr>
     <div class="footer">
-      <a href="${appUrl}">bypostamaker.com</a> ·
+      <a href="${appUrl}">bypostmaker.com</a> ·
       <a href="${appUrl}/app/settings">Settings</a> ·
-      <a href="mailto:support@bypostamaker.com">Support</a>
+      <a href="mailto:support@bypostmaker.com">Support</a>
     </div>
   </div>
 </div>
