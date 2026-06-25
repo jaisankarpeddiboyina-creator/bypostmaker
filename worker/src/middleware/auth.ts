@@ -30,15 +30,15 @@ export async function withAuth(request: Request, env: Env): Promise<AuthResult> 
 
     // Check if user is disabled
     const user = await env.DB.prepare(
-      'SELECT disabled, role FROM users WHERE id = ?'
-    ).bind(payload.sub).first<{ disabled: number; role: string }>()
+      'SELECT disabled, role, plan FROM users WHERE id = ?'
+    ).bind(payload.sub).first<{ disabled: number; role: string; plan: PlatformTier }>()
 
     if (!user || user.disabled === 1) return { ok: false }
 
     return {
       ok: true,
       userId: payload.sub as string,
-      userPlan: (payload.plan as PlatformTier) ?? 'free',
+      userPlan: user.plan ?? 'free',
       userRole: user.role ?? 'user',
     }
   } catch {

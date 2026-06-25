@@ -65,16 +65,64 @@ export function UpgradeModal() {
         description: `${PLANS[plan as keyof typeof PLANS]?.name} Plan`,
         theme: { color: '#7c3aed' },
         handler: () => {
-          const p = PLANS[plan as keyof typeof PLANS]
-          const msg = plan === 'business'
-            ? 'Welcome to Business! 1,000 generations/month unlocked.'
-            : plan === 'pro'
-            ? 'Welcome to Pro! 200 generations/month unlocked.'
-            : 'Welcome to Starter! 50 generations/month unlocked.'
-          addToast(msg, 'success')
           trackEvent('subscription_created', { plan, currency })
-          setShowUpgradeModal(false)
-          window.location.reload()
+          setLoading(plan) // Keep loading indicator active during status check
+          
+          // Helper to reload user and usage limits
+          const refreshUserState = async () => {
+            const { user: updatedUser, usage } = await api.user.me()
+            useAppStore.getState().setUser(updatedUser)
+            if (usage) {
+              const planLimits: Record<string, number> = { free: 5, starter: 50, pro: 200, business: -1 }
+              const limit = planLimits[updatedUser.plan] ?? 5
+              useAppStore.getState().setUsage({
+                generations: usage.generations ?? 0,
+                periodStart: usage.period_start ?? 0,
+                periodEnd: usage.period_end ?? 0,
+                limit,
+                remaining: limit === -1 ? -1 : Math.max(0, limit - (usage.generations ?? 0)),
+              })
+            }
+          }
+
+          const completeActivation = async () => {
+            await refreshUserState()
+            const msg = plan === 'business'
+              ? 'Welcome to Business! 1,000 generations/month unlocked.'
+              : plan === 'pro'
+              ? 'Welcome to Pro! 200 generations/month unlocked.'
+              : 'Welcome to Starter! 50 generations/month unlocked.'
+            addToast(msg, 'success')
+            setShowUpgradeModal(false)
+            setLoading(null)
+          }
+
+          let retryCount = 0
+          const checkStatus = async () => {
+            try {
+              const statusRes = await api.payments.statusById(res.subscriptionId)
+              if (statusRes.subscription?.status === 'active') {
+                await completeActivation()
+              } else if (retryCount < 2) {
+                if (retryCount === 0) {
+                  addToast('Processing payment, please wait...', 'info')
+                }
+                retryCount++
+                setTimeout(checkStatus, 3000)
+              } else {
+                addToast('Payment received, your plan will activate shortly. Refresh in a minute.', 'info')
+                setShowUpgradeModal(false)
+                setLoading(null)
+              }
+            } catch (err) {
+              console.error('Error checking subscription status:', err)
+              addToast('Error checking payment status. Refresh in a minute.', 'error')
+              setLoading(null)
+            }
+          }
+
+          // Wait 2 seconds before the first check
+          setTimeout(checkStatus, 2000)
         },
         modal: { ondismiss: () => setLoading(null) },
       })
@@ -95,6 +143,19 @@ export function UpgradeModal() {
             {upgradeReason && <p style={{ fontSize: 13, color: 'var(--text-3)', marginTop: 4 }}>{upgradeReason}</p>}
           </div>
           <button className="btn-icon" onClick={() => setShowUpgradeModal(false)}><X size={16} /></button>
+        </div>
+
+        <div style={{
+          background: 'var(--warning-bg)',
+          border: '1px solid rgba(217, 119, 6, 0.2)',
+          borderRadius: 'var(--radius)',
+          padding: '10px 14px',
+          fontSize: '12px',
+          color: 'var(--warning)',
+          marginBottom: '16px',
+          lineHeight: '1.4'
+        }}>
+          <strong>INR payments only:</strong> USD billing is temporarily unavailable. Displayed prices and payments are in INR (₹).
         </div>
 
         <div className="upgrade-plans">

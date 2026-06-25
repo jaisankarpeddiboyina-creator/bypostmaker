@@ -112,9 +112,8 @@ export default function App() {
       .catch(() => setUser(null))
       .finally(() => setAuthReadySnapshot(true))
 
-    api.payments.currency()
-      .then(({ currency }) => setCurrency(currency))
-      .catch(() => {})
+    // Force INR for now since USD plan IDs are not configured
+    setCurrency('inr')
   }, [])
 
   return (

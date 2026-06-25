@@ -20,6 +20,21 @@ export async function handlePayments(
     return json({ currency, country })
   }
 
+  // ── GET /api/payments/status/:subscriptionId ──────────────
+  if (path.startsWith('/api/payments/status/')) {
+    const subscriptionId = path.substring('/api/payments/status/'.length)
+    if (!subscriptionId) return jsonError('Subscription ID required', 400)
+
+    const sub = await env.DB.prepare(
+      `SELECT plan, status, current_period_end, currency FROM subscriptions
+       WHERE user_id = ? AND razorpay_sub_id = ?`
+    ).bind(userId, subscriptionId).first<{
+      plan: string; status: string; current_period_end: number; currency: string
+    }>()
+
+    return json({ subscription: sub })
+  }
+
   // ── POST /api/payments/subscribe ─────────────────────────
   if (path === '/api/payments/subscribe' && request.method === 'POST') {
     let body: { plan: string; currency: string }
@@ -32,6 +47,17 @@ export async function handlePayments(
     const { plan, currency, promoCode } = body as { plan: PaidPlan; currency: Currency; promoCode?: string }
     if (!['starter','pro','business'].includes(plan)) return jsonError('Invalid plan', 400)
     if (!['usd','inr'].includes(currency)) return jsonError('Invalid currency', 400)
+
+    if (currency === 'usd') {
+      return jsonError('USD payments are temporarily disabled. Please pay in INR.', 400)
+    }
+
+    // Cleanup check: cancel any existing 'created' subscriptions older than 1 hour
+    await env.DB.prepare(
+      `UPDATE subscriptions 
+       SET status = 'cancelled', updated_at = unixepoch() 
+       WHERE user_id = ? AND status = 'created' AND created_at < unixepoch() - 3600`
+    ).bind(userId).run()
 
     const planId = getRazorpayPlanId(env, plan, currency)
     if (!planId) return jsonError(`Missing Razorpay plan ID for ${plan}/${currency}`, 500)

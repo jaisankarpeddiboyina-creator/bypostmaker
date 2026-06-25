@@ -88,12 +88,16 @@ async function processWebhookEvent(event: RazorpayWebhookEvent, env: Env): Promi
       const userId = await getUserByRazorpaySubId(env.DB, sub.id)
       if (!userId) break
 
+      const plan = getPlanFromRazorpayPlanId(sub.plan_id, env)
       const now = Math.floor(Date.now() / 1000)
       const periodEnd = sub.current_end ?? now + 30 * 24 * 60 * 60
 
       await env.DB.batch([
         env.DB.prepare(
-          `UPDATE subscriptions SET current_period_start = ?, current_period_end = ?, updated_at = unixepoch()
+          `UPDATE users SET plan = ?, plan_status = 'active', updated_at = unixepoch() WHERE id = ?`
+        ).bind(plan, userId),
+        env.DB.prepare(
+          `UPDATE subscriptions SET status = 'active', current_period_start = ?, current_period_end = ?, updated_at = unixepoch()
            WHERE razorpay_sub_id = ?`
         ).bind(now, periodEnd, sub.id),
         // Reset usage for new billing period

@@ -187,6 +187,11 @@ export const api = {
 
     status: () => request<{ user: any; subscription: any }>('/payments/status'),
 
+    statusById: (subscriptionId: string) =>
+      request<{ subscription: { plan: string; status: string; current_period_end: number; currency: string } | null }>(
+        `/payments/status/${subscriptionId}`
+      ),
+
     subscribe: (plan: string, currency: string, promoCode?: string) =>
       request<{ subscriptionId: string; keyId: string; plan: string; currency: string }>(
         '/payments/subscribe',

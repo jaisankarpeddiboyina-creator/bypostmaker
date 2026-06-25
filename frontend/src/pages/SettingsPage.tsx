@@ -157,7 +157,8 @@ export default function SettingsPage() {
               <div className="currency-toggle">
                 <button
                   className={`currency-btn ${currency === 'usd' ? 'active' : ''}`}
-                  onClick={() => handleCurrencyToggle('usd')}
+                  onClick={() => addToast('USD pricing is temporarily unavailable. Payments are processed in INR.', 'info')}
+                  style={{ opacity: 0.5, cursor: 'not-allowed' }}
                 >
                   USD ($)
                 </button>
