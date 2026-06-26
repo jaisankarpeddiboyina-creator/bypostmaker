@@ -6,6 +6,7 @@ interface AuthSuccess {
   userId: string
   userPlan: PlatformTier
   userRole: string
+  emailVerified: boolean
 }
 interface AuthFailure { ok: false }
 type AuthResult = AuthSuccess | AuthFailure
@@ -30,8 +31,8 @@ export async function withAuth(request: Request, env: Env): Promise<AuthResult> 
 
     // Check if user is disabled
     const user = await env.DB.prepare(
-      'SELECT disabled, role, plan FROM users WHERE id = ?'
-    ).bind(payload.sub).first<{ disabled: number; role: string; plan: PlatformTier }>()
+      'SELECT disabled, role, plan, email_verified FROM users WHERE id = ?'
+    ).bind(payload.sub).first<{ disabled: number; role: string; plan: PlatformTier; email_verified: number }>()
 
     if (!user || user.disabled === 1) return { ok: false }
 
@@ -40,6 +41,7 @@ export async function withAuth(request: Request, env: Env): Promise<AuthResult> 
       userId: payload.sub as string,
       userPlan: user.plan ?? 'free',
       userRole: user.role ?? 'user',
+      emailVerified: user.email_verified === 1,
     }
   } catch {
     return { ok: false }

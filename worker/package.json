@@ -1,5 +1,5 @@
 {
-  "name": "bypostmaker-worker",
+  "name": "bypostamaker-worker",
   "version": "1.0.0",
   "private": true,
   "scripts": {

@@ -21,6 +21,8 @@ CREATE TABLE IF NOT EXISTS users (
   currency        TEXT NOT NULL DEFAULT 'usd'
                   CHECK (currency IN ('usd','inr')),
   referred_by     TEXT REFERENCES users(id),
+  password_hash   TEXT,
+  email_verified  INTEGER NOT NULL DEFAULT 0,
   created_at      INTEGER NOT NULL DEFAULT (unixepoch()),
   updated_at      INTEGER NOT NULL DEFAULT (unixepoch())
 );
@@ -139,4 +141,18 @@ CREATE TABLE IF NOT EXISTS db_health_log (
   table_name  TEXT NOT NULL,
   row_count   INTEGER NOT NULL,
   checked_at  INTEGER NOT NULL DEFAULT (unixepoch())
+);
+
+-- ── Password Resets ───────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS password_resets (
+  email       TEXT PRIMARY KEY,
+  token       TEXT NOT NULL,
+  expires_at  INTEGER NOT NULL
+);
+
+-- ── Email Verifications ───────────────────────────────────────
+CREATE TABLE IF NOT EXISTS email_verifications (
+  email       TEXT PRIMARY KEY,
+  token       TEXT NOT NULL,
+  expires_at  INTEGER NOT NULL
 );

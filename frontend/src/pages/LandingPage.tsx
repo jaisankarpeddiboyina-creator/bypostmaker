@@ -26,7 +26,7 @@ export default function LandingPage() {
 
   const handleCTA = () => {
     if (user) { navigate('/app'); return }
-    window.location.href = authUrl
+    navigate('/signup')
   }
 
   const plans = [
@@ -74,12 +74,12 @@ export default function LandingPage() {
           <div className="landing-nav-links">
             <a href="#features">Features</a>
             <a href="#pricing">Pricing</a>
-            <a href="mailto:support@bypostmaker.com">Support</a>
+            <a href="mailto:support@bypostamaker.com">Support</a>
           </div>
           <div className="landing-nav-cta">
             {user
               ? <button className="btn btn-primary" onClick={() => navigate('/app')}>Open app →</button>
-              : <a href={authUrl} className="btn btn-primary">Start free →</a>
+              : <button className="btn btn-primary" onClick={() => navigate('/signup')}>Start free →</button>
             }
           </div>
         </div>
@@ -265,7 +265,7 @@ export default function LandingPage() {
             <a href="/terms">Terms</a>
             <a href="/refund">Refund Policy</a>
             <a href="/cookies">Cookies</a>
-            <a href="mailto:support@bypostmaker.com">Support</a>
+            <a href="mailto:support@bypostamaker.com">Support</a>
             <a href="/contact">Contact Us</a>
             <a href="/shipping">Delivery Policy</a>
           </div>

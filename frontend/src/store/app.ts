@@ -10,6 +10,7 @@ export interface User {
   plan_status: 'active' | 'cancelled' | 'past_due'
   currency: 'usd' | 'inr'
   role: 'user' | 'beta' | 'admin'
+  email_verified: number
 }
 
 export interface UsageInfo {

@@ -13,6 +13,9 @@ import SettingsPage from './pages/SettingsPage'
 import AdminPage from './pages/AdminPage'
 import LegalPage from './pages/LegalPage'
 import { UpgradeModal } from './components/UpgradeModal'
+import AuthPage from './pages/AuthPage'
+import ResetPasswordPage from './pages/ResetPasswordPage'
+import { VerifyEmailScreen } from './components/VerifyEmailScreen'
 
 const SentryRoutes = Sentry.withSentryReactRouterV6Routing(Routes)
 
@@ -26,7 +29,6 @@ function AppShell({ children }: { children: React.ReactNode }) {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
       <Navbar />
       <div style={{ flex: 1, overflow: 'hidden' }}>{children}</div>
-      <Toasts />
       <UpgradeModalWrapper />
     </div>
   )
@@ -37,6 +39,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   const authReady = useAuthReady()
   if (!authReady) return <AppLoading />
   if (!user) return <Navigate to="/" replace />
+  if (user.email_verified === 0) return <VerifyEmailScreen />
   return <>{children}</>
 }
 
@@ -45,6 +48,7 @@ function AdminGuard({ children }: { children: React.ReactNode }) {
   const authReady = useAuthReady()
   if (!authReady) return <AppLoading />
   if (!user) return <Navigate to="/" replace />
+  if (user.email_verified === 0) return <VerifyEmailScreen />
   if (user.role !== 'admin') return <Navigate to="/app" replace />
   return <>{children}</>
 }
@@ -84,9 +88,26 @@ function AppLoading() {
 }
 
 export default function App() {
-  const { setUser, setUsage, setCurrency } = useAppStore()
+  const { setUser, setUsage, setCurrency, addToast } = useAppStore()
 
   useEffect(() => {
+    // Parse query parameters for successful verification or error states
+    const params = new URLSearchParams(window.location.search)
+    const verified = params.get('verified')
+    const error = params.get('error')
+
+    if (verified === 'true') {
+      addToast('Email verified successfully! Welcome to PostMaker.', 'success')
+      const newUrl = window.location.pathname + window.location.search.replace(/[?&]verified=true/, '').replace(/^&/, '?')
+      window.history.replaceState({}, '', newUrl)
+    }
+
+    if (error === 'invalid_token') {
+      addToast('The email verification link is invalid or has expired.', 'error')
+      const newUrl = window.location.pathname + window.location.search.replace(/[?&]error=invalid_token/, '').replace(/^&/, '?')
+      window.history.replaceState({}, '', newUrl)
+    }
+
     setAuthReadySnapshot(false)
     api.user.me()
       .then(({ user, usage }) => {
@@ -114,36 +135,45 @@ export default function App() {
 
     // Force INR for now since USD plan IDs are not configured
     setCurrency('inr')
-  }, [])
+  }, [addToast])
 
   return (
-    <SentryRoutes>
-      <Route path="/" element={<LandingPage />} />
+    <>
+      <SentryRoutes>
+        <Route path="/" element={<LandingPage />} />
+        
+        {/* Auth routes */}
+        <Route path="/login" element={<AuthPage mode="login" />} />
+        <Route path="/signup" element={<AuthPage mode="signup" />} />
+        <Route path="/forgot-password" element={<AuthPage mode="forgot" />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-      <Route path="/app" element={
-        <AuthGuard><AppShell><AppPage /></AppShell></AuthGuard>
-      } />
-      <Route path="/app/history" element={
-        <AuthGuard><AppShell><HistoryPage /></AppShell></AuthGuard>
-      } />
-      <Route path="/app/settings" element={
-        <AuthGuard><AppShell><SettingsPage /></AppShell></AuthGuard>
-      } />
+        <Route path="/app" element={
+          <AuthGuard><AppShell><AppPage /></AppShell></AuthGuard>
+        } />
+        <Route path="/app/history" element={
+          <AuthGuard><AppShell><HistoryPage /></AppShell></AuthGuard>
+        } />
+        <Route path="/app/settings" element={
+          <AuthGuard><AppShell><SettingsPage /></AppShell></AuthGuard>
+        } />
 
-      <Route path="/admin" element={
-        <AdminGuard><AppShell><AdminPage /></AppShell></AdminGuard>
-      } />
+        <Route path="/admin" element={
+          <AdminGuard><AppShell><AdminPage /></AppShell></AdminGuard>
+        } />
 
-      {/* Legal pages */}
-      <Route path="/privacy"  element={<LegalPage page="privacy" />} />
-      <Route path="/terms"    element={<LegalPage page="terms" />} />
-      <Route path="/refund"   element={<LegalPage page="refund" />} />
-      <Route path="/cookies"  element={<LegalPage page="cookies" />} />
-      <Route path="/shipping" element={<LegalPage page="shipping" />} />
-      <Route path="/contact"  element={<LegalPage page="contact" />} />
-      <Route path="/pricing" element={<Navigate to="/#pricing" replace />} />
+        {/* Legal pages */}
+        <Route path="/privacy"  element={<LegalPage page="privacy" />} />
+        <Route path="/terms"    element={<LegalPage page="terms" />} />
+        <Route path="/refund"   element={<LegalPage page="refund" />} />
+        <Route path="/cookies"  element={<LegalPage page="cookies" />} />
+        <Route path="/shipping" element={<LegalPage page="shipping" />} />
+        <Route path="/contact"  element={<LegalPage page="contact" />} />
+        <Route path="/pricing" element={<Navigate to="/#pricing" replace />} />
 
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </SentryRoutes>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </SentryRoutes>
+      <Toasts />
+    </>
   )
 }

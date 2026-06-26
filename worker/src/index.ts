@@ -1,6 +1,6 @@
 import type { Env } from '../../config/ai'
 import { withAuth } from './middleware/auth'
-import { withRateLimit } from './middleware/rateLimit'
+import { withRateLimit, withIpRateLimit } from './middleware/rateLimit'
 import { withCors } from './middleware/cors'
 import { handleAuth } from './routes/auth'
 import { handleGenerate } from './routes/generate'
@@ -25,7 +25,25 @@ export default {
 
     try {
       // ── Public routes ───────────────────────────────────────
-      if (path.startsWith('/api/auth')) return withCors(await handleAuth(request, env), env)
+      if (path.startsWith('/api/auth')) {
+        // Scoped IP rate limiting for sensitive email routes
+        if (
+          path === '/api/auth/email/signup' ||
+          path === '/api/auth/email/login' ||
+          path === '/api/auth/email/forgot-password' ||
+          path === '/api/auth/email/reset-password'
+        ) {
+          const limit = path === '/api/auth/email/signup' ? 10 : 5
+          const ipRl = await withIpRateLimit(request, env, limit)
+          if (!ipRl.ok) {
+            return withCors(new Response(JSON.stringify({ error: 'Too many requests' }), {
+              status: 429,
+              headers: { 'Content-Type': 'application/json', 'Retry-After': String(ipRl.retryAfter ?? 60) },
+            }), env)
+          }
+        }
+        return withCors(await handleAuth(request, env), env)
+      }
       if (path === '/api/webhooks/razorpay') return withCors(await handleWebhook(request, env, ctx), env)
       if (path === '/api/health') return withCors(await handleHealth(env), env)
 
@@ -36,7 +54,14 @@ export default {
           status: 401, headers: { 'Content-Type': 'application/json' },
         }), env)
       }
-      const { userId, userPlan, userRole } = auth
+      const { userId, userPlan, userRole, emailVerified } = auth
+
+      // ── Email verification guard ────────────────────────────
+      if (!emailVerified && path !== '/api/user/me' && path !== '/api/user/resend-verification') {
+        return withCors(new Response(JSON.stringify({ error: 'Email not verified' }), {
+          status: 403, headers: { 'Content-Type': 'application/json' },
+        }), env)
+      }
 
       // ── Rate limit ──────────────────────────────────────────
       const rl = await withRateLimit(request, env, userId)

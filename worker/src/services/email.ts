@@ -8,10 +8,12 @@ type EmailType =
   | 'usage_80'
   | 'usage_100'
   | 'account_deleted'
+  | 'verify_email'
+  | 'reset_password'
 
 const FROM_NAME = 'PostMaker'
-const FROM_EMAIL = 'team@bypostmaker.com'
-const REPLY_TO = 'support@bypostmaker.com'
+const FROM_EMAIL = 'team@bypostamaker.com'
+const REPLY_TO = 'support@bypostamaker.com'
 
 const PLAN_LABELS: Record<string, string> = {
   starter: 'Starter',
@@ -34,6 +36,11 @@ export async function sendEmail(
 ): Promise<void> {
   const template = buildTemplate(type, toName, data, env)
   if (!template) return
+
+  if (env.ENVIRONMENT === 'development') {
+    console.log(`[DEVELOPMENT EMAIL] to: ${toEmail}, subject: ${template.subject}`)
+    console.log(`[DEVELOPMENT EMAIL] body:`, template.html)
+  }
 
   try {
     const res = await fetch('https://api.resend.com/emails', {
@@ -66,7 +73,8 @@ function buildTemplate(
   data: Record<string, string | number>,
   env: Env
 ): { subject: string; html: string } | null {
-  const appUrl = `https://${env.DOMAIN}`
+  const protocol = env.ENVIRONMENT === 'development' ? 'http' : 'https'
+  const appUrl = `${protocol}://${env.DOMAIN}`
   const firstName = name.split(' ')[0]
 
   const wrap = (subject: string, body: string) => ({
@@ -75,6 +83,24 @@ function buildTemplate(
   })
 
   switch (type) {
+    case 'verify_email':
+      return wrap(
+        'Verify your email for PostMaker',
+        `<p>Hey ${firstName},</p>
+         <p>Please verify your email address to activate your PostMaker account.</p>
+         <a href="${appUrl}/api/auth/email/verify?token=${data.token}&email=${data.email}" class="btn">Verify Email →</a>
+         <p>If you did not request this, please ignore this email.</p>`
+      )
+
+    case 'reset_password':
+      return wrap(
+        'Reset your PostMaker password',
+        `<p>Hey ${firstName},</p>
+         <p>We received a request to reset your password. Click the link below to set a new password:</p>
+         <a href="${appUrl}/reset-password?token=${data.token}&email=${data.email}" class="btn">Reset Password →</a>
+         <p>This link is valid for 1 hour. If you did not request a password reset, you can safely ignore this email.</p>`
+      )
+
     case 'welcome':
       return wrap(
         'Welcome to PostMaker 👋',
@@ -187,9 +213,9 @@ function baseTemplate(body: string, appUrl: string): string {
     ${body}
     <hr>
     <div class="footer">
-      <a href="${appUrl}">bypostmaker.com</a> ·
+      <a href="${appUrl}">bypostamaker.com</a> ·
       <a href="${appUrl}/app/settings">Settings</a> ·
-      <a href="mailto:support@bypostmaker.com">Support</a>
+      <a href="mailto:support@bypostamaker.com">Support</a>
     </div>
   </div>
 </div>

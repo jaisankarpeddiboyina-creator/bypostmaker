@@ -85,9 +85,9 @@ export function Navbar() {
             )}
           </div>
         ) : (
-          <a href={authUrl} className="btn btn-primary">
-            {import.meta.env.DEV ? 'Continue locally' : 'Sign in with Google'}
-          </a>
+          <button className="btn btn-primary" onClick={() => navigate('/login')}>
+            Sign in
+          </button>
         )}
       </div>
 

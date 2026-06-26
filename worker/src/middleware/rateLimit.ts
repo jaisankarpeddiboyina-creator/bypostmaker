@@ -43,7 +43,8 @@ export async function withRateLimit(
 
 export async function withIpRateLimit(
   request: Request,
-  env: Env
+  env: Env,
+  maxRequests: number = MAX_REQUESTS_IP
 ): Promise<RateLimitResult> {
   const ip = request.headers.get('CF-Connecting-IP') ?? 'unknown'
   const now = Date.now()
@@ -58,7 +59,7 @@ export async function withIpRateLimit(
 
   entry.count++
 
-  if (entry.count > MAX_REQUESTS_IP) {
+  if (entry.count > maxRequests) {
     const retryAfter = Math.ceil((entry.resetAt - now) / 1000)
     return { ok: false, retryAfter }
   }

@@ -12,3 +12,8 @@ frontend/dist/
 !.dev.vars.example
 
 npm-debug.log*
+
+# Database Backups
+*backup*.sql
+*.sql.bak
+

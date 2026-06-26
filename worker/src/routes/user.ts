@@ -12,7 +12,7 @@ export async function handleUser(
   // ── GET /api/user/me ──────────────────────────────────────
   if (path === '/api/user/me') {
     const user = await env.DB.prepare(
-      `SELECT id, email, name, avatar_url, plan, plan_status, currency, role, created_at FROM users WHERE id = ?`
+      `SELECT id, email, name, avatar_url, plan, plan_status, currency, role, email_verified, created_at FROM users WHERE id = ?`
     ).bind(userId).first()
 
     if (!user) return jsonError('User not found', 404)
@@ -23,6 +23,29 @@ export async function handleUser(
     ).bind(userId).first<{ generations: number; period_start: number; period_end: number }>()
 
     return json({ user, usage })
+  }
+
+  // ── POST /api/user/resend-verification ────────────────────
+  if (path === '/api/user/resend-verification' && request.method === 'POST') {
+    const user = await env.DB.prepare(
+      'SELECT email, name, email_verified FROM users WHERE id = ?'
+    ).bind(userId).first<{ email: string; name: string; email_verified: number }>()
+
+    if (!user) return jsonError('User not found', 404)
+    if (user.email_verified === 1) {
+      return json({ ok: true, message: 'Email already verified' })
+    }
+
+    const token = crypto.randomUUID()
+    const expiresAt = Math.floor(Date.now() / 1000) + 24 * 3600 // 24 hours
+
+    await env.DB.prepare(
+      'INSERT OR REPLACE INTO email_verifications (email, token, expires_at) VALUES (?, ?, ?)'
+    ).bind(user.email, token, expiresAt).run()
+
+    await sendEmail(env, 'verify_email', user.email, user.name, { token, email: user.email })
+
+    return json({ ok: true })
   }
 
   // ── PUT /api/user/currency ────────────────────────────────

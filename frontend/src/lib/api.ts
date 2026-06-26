@@ -31,6 +31,35 @@ export const api = {
     googleUrl: () => `${BASE}/auth/google`,
 
     logout: () => request('/auth/logout', { method: 'POST' }),
+
+    emailSignup: (name: string, email: string, password: string) =>
+      request<{ ok: boolean }>('/auth/email/signup', {
+        method: 'POST',
+        body: JSON.stringify({ name, email, password }),
+      }),
+
+    emailLogin: (email: string, password: string) =>
+      request<{ ok: boolean }>('/auth/email/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      }),
+
+    resendVerification: () =>
+      request<{ ok: boolean }>('/user/resend-verification', {
+        method: 'POST',
+      }),
+
+    forgotPassword: (email: string) =>
+      request<{ ok: boolean, message: string }>('/auth/email/forgot-password', {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+      }),
+
+    resetPassword: (email: string, token: string, password: string) =>
+      request<{ ok: boolean }>('/auth/email/reset-password', {
+        method: 'POST',
+        body: JSON.stringify({ email, token, password }),
+      }),
   },
 
   // ── User ────────────────────────────────────────────────────
