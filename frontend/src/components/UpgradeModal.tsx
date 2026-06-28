@@ -217,6 +217,13 @@ export function UpgradeModal() {
         </div>
         {promoError && <p style={{ fontSize: 12, color: 'var(--error)', marginTop: 4, paddingLeft: 4 }}>{promoError}</p>}
 
+        <p style={{ fontSize: 11, color: 'var(--text-3)', textAlign: 'center', marginTop: 12, lineHeight: 1.5 }}>
+          By subscribing, you agree to our{' '}
+          <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-2)' }}>Terms of Service</a>
+          {' '}and{' '}
+          <a href="/refund" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-2)' }}>Refund Policy</a>.
+        </p>
+
         <style>{`
           .upgrade-modal { max-width: 620px; }
           .upgrade-plans { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 16px; }

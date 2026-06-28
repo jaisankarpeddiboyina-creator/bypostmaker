@@ -84,7 +84,7 @@ Subscriptions are billed monthly in advance. Your plan automatically renews unle
 
 ## Refunds
 
-We do not offer refunds. If you cancel mid-period, you keep access until the period ends. If you believe there has been a billing error, contact ${EMAIL} within 7 days.
+We do not offer refunds except in the cases described in our Cancellation & Refund Policy. If you cancel mid-period, you keep access until the period ends. If you believe there has been a billing error, contact ${EMAIL} within 7 days.
 
 ## Intellectual Property
 
@@ -129,7 +129,7 @@ We will issue a refund if:
 - You were charged twice for the same period due to a technical error
 - You were charged after cancelling and the cancellation was confirmed by us
 
-To request a refund under these exceptions, email ${EMAIL} within 7 days of the charge with your payment reference number.
+To request a refund under these exceptions, email ${EMAIL} within 7 days of the charge with your payment reference number. Approved refunds will be credited to your original payment method within 5–7 business days.
 
 ## Billing Errors
 
