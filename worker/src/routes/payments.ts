@@ -52,22 +52,47 @@ export async function handlePayments(
       return jsonError('USD payments are temporarily disabled. Please pay in INR.', 400)
     }
 
-    // Cleanup check: cancel any existing 'created' subscriptions older than 1 hour
-    await env.DB.prepare(
-      `UPDATE subscriptions 
-       SET status = 'cancelled', updated_at = unixepoch() 
-       WHERE user_id = ? AND status = 'created' AND created_at < unixepoch() - 3600`
-    ).bind(userId).run()
+    // BUG-2: Actively cancel any stale 'created' (abandoned checkout) row before
+    // running the guard check. This replaces the old passive 1-hour time-gate,
+    // which was too slow and blocked retries within 60 minutes (the common case).
+    // The Razorpay cancel call is best-effort — a network failure must not block
+    // the subscribe flow; the DB is always updated regardless.
+    const staleCreated = await env.DB.prepare(
+      `SELECT id, razorpay_sub_id FROM subscriptions WHERE user_id = ? AND status = 'created'`
+    ).bind(userId).first<{ id: string; razorpay_sub_id: string }>()
+
+    if (staleCreated) {
+      try {
+        const rzpCleanupCreds = btoa(`${env.RAZORPAY_KEY_ID}:${env.RAZORPAY_KEY_SECRET}`)
+        await fetch(`https://api.razorpay.com/v1/subscriptions/${staleCreated.razorpay_sub_id}/cancel`, {
+          method: 'POST',
+          headers: { 'Authorization': `Basic ${rzpCleanupCreds}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cancel_at_cycle_end: 0 }),
+        })
+      } catch (e) {
+        // Best-effort: log the failure but always proceed — Razorpay objects in
+        // 'created' state expire naturally within 24 hours if not cancelled here.
+        console.error('[payments] Failed to cancel stale Razorpay subscription during cleanup:', e)
+      }
+      await env.DB.prepare(
+        `UPDATE subscriptions SET status = 'cancelled', updated_at = unixepoch() WHERE id = ?`
+      ).bind(staleCreated.id).run()
+    }
 
     const planId = getRazorpayPlanId(env, plan, currency)
     if (!planId) return jsonError(`Missing Razorpay plan ID for ${plan}/${currency}`, 500)
 
+    // BUG-1: Guard only blocks 'active' and 'authenticated' subscriptions.
+    // 'created' is intentionally excluded: it means only a Razorpay object exists,
+    // not that the user has paid. Stale 'created' rows are cleaned up above.
     const existingSub = await env.DB.prepare(
       `SELECT id, razorpay_sub_id, plan FROM subscriptions 
-       WHERE user_id = ? AND status IN ('active','authenticated','created')`
+       WHERE user_id = ? AND status IN ('active','authenticated')`
     ).bind(userId).first<{ id: string; razorpay_sub_id: string; plan: string }>()
 
-    const PLAN_ORDER = ['starter', 'pro', 'business']
+    // BUG-3: 'free' is included so indexOf never returns -1 for any valid plan,
+    // making the comparison robust against edge-case rows with plan = 'free'.
+    const PLAN_ORDER = ['free', 'starter', 'pro', 'business']
     if (existingSub) {
       const currentIndex = PLAN_ORDER.indexOf(existingSub.plan)
       const newIndex = PLAN_ORDER.indexOf(plan)

@@ -1,7 +1,7 @@
 import { X, Tag, Check } from 'lucide-react'
 import { useState } from 'react'
 import { useAppStore } from '../store/app'
-import { api } from '../lib/api'
+import { api, ApiError } from '../lib/api'
 import { trackEvent } from '../lib/monitoring'
 
 const PLANS = {
@@ -128,8 +128,17 @@ export function UpgradeModal() {
       })
       rzp.open()
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Checkout failed'
-      addToast(msg, 'error')
+      // BUG-4b: A genuine 409 (after backend BUG-1/2 fixes) means the user truly
+      // already has an active or authenticated subscription \u2014 not an app bug.
+      // Show a friendly, actionable message and close the modal rather than
+      // displaying the raw internal error string "Already on this plan or higher".
+      if (err instanceof ApiError && err.status === 409) {
+        addToast('You already have an active subscription. Refresh the page to see your current plan.', 'info')
+        setShowUpgradeModal(false)
+      } else {
+        const msg = err instanceof Error ? err.message : 'Checkout failed'
+        addToast(msg, 'error')
+      }
       setLoading(null)
     }
   }

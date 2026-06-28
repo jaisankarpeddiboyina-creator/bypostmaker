@@ -4,6 +4,15 @@
 
 const BASE = '/api'
 
+// BUG-4a: ApiError carries the HTTP status code so callers can distinguish
+// specific error types (e.g. 409 Conflict = already subscribed) from generic failures.
+export class ApiError extends Error {
+  constructor(message: string, public readonly status: number) {
+    super(message)
+    this.name = 'ApiError'
+  }
+}
+
 async function request<T>(
   path: string,
   options: RequestInit = {}
@@ -19,7 +28,7 @@ async function request<T>(
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: 'Request failed' }))
-    throw new Error((err as { error: string }).error ?? 'Request failed')
+    throw new ApiError((err as { error: string }).error ?? 'Request failed', res.status)
   }
 
   return res.json() as Promise<T>
