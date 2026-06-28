@@ -17,3 +17,5 @@ npm-debug.log*
 *backup*.sql
 *.sql.bak
 
+# Local scratch scripts (one-off utilities, may contain test credentials)
+scratch/
