@@ -107,7 +107,11 @@ export async function handleAuth(request: Request, env: Env): Promise<Response> 
       const { userId, isNew } = await upsertUser(env.DB, profile)
 
       if (isNew) {
-        await sendEmail(env, 'welcome', profile.email.toLowerCase(), profile.name, {})
+        try {
+          await sendEmail(env, 'welcome', profile.email.toLowerCase(), profile.name, {})
+        } catch (err) {
+          console.error('Failed to send welcome email:', err)
+        }
       }
 
       // Get user's current plan
@@ -201,7 +205,11 @@ export async function handleAuth(request: Request, env: Env): Promise<Response> 
     ).bind(trimmedEmail, token, expiresAt).run()
 
     // Send verification email
-    await sendEmail(env, 'verify_email', trimmedEmail, name, { token, email: trimmedEmail })
+    try {
+      await sendEmail(env, 'verify_email', trimmedEmail, name, { token, email: trimmedEmail })
+    } catch (err) {
+      console.error('Failed to send verification email:', err)
+    }
 
     // Sign JWT
     const jwtToken = await signJWT(
@@ -341,7 +349,11 @@ export async function handleAuth(request: Request, env: Env): Promise<Response> 
       'INSERT OR REPLACE INTO password_resets (email, token, expires_at) VALUES (?, ?, ?)'
     ).bind(trimmedEmail, token, expiresAt).run()
 
-    await sendEmail(env, 'reset_password', trimmedEmail, user.name, { token, email: trimmedEmail })
+    try {
+      await sendEmail(env, 'reset_password', trimmedEmail, user.name, { token, email: trimmedEmail })
+    } catch (err) {
+      console.error('Failed to send password reset email:', err)
+    }
 
     return genericSuccess
   }

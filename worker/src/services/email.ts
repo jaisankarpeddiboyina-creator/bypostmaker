@@ -40,6 +40,7 @@ export async function sendEmail(
   if (env.ENVIRONMENT === 'development') {
     console.log(`[DEVELOPMENT EMAIL] to: ${toEmail}, subject: ${template.subject}`)
     console.log(`[DEVELOPMENT EMAIL] body:`, template.html)
+    return
   }
 
   try {
@@ -61,9 +62,11 @@ export async function sendEmail(
     if (!res.ok) {
       const err = await res.text()
       console.error(`Email send failed [${type}]:`, err)
+      throw new Error(`Email send failed [${type}] with status ${res.status}: ${err}`)
     }
   } catch (err) {
     console.error(`Email service error [${type}]:`, err)
+    throw err
   }
 }
 
