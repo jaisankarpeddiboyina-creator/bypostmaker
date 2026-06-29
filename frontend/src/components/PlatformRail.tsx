@@ -114,7 +114,7 @@ export function PlatformRail({ userPlan, onLockedClick }: PlatformRailProps) {
                   {/* Tooltip */}
                   {tooltip?.id === id && !isAccessible && (
                     <div className="platform-tooltip">
-                      {platform.tier === 'pro' ? 'Pro' : platform.tier === 'business' ? 'Business' : 'Starter'} plan
+                      Upgrade to a paid plan to unlock this platform
                     </div>
                   )}
                 </div>

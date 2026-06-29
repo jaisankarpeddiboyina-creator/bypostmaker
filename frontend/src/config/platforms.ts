@@ -26,7 +26,8 @@ export interface Platform {
   name: string
   icon: string                    // lucide icon name or custom svg id
   group: PlatformGroup
-  tier: PlatformTier              // minimum tier required
+  tier: PlatformTier              // Informational/display only — access control is handled
+                                  // by FREE_PLATFORM_IDS in isPlatformAccessible(), not this field.
   charLimit: number | null        // null = no hard limit
   hashtagStyle: 'inline' | 'block' | 'none'
   maxHashtags: number
@@ -753,15 +754,37 @@ export const PLATFORMS: Platform[] = [
 ]
 
 // ──────────────────────────────────────────────────────────
+// FREE TIER PLATFORM WHITELIST
+// ──────────────────────────────────────────────────────────
+// Any paid plan (starter / pro / business) unlocks ALL platforms.
+// Only free-tier users are restricted to this explicit whitelist.
+// To add/remove a free platform, edit this array — nowhere else.
+
+export const FREE_PLATFORM_IDS: readonly string[] = [
+  'twitter',
+  'threads',
+  'bluesky',
+  'linkedin',
+  'facebook',
+  'reddit',
+  'instagram',
+] as const
+
+// ⚠️  SYNC REQUIRED
+// This file is duplicated at config/platforms.ts (backend)
+// Any change here MUST be reflected there too.
+// Both files must always be identical in their access-control logic.
+
+// ──────────────────────────────────────────────────────────
 // DERIVED HELPERS
 // ──────────────────────────────────────────────────────────
 
 export const PLATFORM_MAP = Object.fromEntries(PLATFORMS.map(p => [p.id, p]))
 
 export const PLATFORMS_BY_TIER: Record<PlatformTier, Platform[]> = {
-  free:     PLATFORMS.filter(p => p.tier === 'free'),
-  starter:  PLATFORMS.filter(p => ['free','starter'].includes(p.tier)),
-  pro:      PLATFORMS.filter(p => ['free','starter','pro'].includes(p.tier)),
+  free:     PLATFORMS.filter(p => FREE_PLATFORM_IDS.includes(p.id)),
+  starter:  PLATFORMS,
+  pro:      PLATFORMS,
   business: PLATFORMS,
 }
 
@@ -772,10 +795,10 @@ export const PLATFORMS_BY_GROUP = PLATFORMS.reduce((acc, p) => {
 }, {} as Record<PlatformGroup, Platform[]>)
 
 export const TIER_LIMITS: Record<PlatformTier, { generations: number; platforms: number }> = {
-  free:     { generations: 5,   platforms: PLATFORMS_BY_TIER.free.length },
-  starter:  { generations: 50,  platforms: PLATFORMS_BY_TIER.starter.length },
-  pro:      { generations: 200, platforms: PLATFORMS_BY_TIER.pro.length },
-  business: { generations: Infinity, platforms: PLATFORMS.length },
+  free:     { generations: 5,    platforms: FREE_PLATFORM_IDS.length },
+  starter:  { generations: 50,   platforms: PLATFORMS.length },
+  pro:      { generations: 200,  platforms: PLATFORMS.length },
+  business: { generations: 1000, platforms: PLATFORMS.length },
 }
 
 export function getPlatformsForTier(tier: PlatformTier): Platform[] {
@@ -783,9 +806,11 @@ export function getPlatformsForTier(tier: PlatformTier): Platform[] {
 }
 
 export function isPlatformAccessible(platformId: string, tier: PlatformTier): boolean {
-  const platform = PLATFORM_MAP[platformId]
-  if (!platform) return false
-  return getPlatformsForTier(tier).some(p => p.id === platformId)
+  if (!PLATFORM_MAP[platformId]) return false
+  // Any paid plan gets full access to all platforms.
+  // Only free tier is restricted to the FREE_PLATFORM_IDS whitelist.
+  if (tier !== 'free') return true
+  return FREE_PLATFORM_IDS.includes(platformId)
 }
 // Platform config version — bump when any platform's limits or tones change
 export const PLATFORM_CONFIG_VERSION = '1.0.0'
