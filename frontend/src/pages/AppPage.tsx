@@ -6,6 +6,7 @@ import { PostCard } from '../components/PostCard'
 import { RefinementChat } from '../components/RefinementChat'
 import { api } from '../lib/api'
 import { PLATFORM_MAP } from '../config/platforms'
+import { generateClientZip } from '../lib/downloadKit'
 
 const VIDEO_MAX_MB = 100
 
@@ -23,6 +24,8 @@ export default function AppPage() {
     addToast,
     setShowUpgradeModal, setUpgradeReason,
   } = useAppStore()
+
+  const [downloadProgress, setDownloadProgress] = useState<string | null>(null)
 
   const abortRef = useRef<AbortController | null>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
@@ -110,10 +113,51 @@ export default function AppPage() {
 
   const handleDownloadAll = async () => {
     if (!campaign?.id) return
+
+    // Calculate total operations for warning
+    let totalResizes = 0
+    const postsList = Object.values(campaign.posts)
+    for (const post of postsList) {
+      const platform = PLATFORM_MAP[post.platformId]
+      if (!platform) continue
+      if (imageFiles.length > 0 && platform.imageDimensions.length > 0) {
+        const imagesToProcess = imageFiles.slice(0, platform.maxImages)
+        totalResizes += imagesToProcess.length * platform.imageDimensions.length
+      }
+    }
+
+    if (totalResizes > 60) {
+      addToast('Capping resizes at 60 operations to prevent memory issues.', 'info')
+    }
+
+    setDownloadProgress('Starting generation...')
     try {
-      await api.download.kit(campaign.id, imageFiles, videoFile)
-    } catch {
-      addToast('Download failed', 'error')
+      const zipBlob = await generateClientZip(
+        campaign.id,
+        campaign.prompt,
+        postsList,
+        imageFiles,
+        videoFile,
+        (msg) => setDownloadProgress(msg)
+      )
+
+      const url = URL.createObjectURL(zipBlob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'postmaker_kit.zip'
+      a.click()
+
+      // Memory cleanup
+      setTimeout(() => {
+        URL.revokeObjectURL(url)
+      }, 1000)
+
+      addToast('Download started', 'success')
+    } catch (err: any) {
+      console.error('ZIP generation failed:', err)
+      addToast(err?.message || 'Failed to generate download kit. Select fewer platforms or smaller files.', 'error')
+    } finally {
+      setDownloadProgress(null)
     }
   }
 
@@ -236,9 +280,18 @@ export default function AppPage() {
             )}
 
             {completedPosts.length > 0 && !isGenerating && campaign?.id && (
-              <button className="btn btn-ghost download-all-btn" onClick={handleDownloadAll}>
-                <Download size={14} />
-                Download full kit ({completedPosts.length} platforms)
+              <button className="btn btn-ghost download-all-btn" onClick={handleDownloadAll} disabled={!!downloadProgress}>
+                {downloadProgress ? (
+                  <>
+                    <Loader2 size={14} className="spin" />
+                    <span style={{ marginLeft: '6px' }}>{downloadProgress}</span>
+                  </>
+                ) : (
+                  <>
+                    <Download size={14} />
+                    <span style={{ marginLeft: '6px' }}>Download full kit ({completedPosts.length} platforms)</span>
+                  </>
+                )}
               </button>
             )}
           </div>

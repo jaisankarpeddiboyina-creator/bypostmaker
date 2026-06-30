@@ -5,7 +5,6 @@ import { withCors } from './middleware/cors'
 import { handleAuth } from './routes/auth'
 import { handleGenerate } from './routes/generate'
 import { handleRetry } from './routes/retry'
-import { handleDownload } from './routes/download'
 import { handleRefinement } from './routes/refinement'
 import { handlePayments } from './routes/payments'
 import { handleWebhook } from './routes/webhook'
@@ -81,9 +80,6 @@ export default {
 
       if (path.startsWith('/api/refine'))
         return withCors(await handleRefinement(request, env, userId, userPlan), env)
-
-      if (path.startsWith('/api/download'))
-        return withCors(await handleDownload(request, env, userId), env)
 
       if (path.startsWith('/api/payments'))
         return withCors(await handlePayments(request, env, userId), env)

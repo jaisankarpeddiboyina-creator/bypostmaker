@@ -4,6 +4,7 @@ import { PLATFORM_MAP } from '../config/platforms'
 import { useAppStore, type PlatformPost } from '../store/app'
 import { api } from '../lib/api'
 import { PlatformIcon } from './PlatformIcon'
+import { generateClientZip, sanitize } from '../lib/downloadKit'
 
 interface ExtraField {
   key: string
@@ -185,8 +186,29 @@ export function PostCard({ platformId, post, campaignId, imageFiles, videoFile, 
     if (!campaignId || downloading) return
     setDownloading(true)
     try {
-      await api.download.kit(campaignId, imageFiles, videoFile, platformId)
-    } catch {
+      const prompt = useAppStore.getState().campaign?.prompt || ''
+      const zipBlob = await generateClientZip(
+        campaignId,
+        prompt,
+        [post],
+        imageFiles,
+        videoFile,
+        () => {}
+      )
+
+      const url = URL.createObjectURL(zipBlob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${sanitize(platform?.name || platformId)}_kit.zip`
+      a.click()
+
+      setTimeout(() => {
+        URL.revokeObjectURL(url)
+      }, 1000)
+
+      addToast(`${platform?.name || platformId} kit downloaded`, 'success')
+    } catch (err) {
+      console.error('Individual ZIP generation failed:', err)
       addToast('Download failed. Try again.', 'error')
     } finally {
       setDownloading(false)

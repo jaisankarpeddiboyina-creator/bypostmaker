@@ -177,42 +177,6 @@ export const api = {
       body: JSON.stringify({ campaignId, platformId, message, currentContent }),
     }),
 
-  // ── Download ────────────────────────────────────────────────
-  download: {
-    kit: async (
-      campaignId: string,
-      imageFiles: File[],
-      videoFile: File | null,
-      platformId?: string
-    ): Promise<void> => {
-      const params = new URLSearchParams({ campaign: campaignId })
-      if (platformId) params.set('platform', platformId)
-
-      const formData = new FormData()
-      imageFiles.forEach(f => formData.append('image', f))
-      if (videoFile) formData.append('video', videoFile)
-
-      const hasMedia = imageFiles.length > 0 || videoFile
-      const res = await fetch(`${BASE}/download?${params}`, {
-        method: hasMedia ? 'POST' : 'GET',
-        credentials: 'include',
-        body: hasMedia ? formData : undefined,
-      })
-
-      if (!res.ok) throw new Error('Download failed')
-
-      const blob = await res.blob()
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      const filename = res.headers.get('Content-Disposition')
-        ?.match(/filename="(.+)"/)?.[1] ?? 'postmaker_kit.zip'
-      a.href = url
-      a.download = filename
-      a.click()
-      URL.revokeObjectURL(url)
-    },
-  },
-
   // ── History ─────────────────────────────────────────────────
   history: {
     list: (page = 1) =>
