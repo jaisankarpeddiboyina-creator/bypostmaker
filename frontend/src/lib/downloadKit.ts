@@ -47,24 +47,15 @@ export function resizeImage(
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, width, height);
 
-      // 2. Calculate "cover" dimensions (fill and crop)
-      const imgRatio = img.width / img.height;
-      const targetRatio = width / height;
+      // 2. Calculate "cover" dimensions (fill and crop) using natural dimensions
+      const scaleX = width / img.naturalWidth;
+      const scaleY = height / img.naturalHeight;
+      const scale = Math.max(scaleX, scaleY);
 
-      let drawWidth = width;
-      let drawHeight = height;
-      let offsetX = 0;
-      let offsetY = 0;
-
-      if (imgRatio > targetRatio) {
-        // Image is wider than target aspect ratio -> fit height, crop width
-        drawWidth = height * imgRatio;
-        offsetX = (width - drawWidth) / 2;
-      } else {
-        // Image is taller than target aspect ratio -> fit width, crop height
-        drawHeight = width / imgRatio;
-        offsetY = (height - drawHeight) / 2;
-      }
+      const drawWidth = img.naturalWidth * scale;
+      const drawHeight = img.naturalHeight * scale;
+      const offsetX = (width - drawWidth) / 2;
+      const offsetY = (height - drawHeight) / 2;
 
       // 3. Draw the image with cover cropping
       ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
