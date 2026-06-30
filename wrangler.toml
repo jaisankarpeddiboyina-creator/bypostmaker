@@ -17,6 +17,12 @@ database_name = "postmaker-db"
 database_id = "5a7acba9-31aa-41fc-98ab-1553102423d7"
 migrations_dir = "db/migrations"
 
+# ── R2 Buckets ───────────────────────────────────────────────
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "postmaker-uploads"
+
+
 # ── Cron Triggers ────────────────────────────────────────────
 [triggers]
 crons = [
@@ -36,6 +42,11 @@ database_name = "postmaker-db-dev"
 database_id = "a1f9198a-9b3c-4395-8971-3774aff65760"
 migrations_dir = "db/migrations"
 
+[[env.development.r2_buckets]]
+binding = "BUCKET"
+bucket_name = "postmaker-uploads-dev"
+
+
 # ── Staging Environment ──────────────────────────────────────
 [env.staging]
 name = "bypostamaker-worker-staging"
@@ -47,6 +58,11 @@ binding = "DB"
 database_name = "postmaker-db-staging"
 database_id = "23d6831a-1fa3-4b40-a6e4-043ec0b36f6f"
 migrations_dir = "db/migrations"
+
+[[env.staging.r2_buckets]]
+binding = "BUCKET"
+bucket_name = "postmaker-uploads-staging"
+
 
 # ── Production Environment ───────────────────────────────────
 [env.production]
@@ -61,6 +77,11 @@ binding = "DB"
 database_name = "postmaker-db"
 database_id = "5a7acba9-31aa-41fc-98ab-1553102423d7"
 migrations_dir = "db/migrations"
+
+[[env.production.r2_buckets]]
+binding = "BUCKET"
+bucket_name = "postmaker-uploads"
+
 
 # ── Secrets (set via: wrangler secret put SECRET_NAME) ───────
 # GROQ_API_KEY

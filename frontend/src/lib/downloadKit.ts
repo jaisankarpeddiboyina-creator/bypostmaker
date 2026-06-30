@@ -1,5 +1,6 @@
 import JSZip from 'jszip';
 import { PLATFORM_MAP } from '../config/platforms';
+import { MAX_IMAGE_SIZE_BYTES } from '../../../config/limits';
 
 const ZIP_VIDEO_THRESHOLD = 80 * 1024 * 1024; // 80MB
 
@@ -181,7 +182,7 @@ export async function generateClientZip(
         const ext = imageMimeType.includes('png') ? 'png' : 'jpg';
 
         // Pre-resize file size guard: 15MB
-        if (imgFile.size > 15 * 1024 * 1024) {
+        if (imgFile.size > MAX_IMAGE_SIZE_BYTES) {
           imageSkippedCount++;
           const skipMsg = `Image "${imgFile.name}" exceeds 15MB and was skipped to prevent memory crash.`;
           warnings.push(skipMsg);

@@ -13,7 +13,9 @@ import { handleHistory } from './routes/history'
 import { handleHealth } from './routes/health'
 import { handleAdmin } from './routes/admin'
 import { handlePromos } from './routes/promos'
+import { handlePresignRoute } from './routes/upload'
 import { runCronJobs } from './services/cron'
+
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -72,6 +74,9 @@ export default {
       }
 
       // ── Protected routes ────────────────────────────────────
+      if (path === '/api/upload/presign' && request.method === 'POST')
+        return withCors(await handlePresignRoute(request, env, userId), env)
+
       if (path === '/api/generate' && request.method === 'POST')
         return withCors(await handleGenerate(request, env, userId, userPlan, ctx), env)
 

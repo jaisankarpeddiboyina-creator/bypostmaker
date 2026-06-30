@@ -9,8 +9,8 @@ import { PLATFORM_MAP, isPlatformAccessible, TIER_LIMITS } from '../../../config
 import { generateId } from '../utils/id'
 import { checkUsageLimit, incrementUsage } from '../services/usage'
 import { sendEmail } from '../services/email'
+import { MAX_IMAGE_SIZE_BYTES } from '../../../config/limits'
 
-const MAX_VIDEO_SIZE = 100 * 1024 * 1024 // 100MB
 
 export async function handleGenerate(
   request: Request,
@@ -21,15 +21,23 @@ export async function handleGenerate(
 ): Promise<Response> {
   let prompt: string
   let platformIds: string[]
-  let imageFile: File | null = null
-  let videoFile: File | null = null
+  let imageKey: string | null = null
+  let hasVideo = false
+  let videoName: string | null = null
 
   try {
-    const formData = await request.formData()
-    prompt = ((formData.get('prompt') as string) ?? '').trim()
-    platformIds = JSON.parse((formData.get('platforms') as string) ?? '[]')
-    imageFile = formData.get('image') as File | null
-    videoFile = formData.get('video') as File | null
+    const body = await request.json() as {
+      prompt?: string
+      platforms?: string[]
+      imageKey?: string | null
+      hasVideo?: boolean
+      videoName?: string | null
+    }
+    prompt = (body.prompt ?? '').trim()
+    platformIds = body.platforms ?? []
+    imageKey = body.imageKey ?? null
+    hasVideo = body.hasVideo ?? false
+    videoName = body.videoName ?? null
   } catch {
     return jsonError('Invalid request body', 400)
   }
@@ -37,7 +45,6 @@ export async function handleGenerate(
   if (!prompt || prompt.length < 3) return jsonError('Prompt is too short', 400)
   if (prompt.length > 2000) return jsonError('Prompt too long. Max 2000 characters.', 400)
   if (!Array.isArray(platformIds) || platformIds.length === 0) return jsonError('Select at least one platform', 400)
-  if (videoFile && videoFile.size > MAX_VIDEO_SIZE) return jsonError('Video too large. Maximum size is 100MB.', 400)
   if (!env.GROQ_API_KEY || !env.GEMINI_API_KEY) {
     return jsonError('Missing AI keys. Add GROQ_API_KEY and GEMINI_API_KEY to .dev.vars, then restart npm run dev.', 500)
   }
@@ -53,6 +60,15 @@ export async function handleGenerate(
     )
   }
 
+  if (imageKey) {
+    const imageMeta = await env.BUCKET.head(imageKey)
+    if (!imageMeta) return jsonError('Uploaded image not found', 404)
+    if (imageMeta.size > MAX_IMAGE_SIZE_BYTES) {
+      ctx.waitUntil(env.BUCKET.delete(imageKey).catch(() => {}))
+      return jsonError('Image file size exceeds the 15MB limit.', 400)
+    }
+  }
+
   const campaignId = generateId()
 
   // `campaigns.original_prompt` is required by schema. For now we store the same value
@@ -66,17 +82,13 @@ export async function handleGenerate(
     prompt,
     prompt,
     JSON.stringify(accessibleIds),
-    imageFile ? 1 : 0,
-    videoFile ? 1 : 0,
-    videoFile?.name ?? null
+    imageKey ? 1 : 0,
+    hasVideo ? 1 : 0,
+    videoName
   ).run()
 
   const language = detectLanguage(prompt)
 
-  // Read files into memory before streaming (can't read in background)
-  const imageBuffer = imageFile ? await imageFile.arrayBuffer() : null
-  const videoBuffer = videoFile ? await videoFile.arrayBuffer() : null
-  const videoName = videoFile?.name ?? 'your_video.mp4'
 
   const { readable, writable } = new TransformStream()
   const writer = writable.getWriter()
@@ -95,6 +107,20 @@ export async function handleGenerate(
       for (const id of accessibleIds) initialPosts[id] = 'generating'
       await send('init', { posts: initialPosts })
 
+      // Fetch image from R2 if present
+      let imagePayload: { buffer: ArrayBuffer; contentType: string } | undefined = undefined
+      if (imageKey) {
+        const object = await env.BUCKET.get(imageKey)
+        if (!object) {
+          await send('fatal', { message: 'Uploaded image not found in storage. Please try again.' })
+          throw new Error(`Image object "${imageKey}" not found in R2 bucket`)
+        }
+        imagePayload = {
+          buffer: await object.arrayBuffer(),
+          contentType: object.httpMetadata?.contentType ?? 'image/jpeg'
+        }
+      }
+
       // Group platforms
       const grouped = groupByGroup(accessibleIds)
       const { streamGenerate } = createStreamingClient(env)
@@ -107,7 +133,7 @@ export async function handleGenerate(
           const userPrompt = `User's content: "${prompt}"\n\nGenerate posts for: ${platforms.map(p => p.name).join(', ')}. Return only JSON.`
 
           try {
-            const stream = await streamGenerate({ systemPrompt, userPrompt })
+            const stream = await streamGenerate({ systemPrompt, userPrompt, useGroq: true, image: imagePayload })
             let fullText = ''
             for await (const chunk of stream.textStream) {
               fullText += chunk
@@ -160,11 +186,10 @@ export async function handleGenerate(
         }
       }
 
-      // Send video reference if present (stored by worker memory, included in ZIP on download)
       await send('done', {
         campaignId,
-        hasVideo: !!videoBuffer,
-        videoName: videoName,
+        hasVideo,
+        videoName: videoName ?? 'your_video.mp4',
       })
     } catch (err) {
       console.error('Generate fatal error:', err)
@@ -173,6 +198,11 @@ export async function handleGenerate(
         `UPDATE campaigns SET status = 'failed', updated_at = unixepoch() WHERE id = ?`
       ).bind(campaignId).run()
     } finally {
+      if (imageKey) {
+        await env.BUCKET.delete(imageKey).catch(err => {
+          console.error('Failed to delete R2 object:', err)
+        })
+      }
       await writer.close()
     }
   })())

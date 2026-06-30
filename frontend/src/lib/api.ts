@@ -90,24 +90,25 @@ export const api = {
     stream: (
       prompt: string,
       platformIds: string[],
-      imageFiles: File[],
+      imageKey: string | null,
       videoFile: File | null,
       onEvent: (event: string, data: unknown) => void
     ): AbortController => {
       const ctrl = new AbortController()
-
-      const formData = new FormData()
-      formData.append('prompt', prompt)
-      formData.append('platforms', JSON.stringify(platformIds))
-      imageFiles.forEach(f => formData.append('image', f))
-      if (videoFile) formData.append('video', videoFile)
 
       ;(async () => {
         try {
           const res = await fetch(`${BASE}/generate`, {
             method: 'POST',
             credentials: 'include',
-            body: formData,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              prompt,
+              platforms: platformIds,
+              imageKey,
+              hasVideo: !!videoFile,
+              videoName: videoFile?.name || null,
+            }),
             signal: ctrl.signal,
           })
 
@@ -201,5 +202,14 @@ export const api = {
       ),
 
     cancel: () => request('/payments/cancel', { method: 'POST' }),
+  },
+
+  // ── Upload ──────────────────────────────────────────────────
+  upload: {
+    presign: (contentType: string, contentLength: number) =>
+      request<{ uploadUrl: string; objectKey: string }>('/upload/presign', {
+        method: 'POST',
+        body: JSON.stringify({ contentType, contentLength }),
+      }),
   },
 }

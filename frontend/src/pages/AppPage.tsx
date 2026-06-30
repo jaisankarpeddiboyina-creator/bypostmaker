@@ -7,6 +7,7 @@ import { RefinementChat } from '../components/RefinementChat'
 import { api } from '../lib/api'
 import { PLATFORM_MAP } from '../config/platforms'
 import { generateClientZip } from '../lib/downloadKit'
+import { MAX_IMAGE_SIZE_BYTES } from '../../../config/limits'
 
 const VIDEO_MAX_MB = 100
 
@@ -31,7 +32,7 @@ export default function AppPage() {
   const imageInputRef = useRef<HTMLInputElement>(null)
   const videoInputRef = useRef<HTMLInputElement>(null)
 
-  const handleGenerate = useCallback(() => {
+  const handleGenerate = useCallback(async () => {
     if (!prompt.trim()) { addToast('Enter a prompt first', 'error'); return }
     if (selectedPlatforms.length === 0) { addToast('Select at least one platform', 'error'); return }
 
@@ -39,6 +40,34 @@ export default function AppPage() {
       setUpgradeReason("You've hit your monthly generation limit.")
       setShowUpgradeModal(true)
       return
+    }
+
+    setIsGenerating(true)
+
+    let uploadedImageKey: string | null = null
+
+    if (imageFiles.length > 0) {
+      try {
+        const file = imageFiles[0]
+        if (file.size > MAX_IMAGE_SIZE_BYTES) {
+          throw new Error('Image file size exceeds the 15MB limit.')
+        }
+
+        const { uploadUrl, objectKey } = await api.upload.presign(file.type, file.size)
+
+        const uploadRes = await fetch(uploadUrl, {
+          method: 'PUT',
+          headers: { 'Content-Type': file.type },
+          body: file,
+        })
+
+        if (!uploadRes.ok) throw new Error('Upload failed')
+        uploadedImageKey = objectKey
+      } catch (err: any) {
+        setIsGenerating(false)
+        addToast(err?.message || 'Image upload failed. Please try again.', 'error')
+        return
+      }
     }
 
     // Init all selected platforms as pending
@@ -52,10 +81,9 @@ export default function AppPage() {
       id: '', prompt: prompt.trim(), platforms: selectedPlatforms,
       posts: initialPosts, videoUrl: null, imageFiles, videoFile,
     })
-    setIsGenerating(true)
 
     abortRef.current = api.generate.stream(
-      prompt.trim(), selectedPlatforms, imageFiles, videoFile,
+      prompt.trim(), selectedPlatforms, uploadedImageKey, videoFile,
       (event, data: unknown) => {
         const d = data as Record<string, unknown>
         switch (event) {

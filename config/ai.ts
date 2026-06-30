@@ -25,6 +25,12 @@ export interface Env {
   GOOGLE_CLIENT_SECRET: string
   JWT_SECRET: string
   DB: D1Database
+  BUCKET: R2Bucket
+  CLOUDFLARE_ACCOUNT_ID: string
+  R2_ACCESS_KEY_ID: string
+  R2_SECRET_ACCESS_KEY: string
+  R2_BUCKET_NAME: string
+  VISION_MODEL: string
   DOMAIN: string
   ENVIRONMENT: 'development' | 'staging' | 'production'
 }
@@ -100,19 +106,37 @@ export function createStreamingClient(env: Env) {
   const geminiProvider = createGoogleGenerativeAI({ apiKey: env.GEMINI_API_KEY })
 
   const streamGenerate = ai.wrap(
-    async ({ systemPrompt, userPrompt, useGroq = true }: {
+    async ({ systemPrompt, userPrompt, useGroq = true, image }: {
       systemPrompt: string
       userPrompt: string
       useGroq?: boolean
+      image?: { buffer: ArrayBuffer; contentType: string }
     }) => {
-      const model = useGroq
+      const model = useGroq && !image
         ? groqProvider('llama-3.3-70b-versatile')
-        : geminiProvider('gemini-1.5-flash')
+        : geminiProvider(env.VISION_MODEL)
+
+      const messages: any[] = [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: userPrompt }
+          ]
+        }
+      ]
+
+      if (image) {
+        messages[0].content.push({
+          type: 'image',
+          image: image.buffer,
+          mimeType: image.contentType
+        })
+      }
 
       return streamText({
         model,
         system: systemPrompt,
-        prompt: userPrompt,
+        messages,
         maxOutputTokens: 4096,
       })
     },
