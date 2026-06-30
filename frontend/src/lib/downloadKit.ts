@@ -43,8 +43,31 @@ export function resizeImage(
         return;
       }
 
-      // Draw image stretched to exact dimensions (replicates photon behavior)
-      ctx.drawImage(img, 0, 0, width, height);
+      // 1. Fill background with solid white to handle any transparency in the source image
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, width, height);
+
+      // 2. Calculate "cover" dimensions (fill and crop)
+      const imgRatio = img.width / img.height;
+      const targetRatio = width / height;
+
+      let drawWidth = width;
+      let drawHeight = height;
+      let offsetX = 0;
+      let offsetY = 0;
+
+      if (imgRatio > targetRatio) {
+        // Image is wider than target aspect ratio -> fit height, crop width
+        drawWidth = height * imgRatio;
+        offsetX = (width - drawWidth) / 2;
+      } else {
+        // Image is taller than target aspect ratio -> fit width, crop height
+        drawHeight = width / imgRatio;
+        offsetY = (height - drawHeight) / 2;
+      }
+
+      // 3. Draw the image with cover cropping
+      ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
 
       if (typeof canvas.toBlob === 'function') {
         canvas.toBlob(
