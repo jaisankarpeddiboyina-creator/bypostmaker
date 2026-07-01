@@ -33,7 +33,7 @@ crons = [
 # ── Dev Environment ──────────────────────────────────────────
 [env.development]
 name = "bypostamaker-worker-dev"
-vars = { ENVIRONMENT = "development", DOMAIN = "localhost:5173" }
+vars = { ENVIRONMENT = "development", DOMAIN = "localhost:5173", GROQ_MODEL = "llama-3.3-70b-versatile" }
 triggers = { crons = [] }
 
 [[env.development.d1_databases]]
@@ -50,7 +50,7 @@ bucket_name = "postmaker-uploads-dev"
 # ── Staging Environment ──────────────────────────────────────
 [env.staging]
 name = "bypostamaker-worker-staging"
-vars = { ENVIRONMENT = "staging", DOMAIN = "staging.bypostamaker.com" }
+vars = { ENVIRONMENT = "staging", DOMAIN = "staging.bypostamaker.com", GROQ_MODEL = "llama-3.3-70b-versatile" }
 triggers = { crons = [] }
 
 [[env.staging.d1_databases]]
@@ -67,7 +67,7 @@ bucket_name = "postmaker-uploads-staging"
 # ── Production Environment ───────────────────────────────────
 [env.production]
 name = "bypostamaker-worker"
-vars = { ENVIRONMENT = "production", DOMAIN = "bypostamaker.com" }
+vars = { ENVIRONMENT = "production", DOMAIN = "bypostamaker.com", GROQ_MODEL = "llama-3.3-70b-versatile" }
 routes = [
   { pattern = "bypostamaker.com", custom_domain = true, zone_name = "bypostamaker.com" }
 ]

@@ -1,6 +1,6 @@
 import type { Env } from '../../config/ai'
 import { withAuth } from './middleware/auth'
-import { withRateLimit, withIpRateLimit } from './middleware/rateLimit'
+import { withRateLimit, withIpRateLimit, withPresignRateLimit } from './middleware/rateLimit'
 import { withCors } from './middleware/cors'
 import { handleAuth } from './routes/auth'
 import { handleGenerate } from './routes/generate'
@@ -74,8 +74,16 @@ export default {
       }
 
       // ── Protected routes ────────────────────────────────────
-      if (path === '/api/upload/presign' && request.method === 'POST')
+      if (path === '/api/upload/presign' && request.method === 'POST') {
+        const presignRl = await withPresignRateLimit(request, env, userId)
+        if (!presignRl.ok) {
+          return withCors(new Response(JSON.stringify({ error: 'Too many upload requests. Wait a moment.' }), {
+            status: 429,
+            headers: { 'Content-Type': 'application/json', 'Retry-After': String(presignRl.retryAfter ?? 60) },
+          }), env)
+        }
         return withCors(await handlePresignRoute(request, env, userId), env)
+      }
 
       if (path === '/api/generate' && request.method === 'POST')
         return withCors(await handleGenerate(request, env, userId, userPlan, ctx), env)

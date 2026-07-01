@@ -11,6 +11,7 @@ interface RateLimitResult {
 const WINDOW_MS = 60 * 1000  // 1 minute
 const MAX_REQUESTS_USER = 60
 const MAX_REQUESTS_IP = 20
+const MAX_REQUESTS_PRESIGN = 10  // tighter limit for /api/upload/presign
 
 // In-memory store (per Worker isolate, resets on cold start)
 // For production scale, swap with Cloudflare Durable Objects
@@ -60,6 +61,34 @@ export async function withIpRateLimit(
   entry.count++
 
   if (entry.count > maxRequests) {
+    const retryAfter = Math.ceil((entry.resetAt - now) / 1000)
+    return { ok: false, retryAfter }
+  }
+
+  return { ok: true }
+}
+
+// withPresignRateLimit — 10 req/min per user for /api/upload/presign.
+// Uses a separate key namespace ("presign:") so this limit is independent
+// of the general withRateLimit counter ("user:").
+export async function withPresignRateLimit(
+  _request: Request,
+  _env: Env,
+  userId: string
+): Promise<RateLimitResult> {
+  const now = Date.now()
+  const key = `presign:${userId}`
+
+  let entry = requestCounts.get(key)
+
+  if (!entry || now > entry.resetAt) {
+    entry = { count: 0, resetAt: now + WINDOW_MS }
+    requestCounts.set(key, entry)
+  }
+
+  entry.count++
+
+  if (entry.count > MAX_REQUESTS_PRESIGN) {
     const retryAfter = Math.ceil((entry.resetAt - now) / 1000)
     return { ok: false, retryAfter }
   }

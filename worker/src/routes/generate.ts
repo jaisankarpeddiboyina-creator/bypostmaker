@@ -12,6 +12,14 @@ import { sendEmail } from '../services/email'
 import { MAX_IMAGE_SIZE_BYTES } from '../../../config/limits'
 
 
+// Sentinel: thrown when a 'fatal' SSE event has already been sent to the client
+// inside the waitUntil block. The outer catch checks for this instance to avoid
+// sending a duplicate fatal event that the frontend would receive twice.
+class FatalAlreadySentError extends Error {
+  constructor() { super('FATAL_ALREADY_SENT'); this.name = 'FatalAlreadySentError' }
+}
+
+
 export async function handleGenerate(
   request: Request,
   env: Env,
@@ -118,7 +126,7 @@ export async function handleGenerate(
         const object = await env.BUCKET.get(imageKey)
         if (!object) {
           await send('fatal', { message: 'Uploaded image not found in storage. Please try again.' })
-          throw new Error(`Image object "${imageKey}" not found in R2 bucket`)
+          throw new FatalAlreadySentError()
         }
         imagePayload = {
           buffer: await object.arrayBuffer(),
@@ -162,8 +170,11 @@ export async function handleGenerate(
             }
           } catch (err) {
             console.error(`Group ${group} failed:`, err)
+            const message = imagePayload
+              ? 'Vision analysis failed — try without image'
+              : 'AI was momentarily busy handling all platforms at once — tap retry!'
             for (const id of ids) {
-              await send('error', { platformId: id, message: 'AI was momentarily busy handling all platforms at once — tap retry!' })
+              await send('error', { platformId: id, message })
             }
           }
         })
@@ -198,7 +209,9 @@ export async function handleGenerate(
       })
     } catch (err) {
       console.error('Generate fatal error:', err)
-      await send('fatal', { message: 'AI service temporarily unavailable. Your prompt is saved — try again in a moment.' })
+      if (!(err instanceof FatalAlreadySentError)) {
+        await send('fatal', { message: 'AI service temporarily unavailable. Your prompt is saved — try again in a moment.' })
+      }
       await env.DB.prepare(
         `UPDATE campaigns SET status = 'failed', updated_at = unixepoch() WHERE id = ?`
       ).bind(campaignId).run()
@@ -208,7 +221,11 @@ export async function handleGenerate(
           console.error('Failed to delete R2 object:', err)
         })
       }
-      await writer.close()
+      try {
+        await writer.close()
+      } catch (err) {
+        console.error('Failed to close SSE writer:', err)
+      }
     }
   })())
 

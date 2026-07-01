@@ -51,6 +51,10 @@ export async function handlePresignRoute(
     const objectKey = `uploads/${userId}/${generateId()}.${ext}`
 
     // 4. Instantiate S3Client
+    // requestChecksumCalculation / responseChecksumValidation: AWS SDK v3 defaults
+    // to adding CRC32 checksums automatically. R2 validates the actual file checksum
+    // against the placeholder in the presigned URL — they never match — so R2
+    // rejects with 403. Setting both to 'when_required' disables this behaviour.
     const s3 = new S3Client({
       region: 'auto',
       endpoint: `https://${env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
@@ -58,6 +62,8 @@ export async function handlePresignRoute(
         accessKeyId: env.R2_ACCESS_KEY_ID,
         secretAccessKey: env.R2_SECRET_ACCESS_KEY,
       },
+      requestChecksumCalculation: 'WHEN_REQUIRED',
+      responseChecksumValidation: 'WHEN_REQUIRED',
     })
 
     // 5. Generate presigned URL (valid for 10 minutes) using R2_BUCKET_NAME from wrangler.toml

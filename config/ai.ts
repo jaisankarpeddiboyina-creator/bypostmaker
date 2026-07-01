@@ -11,6 +11,7 @@ import { PLATFORM_MAP, PLATFORMS_BY_GROUP, type PlatformGroup } from './platform
 export interface Env {
   GROQ_API_KEY: string
   GEMINI_API_KEY: string
+  GROQ_MODEL: string
   RAZORPAY_KEY_ID: string
   RAZORPAY_KEY_SECRET: string
   RAZORPAY_WEBHOOK_SECRET: string
@@ -113,7 +114,7 @@ export function createStreamingClient(env: Env) {
       image?: { buffer: ArrayBuffer; contentType: string }
     }) => {
       const model = useGroq && !image
-        ? groqProvider('llama-3.3-70b-versatile')
+        ? groqProvider(env.GROQ_MODEL)
         : geminiProvider(env.VISION_MODEL)
 
       const messages: any[] = [

@@ -104,5 +104,7 @@ export async function signJWT(
 export function getJwtSecret(env: Env): string {
   if (env.JWT_SECRET) return env.JWT_SECRET
   if (env.ENVIRONMENT === 'development') return 'local-development-jwt-secret-change-before-production'
-  return ''
+  throw new Error(
+    'JWT_SECRET is not configured. Set it via: wrangler secret put JWT_SECRET'
+  )
 }
