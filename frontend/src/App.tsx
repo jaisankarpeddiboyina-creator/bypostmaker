@@ -1,21 +1,22 @@
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, lazy, Suspense } from 'react'
 import * as Sentry from '@sentry/react'
 import { useAppStore } from './store/app'
 import { api } from './lib/api'
 import { identifyUser } from './lib/monitoring'
 import { Navbar } from './components/Navbar'
 import { Toasts } from './components/Toasts'
-import AppPage from './pages/AppPage'
-import LandingPage from './pages/LandingPage'
-import HistoryPage from './pages/HistoryPage'
-import SettingsPage from './pages/SettingsPage'
-import AdminPage from './pages/AdminPage'
-import LegalPage from './pages/LegalPage'
 import { UpgradeModal } from './components/UpgradeModal'
-import AuthPage from './pages/AuthPage'
-import ResetPasswordPage from './pages/ResetPasswordPage'
 import { VerifyEmailScreen } from './components/VerifyEmailScreen'
+
+const AppPage = lazy(() => import('./pages/AppPage'))
+const LandingPage = lazy(() => import('./pages/LandingPage'))
+const HistoryPage = lazy(() => import('./pages/HistoryPage'))
+const SettingsPage = lazy(() => import('./pages/SettingsPage'))
+const AdminPage = lazy(() => import('./pages/AdminPage'))
+const LegalPage = lazy(() => import('./pages/LegalPage'))
+const AuthPage = lazy(() => import('./pages/AuthPage'))
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'))
 
 const SentryRoutes = Sentry.withSentryReactRouterV6Routing(Routes)
 
@@ -139,40 +140,42 @@ export default function App() {
 
   return (
     <>
-      <SentryRoutes>
-        <Route path="/" element={<LandingPage />} />
-        
-        {/* Auth routes */}
-        <Route path="/login" element={<AuthPage mode="login" />} />
-        <Route path="/signup" element={<AuthPage mode="signup" />} />
-        <Route path="/forgot-password" element={<AuthPage mode="forgot" />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Suspense fallback={<AppLoading />}>
+        <SentryRoutes>
+          <Route path="/" element={<LandingPage />} />
+          
+          {/* Auth routes */}
+          <Route path="/login" element={<AuthPage mode="login" />} />
+          <Route path="/signup" element={<AuthPage mode="signup" />} />
+          <Route path="/forgot-password" element={<AuthPage mode="forgot" />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-        <Route path="/app" element={
-          <AuthGuard><AppShell><AppPage /></AppShell></AuthGuard>
-        } />
-        <Route path="/app/history" element={
-          <AuthGuard><AppShell><HistoryPage /></AppShell></AuthGuard>
-        } />
-        <Route path="/app/settings" element={
-          <AuthGuard><AppShell><SettingsPage /></AppShell></AuthGuard>
-        } />
+          <Route path="/app" element={
+            <AuthGuard><AppShell><AppPage /></AppShell></AuthGuard>
+          } />
+          <Route path="/app/history" element={
+            <AuthGuard><AppShell><HistoryPage /></AppShell></AuthGuard>
+          } />
+          <Route path="/app/settings" element={
+            <AuthGuard><AppShell><SettingsPage /></AppShell></AuthGuard>
+          } />
 
-        <Route path="/admin" element={
-          <AdminGuard><AppShell><AdminPage /></AppShell></AdminGuard>
-        } />
+          <Route path="/admin" element={
+            <AdminGuard><AppShell><AdminPage /></AppShell></AdminGuard>
+          } />
 
-        {/* Legal pages */}
-        <Route path="/privacy"  element={<LegalPage page="privacy" />} />
-        <Route path="/terms"    element={<LegalPage page="terms" />} />
-        <Route path="/refund"   element={<LegalPage page="refund" />} />
-        <Route path="/cookies"  element={<LegalPage page="cookies" />} />
-        <Route path="/shipping" element={<LegalPage page="shipping" />} />
-        <Route path="/contact"  element={<LegalPage page="contact" />} />
-        <Route path="/pricing" element={<Navigate to="/#pricing" replace />} />
+          {/* Legal pages */}
+          <Route path="/privacy"  element={<LegalPage page="privacy" />} />
+          <Route path="/terms"    element={<LegalPage page="terms" />} />
+          <Route path="/refund"   element={<LegalPage page="refund" />} />
+          <Route path="/cookies"  element={<LegalPage page="cookies" />} />
+          <Route path="/shipping" element={<LegalPage page="shipping" />} />
+          <Route path="/contact"  element={<LegalPage page="contact" />} />
+          <Route path="/pricing" element={<Navigate to="/#pricing" replace />} />
 
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </SentryRoutes>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </SentryRoutes>
+      </Suspense>
       <Toasts />
     </>
   )
