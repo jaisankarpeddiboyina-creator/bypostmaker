@@ -61,6 +61,11 @@ export async function handleGenerate(
   }
 
   if (imageKey) {
+    // Security: verify the key belongs to the authenticated user.
+    // Keys are structured as uploads/{userId}/{id}.{ext} by the presign route.
+    if (!imageKey.startsWith(`uploads/${userId}/`)) {
+      return jsonError('Forbidden: image key does not belong to this user', 403)
+    }
     const imageMeta = await env.BUCKET.head(imageKey)
     if (!imageMeta) return jsonError('Uploaded image not found', 404)
     if (imageMeta.size > MAX_IMAGE_SIZE_BYTES) {
