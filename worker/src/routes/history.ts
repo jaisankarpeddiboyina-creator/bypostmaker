@@ -19,20 +19,33 @@ export async function handleHistory(
      ORDER BY created_at DESC LIMIT ? OFFSET ?`
   ).bind(userId, limit, offset).all()
 
-  // For each campaign, get its generated posts
-  const enriched = await Promise.all(
-    (campaigns ?? []).map(async (c: any) => {
-      const { results: posts } = await env.DB.prepare(
-        'SELECT platform_id, content, edited FROM generated_posts WHERE campaign_id = ?'
-      ).bind(c.id).all()
+  let enriched: any[] = []
 
-      return {
-        ...c,
-        platforms: JSON.parse(c.platforms as string),
-        posts: posts ?? [],
-      }
-    })
-  )
+  if (campaigns && campaigns.length > 0) {
+    const campaignIds = campaigns.map((c: any) => c.id)
+    const placeholders = campaignIds.map(() => '?').join(',')
+
+    const { results: allPosts } = await env.DB.prepare(
+      `SELECT campaign_id, platform_id, content, edited FROM generated_posts 
+       WHERE campaign_id IN (${placeholders})`
+    ).bind(...campaignIds).all()
+
+    const postsByCampaign = (allPosts ?? []).reduce((acc: any, post: any) => {
+      if (!acc[post.campaign_id]) acc[post.campaign_id] = []
+      acc[post.campaign_id].push({
+        platform_id: post.platform_id,
+        content: post.content,
+        edited: post.edited
+      })
+      return acc
+    }, {})
+
+    enriched = campaigns.map((c: any) => ({
+      ...c,
+      platforms: JSON.parse(c.platforms as string),
+      posts: postsByCampaign[c.id] ?? [],
+    }))
+  }
 
   const { results: countResult } = await env.DB.prepare(
     `SELECT COUNT(*) as total FROM campaigns WHERE user_id = ? AND status = 'completed'`
