@@ -52,6 +52,9 @@ bucket_name = "postmaker-uploads-dev"
 name = "bypostamaker-worker-staging"
 vars = { ENVIRONMENT = "staging", DOMAIN = "staging.bypostamaker.com", GROQ_MODEL = "llama-3.3-70b-versatile" }
 triggers = { crons = [] }
+routes = [
+  { pattern = "staging.bypostamaker.com", custom_domain = true, zone_name = "bypostamaker.com" }
+]
 
 [[env.staging.d1_databases]]
 binding = "DB"
