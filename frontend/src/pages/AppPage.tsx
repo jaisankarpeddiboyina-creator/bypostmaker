@@ -5,7 +5,7 @@ import { PlatformRail } from '../components/PlatformRail'
 import { PostCard } from '../components/PostCard'
 import { RefinementChat } from '../components/RefinementChat'
 import { api } from '../lib/api'
-import { PLATFORM_MAP } from '../config/platforms'
+import { PLATFORM_MAP } from '@@config/platforms'
 import { generateClientZip } from '../lib/downloadKit'
 import { MAX_IMAGE_SIZE_BYTES } from '../../../config/limits'
 

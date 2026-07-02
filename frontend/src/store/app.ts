@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { PlatformTier } from '../config/platforms'
+import type { PlatformTier } from '@@config/platforms'
 
 export interface User {
   id: string

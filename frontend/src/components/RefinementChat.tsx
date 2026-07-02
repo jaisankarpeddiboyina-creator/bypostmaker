@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { X, Send, Loader2 } from 'lucide-react'
-import { PLATFORM_MAP } from '../config/platforms'
+import { PLATFORM_MAP } from '@@config/platforms'
 import { useAppStore } from '../store/app'
 import { api } from '../lib/api'
 

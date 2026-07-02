@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Lock } from 'lucide-react'
-import { PLATFORMS, isPlatformAccessible } from '../config/platforms'
-import type { PlatformTier } from '../config/platforms'
+import { PLATFORMS, isPlatformAccessible } from '@@config/platforms'
+import type { PlatformTier } from '@@config/platforms'
 import { useAppStore } from '../store/app'
 import { PlatformIcon } from './PlatformIcon'
 

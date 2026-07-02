@@ -1,5 +1,5 @@
 import JSZip from 'jszip';
-import { PLATFORM_MAP } from '../config/platforms';
+import { PLATFORM_MAP } from '@@config/platforms';
 import { MAX_IMAGE_SIZE_BYTES } from '../../../config/limits';
 
 const ZIP_VIDEO_THRESHOLD = 80 * 1024 * 1024; // 80MB

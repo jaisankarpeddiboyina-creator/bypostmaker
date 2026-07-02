@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Clock, Copy, Check, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react'
 import { api } from '../lib/api'
 import { useAppStore } from '../store/app'
-import { PLATFORM_MAP } from '../config/platforms'
+import { PLATFORM_MAP } from '@@config/platforms'
 
 interface HistoryCampaign {
   id: string

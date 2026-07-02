@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { Copy, Download, MessageSquare, Check, AlertCircle, Heart, Repeat, Share2, ThumbsUp, ChevronUp, ChevronDown, BookOpen, PlayCircle, Mic, Bookmark, Send } from 'lucide-react'
-import { PLATFORM_MAP } from '../config/platforms'
+import { PLATFORM_MAP } from '@@config/platforms'
 import { useAppStore, type PlatformPost } from '../store/app'
 import { api } from '../lib/api'
 import { PlatformIcon } from './PlatformIcon'
@@ -18,7 +18,7 @@ const PLATFORM_EXTRA_FIELDS: Record<string, ExtraField[]> = {
   stackoverflow:[{ key: 'url', placeholder: 'https://stackoverflow.com/...', label: 'Question URL' }],
 }
 
-import type { Platform } from '../config/platforms'
+import type { Platform } from '@@config/platforms'
 
 function getProfileSub(platform: Platform | undefined): string {
   if (!platform) return ''
