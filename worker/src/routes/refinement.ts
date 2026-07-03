@@ -1,7 +1,7 @@
 import type { Env } from '../../../config/ai'
 import type { PlatformTier } from '../../../config/platforms'
 import { createAIClient } from '../../../config/ai'
-import { PLATFORM_MAP } from '../../../config/platforms'
+import { PLATFORM_MAP, isPlatformAccessible } from '../../../config/platforms'
 
 interface RefineRequest {
   campaignId: string
@@ -14,7 +14,7 @@ export async function handleRefinement(
   request: Request,
   env: Env,
   userId: string,
-  _userPlan: PlatformTier
+  userPlan: PlatformTier
 ): Promise<Response> {
   let body: RefineRequest
   try {
@@ -38,6 +38,10 @@ export async function handleRefinement(
 
   const platform = PLATFORM_MAP[platformId]
   if (!platform) return jsonError('Unknown platform', 400)
+
+  if (!isPlatformAccessible(platformId, userPlan)) {
+    return jsonError('Forbidden: platform not accessible on your plan', 403)
+  }
 
   try {
     const ai = createAIClient(env)
