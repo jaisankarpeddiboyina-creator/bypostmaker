@@ -14,7 +14,7 @@ export async function handleHistory(
   const offset = (page - 1) * limit
 
   const { results: campaigns } = await env.DB.prepare(
-    `SELECT id, prompt, platforms, has_image, has_video, status, generated_count, created_at
+    `SELECT id, prompt, platforms, has_image, image_key, has_video, status, generated_count, created_at
      FROM campaigns WHERE user_id = ? AND status = 'completed'
      ORDER BY created_at DESC LIMIT ? OFFSET ?`
   ).bind(userId, limit, offset).all()

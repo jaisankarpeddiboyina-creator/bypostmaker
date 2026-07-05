@@ -24,42 +24,67 @@ export async function runCronJobs(cron: string, env: Env): Promise<void> {
 
 // ── Data Retention ────────────────────────────────────────────
 // Free: 7 days, Starter: 30 days, Pro: 90 days, Business: 1 year
-async function runDataRetention(env: Env): Promise<void> {
+export async function runDataRetention(env: Env): Promise<void> {
   const now = Math.floor(Date.now() / 1000)
 
-  const retentionDays: Record<string, number> = {
-    free:     7,
-    starter:  30,
-    pro:      90,
-    business: 365,
+  // 1. Fetch retention limits from settings table (fallback if not seeded)
+  let daysFree = 7
+  let daysPaid = 30
+
+  try {
+    const settings = await env.DB.prepare(
+      "SELECT key, value FROM system_settings WHERE key IN ('retention_days_free', 'retention_days_paid')"
+    ).all<{ key: string; value: string }>()
+
+    for (const row of settings.results ?? []) {
+      if (row.key === 'retention_days_free') daysFree = parseInt(row.value, 10)
+      if (row.key === 'retention_days_paid') daysPaid = parseInt(row.value, 10)
+    }
+  } catch (err) {
+    console.error('Failed to read retention settings from DB, using fallbacks:', err)
   }
 
-  for (const [plan, days] of Object.entries(retentionDays)) {
-    const cutoff = now - days * 24 * 60 * 60
+  const cutoffFree = now - daysFree * 24 * 60 * 60
+  const cutoffPaid = now - daysPaid * 24 * 60 * 60
 
-    // Find campaigns older than retention window for this plan
-    const { results: expiredCampaigns } = await env.DB.prepare(
-      `SELECT c.id FROM campaigns c
-       JOIN users u ON c.user_id = u.id
-       WHERE u.plan = ? AND c.created_at < ?`
-    ).bind(plan, cutoff).all<{ id: string }>()
+  // 2. Find campaigns with non-null image keys that are past their plan's retention window
+  const { results: expiredCampaigns } = await env.DB.prepare(
+    `SELECT c.id, c.image_key FROM campaigns c
+     JOIN users u ON c.user_id = u.id
+     WHERE c.image_key IS NOT NULL AND (
+       (u.plan = 'free' AND c.created_at < ?) OR
+       (u.plan != 'free' AND c.created_at < ?)
+     )`
+  ).bind(cutoffFree, cutoffPaid).all<{ id: string; image_key: string }>()
 
-    if (!expiredCampaigns?.length) continue
+  if (!expiredCampaigns?.length) {
+    console.log('Retention: no expired media assets found.')
+    return
+  }
 
-    // Delete in batches of 50
-    const ids = expiredCampaigns.map(c => c.id)
-    for (let i = 0; i < ids.length; i += 50) {
-      const batch = ids.slice(i, i + 50)
-      const placeholders = batch.map(() => '?').join(',')
+  console.log(`Retention: found ${expiredCampaigns.length} expired media assets. Starting cleanup...`)
 
-      await env.DB.batch([
-        env.DB.prepare(`DELETE FROM generated_posts WHERE campaign_id IN (${placeholders})`).bind(...batch),
-        env.DB.prepare(`DELETE FROM campaigns WHERE id IN (${placeholders})`).bind(...batch),
-      ])
+  // 3. Process expired campaigns: delete from R2 and set DB column to NULL
+  for (const campaign of expiredCampaigns) {
+    // Delete from R2
+    try {
+      await env.BUCKET.delete(campaign.image_key)
+      console.log(`Retention: deleted R2 object for campaign ${campaign.id}: ${campaign.image_key}`)
+    } catch (err) {
+      console.error(`Retention: failed to delete R2 object ${campaign.image_key} for campaign ${campaign.id}:`, err)
     }
 
-    console.log(`Retention: deleted ${ids.length} campaigns for ${plan} plan`)
+    // Nullify image_key and has_image in DB
+    try {
+      await env.DB.prepare(
+        'UPDATE campaigns SET image_key = NULL, has_image = 0, updated_at = unixepoch() WHERE id = ?'
+      ).bind(campaign.id).run()
+    } catch (err) {
+      console.error(`Retention: failed to nullify image_key/has_image in D1 for campaign ${campaign.id}:`, err)
+    }
   }
+
+  console.log(`Retention: media assets cleanup finished for ${expiredCampaigns.length} campaigns.`)
 }
 
 // ── DB Health Check ───────────────────────────────────────────

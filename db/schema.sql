@@ -90,6 +90,7 @@ CREATE TABLE IF NOT EXISTS campaigns (
   original_prompt TEXT NOT NULL,
   platforms       TEXT NOT NULL,
   has_image       INTEGER NOT NULL DEFAULT 0,
+  image_key       TEXT,
   has_video       INTEGER NOT NULL DEFAULT 0,
   video_filename  TEXT,
   status          TEXT NOT NULL DEFAULT 'generating'
@@ -155,4 +156,11 @@ CREATE TABLE IF NOT EXISTS email_verifications (
   email       TEXT PRIMARY KEY,
   token       TEXT NOT NULL,
   expires_at  INTEGER NOT NULL
+);
+
+-- ── System Settings ───────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS system_settings (
+  key         TEXT PRIMARY KEY,
+  value       TEXT NOT NULL,
+  updated_at  INTEGER NOT NULL DEFAULT (unixepoch())
 );

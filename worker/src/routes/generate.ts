@@ -87,8 +87,8 @@ export async function handleGenerate(
   // `campaigns.original_prompt` is required by schema. For now we store the same value
   // as `prompt` (refinements can overwrite `prompt` later, while preserving original).
   await env.DB.prepare(
-    `INSERT INTO campaigns (id, user_id, prompt, original_prompt, platforms, has_image, has_video, video_filename, status)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'generating')`
+    `INSERT INTO campaigns (id, user_id, prompt, original_prompt, platforms, has_image, image_key, has_video, video_filename, status)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'generating')`
   ).bind(
     campaignId,
     userId,
@@ -96,6 +96,7 @@ export async function handleGenerate(
     prompt,
     JSON.stringify(accessibleIds),
     imageKey ? 1 : 0,
+    imageKey,
     hasVideo ? 1 : 0,
     videoName
   ).run()
@@ -112,6 +113,7 @@ export async function handleGenerate(
   }
 
   ctx.waitUntil((async () => {
+    let success = false
     try {
       await send('start', { campaignId, platformCount: accessibleIds.length })
 
@@ -207,6 +209,7 @@ export async function handleGenerate(
         hasVideo,
         videoName: videoName ?? 'your_video.mp4',
       })
+      success = true
     } catch (err) {
       console.error('Generate fatal error:', err)
       if (!(err instanceof FatalAlreadySentError)) {
@@ -216,7 +219,7 @@ export async function handleGenerate(
         `UPDATE campaigns SET status = 'failed', updated_at = unixepoch() WHERE id = ?`
       ).bind(campaignId).run()
     } finally {
-      if (imageKey) {
+      if (imageKey && !success) {
         await env.BUCKET.delete(imageKey).catch(err => {
           console.error('Failed to delete R2 object:', err)
         })

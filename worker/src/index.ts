@@ -14,7 +14,7 @@ import { handleHealth } from './routes/health'
 import { handleAdmin } from './routes/admin'
 import { handlePromos } from './routes/promos'
 import { handlePresignRoute } from './routes/upload'
-import { runCronJobs } from './services/cron'
+import { runCronJobs, runDataRetention } from './services/cron'
 
 
 export default {
@@ -47,6 +47,12 @@ export default {
       }
       if (path === '/api/webhooks/razorpay') return withCors(await handleWebhook(request, env, ctx), env)
       if (path === '/api/health') return withCors(await handleHealth(env), env)
+      if (path === '/api/test/retention' && env.ENVIRONMENT === 'development') {
+        await runDataRetention(env)
+        return withCors(new Response(JSON.stringify({ ok: true, message: 'Retention completed' }), {
+          status: 200, headers: { 'Content-Type': 'application/json' },
+        }), env)
+      }
 
       // ── Auth guard ──────────────────────────────────────────
       const auth = await withAuth(request, env)
