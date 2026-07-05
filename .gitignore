@@ -19,3 +19,8 @@ npm-debug.log*
 
 # Local scratch scripts (one-off utilities, may contain test credentials)
 scratch/
+
+# Large reference assets and local test logs/images
+postmaker design reference.pdf
+worker/local_check.jpg
+
