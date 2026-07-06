@@ -4,7 +4,8 @@ import * as Sentry from '@sentry/react'
 import { useAppStore } from './store/app'
 import { api } from './lib/api'
 import { identifyUser } from './lib/monitoring'
-import { Navbar } from './components/Navbar'
+import { Sidebar } from './components/Sidebar'
+import { Topbar } from './components/Topbar'
 import { Toasts } from './components/Toasts'
 import { UpgradeModal } from './components/UpgradeModal'
 import { VerifyEmailScreen } from './components/VerifyEmailScreen'
@@ -12,6 +13,7 @@ import { VerifyEmailScreen } from './components/VerifyEmailScreen'
 const AppPage = lazy(() => import('./pages/AppPage'))
 const LandingPage = lazy(() => import('./pages/LandingPage'))
 const HistoryPage = lazy(() => import('./pages/HistoryPage'))
+const BillingPage = lazy(() => import('./pages/BillingPage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
 const AdminPage = lazy(() => import('./pages/AdminPage'))
 const LegalPage = lazy(() => import('./pages/LegalPage'))
@@ -26,10 +28,17 @@ function UpgradeModalWrapper() {
 }
 
 function AppShell({ children }: { children: React.ReactNode }) {
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
-      <Navbar />
-      <div style={{ flex: 1, overflow: 'hidden' }}>{children}</div>
+    <div style={{ display: 'flex', width: '100vw', height: '100vh', overflow: 'hidden' }}>
+      <Sidebar isOpen={isMobileSidebarOpen} onClose={() => setIsMobileSidebarOpen(false)} />
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, height: '100%', overflow: 'hidden' }}>
+        <Topbar onMenuClick={() => setIsMobileSidebarOpen(true)} />
+        <main style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+          {children}
+        </main>
+      </div>
       <UpgradeModalWrapper />
     </div>
   )
@@ -151,10 +160,16 @@ export default function App() {
           <Route path="/reset-password" element={<ResetPasswordPage />} />
 
           <Route path="/app" element={
+            <AuthGuard><Navigate to="/app/create" replace /></AuthGuard>
+          } />
+          <Route path="/app/create" element={
             <AuthGuard><AppShell><AppPage /></AppShell></AuthGuard>
           } />
           <Route path="/app/history" element={
             <AuthGuard><AppShell><HistoryPage /></AppShell></AuthGuard>
+          } />
+          <Route path="/app/billing" element={
+            <AuthGuard><AppShell><BillingPage /></AppShell></AuthGuard>
           } />
           <Route path="/app/settings" element={
             <AuthGuard><AppShell><SettingsPage /></AppShell></AuthGuard>
@@ -180,3 +195,4 @@ export default function App() {
     </>
   )
 }
+
