@@ -41,12 +41,12 @@ export async function handleWebhook(
   }
 
   // Process async so we can return 200 immediately to Razorpay
-  ctx.waitUntil(processWebhookEvent(event, env))
+  ctx.waitUntil(processWebhookEvent(event, env, ctx))
 
   return new Response('OK', { status: 200 })
 }
 
-async function processWebhookEvent(event: RazorpayWebhookEvent, env: Env): Promise<void> {
+async function processWebhookEvent(event: RazorpayWebhookEvent, env: Env, ctx: ExecutionContext): Promise<void> {
   const entity = event.payload?.subscription?.entity ?? event.payload?.payment?.entity
 
   switch (event.event) {
@@ -76,6 +76,37 @@ async function processWebhookEvent(event: RazorpayWebhookEvent, env: Env): Promi
            ON CONFLICT(user_id, period_start) DO UPDATE SET generations = 0, updated_at = unixepoch()`
         ).bind(generateId(), userId, periodStart, calendarPeriodEnd),
       ])
+
+      // Look for older active/authenticated subscriptions to cancel
+      const oldSubs = await env.DB.prepare(
+        `SELECT id, razorpay_sub_id FROM subscriptions
+         WHERE user_id = ? AND status IN ('active', 'authenticated') AND razorpay_sub_id != ?`
+      ).bind(userId, sub.id).all<{ id: string; razorpay_sub_id: string }>()
+
+      if (oldSubs.results && oldSubs.results.length > 0) {
+        for (const oldSub of oldSubs.results) {
+          ctx.waitUntil((async () => {
+            try {
+              const rzpCredentials = btoa(`${env.RAZORPAY_KEY_ID}:${env.RAZORPAY_KEY_SECRET}`)
+              const response = await fetch(`https://api.razorpay.com/v1/subscriptions/${oldSub.razorpay_sub_id}/cancel`, {
+                method: 'POST',
+                headers: { 'Authorization': `Basic ${rzpCredentials}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cancel_at_cycle_end: 0 }),
+              })
+              if (response.ok) {
+                await env.DB.prepare(
+                  `UPDATE subscriptions SET status = 'cancelled', updated_at = unixepoch() WHERE id = ?`
+                ).bind(oldSub.id).run()
+              } else {
+                const errText = await response.text()
+                console.error(`[webhook] Failed to cancel old subscription on Razorpay (HTTP ${response.status}). User: ${userId}, Sub ID: ${oldSub.id}, RZP Sub ID: ${oldSub.razorpay_sub_id}, Error: ${errText}`)
+              }
+            } catch (e: any) {
+              console.error(`[webhook] Error cancelling old subscription on Razorpay. User: ${userId}, Sub ID: ${oldSub.id}, RZP Sub ID: ${oldSub.razorpay_sub_id}, Error: ${e?.message || e}`)
+            }
+          })())
+        }
+      }
 
       const user = await getUser(env.DB, userId)
       if (user) {

@@ -99,16 +99,7 @@ export async function handlePayments(
       if (newIndex <= currentIndex) {
         return jsonError('Already on this plan or higher', 409)
       }
-      // Cancel existing subscription immediately before creating new one
-      const rzpCredentials = btoa(`${env.RAZORPAY_KEY_ID}:${env.RAZORPAY_KEY_SECRET}`)
-      await fetch(`https://api.razorpay.com/v1/subscriptions/${existingSub.razorpay_sub_id}/cancel`, {
-        method: 'POST',
-        headers: { 'Authorization': `Basic ${rzpCredentials}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cancel_at_cycle_end: 0 }),
-      })
-      await env.DB.prepare(
-        `UPDATE subscriptions SET status = 'cancelled', updated_at = unixepoch() WHERE id = ?`
-      ).bind(existingSub.id).run()
+
     }
 
     // Create Razorpay subscription
