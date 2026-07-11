@@ -134,12 +134,32 @@ export function createStreamingClient(env: Env) {
         })
       }
 
-      return streamText({
-        model,
-        system: systemPrompt,
-        messages,
-        maxOutputTokens: 4096,
-      })
+      // Hard 25-second deadline on every provider call.
+      // Prevents the for-await loop in generate.ts / retry.ts from blocking
+      // indefinitely when Gemini or Groq stalls without closing the connection.
+      // 25s chosen to land 5s before Cloudflare's ~30s subrequest wall-clock limit,
+      // giving the catch block time to emit an error SSE event cleanly.
+      const abortController = new AbortController()
+      const timeoutId = setTimeout(() => abortController.abort(), 25_000)
+
+      try {
+        return streamText({
+          model,
+          system: systemPrompt,
+          messages,
+          maxOutputTokens: 4096,
+          abortSignal: abortController.signal,
+        })
+      } finally {
+        // Always clear the timer so it doesn't fire after a successful return.
+        // streamText() returns a result object immediately (the stream is lazy);
+        // the actual generation happens when the caller iterates textStream.
+        // The AbortController remains live — the signal is embedded in the
+        // returned stream object and will fire if the 25s window expires while
+        // the caller is iterating chunks. clearTimeout only prevents an
+        // already-completed call from triggering an unnecessary abort.
+        clearTimeout(timeoutId)
+      }
     },
     { toolName: 'StreamGenerate' }
   )

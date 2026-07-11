@@ -240,7 +240,7 @@ export default function AppPage() {
             </div>
 
             <div className="media-row">
-              <input ref={imageInputRef} type="file" accept="image/*" multiple style={{ display: 'none' }}
+              <input ref={imageInputRef} type="file" accept="image/*" style={{ display: 'none' }}
                 onChange={e => {
                   const files = Array.from(e.target.files ?? [])
                   const imageSupportedPlatforms = selectedPlatforms
@@ -259,7 +259,8 @@ export default function AppPage() {
                   setImageFiles(cappedArray)
                 }} />
               <button className={`media-btn ${imageFiles.length > 0 ? 'active' : ''}`}
-                onClick={() => imageInputRef.current?.click()} disabled={isGenerating}>
+                onClick={() => imageInputRef.current?.click()} disabled={isGenerating}
+                title="Add one image for AI to analyze (JPEG, PNG, WEBP, or GIF · max 15MB)">
                 <ImageIcon size={14} />
                 {imageFiles.length > 1
                   ? `${imageFiles.length} images`

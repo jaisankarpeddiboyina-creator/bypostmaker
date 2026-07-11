@@ -239,13 +239,19 @@ export function PostCard({ platformId, post, campaignId, imageFiles, videoFile, 
     try {
       const result = await api.generate.retry(campaignId, platformId)
       updatePost(platformId, { content: result.content, status: 'done' })
+      if (result.imageDropped) {
+        // The original image was cleaned up by retention — retry succeeded text-only.
+        // Show a non-blocking notice so the user knows the result may differ.
+        addToast('Image expired — regenerated from text only', 'info')
+      }
     } catch (err: any) {
       updatePost(platformId, {
         status: 'error',
         errorMessage: err.message ?? 'Could not generate — try again!',
       })
     }
-  }, [platformId, campaignId, updatePost])
+  }, [platformId, campaignId, updatePost, addToast])
+
 
   const shareUrl = platform?.shareUrl(post.content, extraFields)
   const charLimit = platform?.charLimit

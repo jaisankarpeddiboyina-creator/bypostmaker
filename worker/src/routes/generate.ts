@@ -71,14 +71,10 @@ export async function handleGenerate(
   if (imageKey) {
     // Security: verify the key belongs to the authenticated user.
     // Keys are structured as uploads/{userId}/{id}.{ext} by the presign route.
+    // Existence, size, and MIME checks are deferred to the SSE block below so
+    // that a single BUCKET.get() handles all validation — no separate head() call.
     if (!imageKey.startsWith(`uploads/${userId}/`)) {
       return jsonError('Forbidden: image key does not belong to this user', 403)
-    }
-    const imageMeta = await env.BUCKET.head(imageKey)
-    if (!imageMeta) return jsonError('Uploaded image not found', 404)
-    if (imageMeta.size > MAX_IMAGE_SIZE_BYTES) {
-      ctx.waitUntil(env.BUCKET.delete(imageKey).catch(() => {}))
-      return jsonError('Image file size exceeds the 15MB limit.', 400)
     }
   }
 
@@ -122,7 +118,10 @@ export async function handleGenerate(
       for (const id of accessibleIds) initialPosts[id] = 'generating'
       await send('init', { posts: initialPosts })
 
-      // Fetch image from R2 if present
+      // Fetch image from R2 if present.
+      // Single BUCKET.get() handles existence, size, and MIME checks — no separate
+      // head() pre-check. This removes the TOCTOU window between two R2 calls and
+      // saves one round-trip on every image generation request.
       let imagePayload: { buffer: ArrayBuffer; contentType: string } | undefined = undefined
       if (imageKey) {
         const object = await env.BUCKET.get(imageKey)
@@ -130,9 +129,26 @@ export async function handleGenerate(
           await send('fatal', { message: 'Uploaded image not found in storage. Please try again.' })
           throw new FatalAlreadySentError()
         }
+
+        // Size check (mirrors the presign-time validation in upload.ts)
+        if (object.size > MAX_IMAGE_SIZE_BYTES) {
+          await env.BUCKET.delete(imageKey).catch(() => {})
+          await send('fatal', { message: 'Image file size exceeds the 15MB limit.' })
+          throw new FatalAlreadySentError()
+        }
+
+        // MIME re-validation — defense-in-depth against clients that bypass
+        // the presign route or set wrong Content-Type on their PUT.
+        const contentType = object.httpMetadata?.contentType ?? ''
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+        if (!allowedTypes.includes(contentType)) {
+          await send('fatal', { message: 'Unsupported image type. Please upload a JPEG, PNG, WEBP, or GIF.' })
+          throw new FatalAlreadySentError()
+        }
+
         imagePayload = {
           buffer: await object.arrayBuffer(),
-          contentType: object.httpMetadata?.contentType ?? 'image/jpeg'
+          contentType,
         }
       }
 
@@ -181,6 +197,12 @@ export async function handleGenerate(
           }
         })
       )
+
+      // Release the image buffer reference now that all parallel generation calls
+      // are done. The ArrayBuffer (up to 15MB) stays in heap until GC; removing
+      // the live reference makes it eligible for collection before the DB writes
+      // and email sends below run.
+      imagePayload = undefined
 
       await env.DB.prepare(
         `UPDATE campaigns SET status = 'completed', generated_count = ?, updated_at = unixepoch() WHERE id = ?`
