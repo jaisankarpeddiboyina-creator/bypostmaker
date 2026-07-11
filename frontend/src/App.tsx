@@ -19,6 +19,8 @@ const AdminPage = lazy(() => import('./pages/AdminPage'))
 const LegalPage = lazy(() => import('./pages/LegalPage'))
 const AuthPage = lazy(() => import('./pages/AuthPage'))
 const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'))
+const BlogPage = lazy(() => import('./pages/BlogPage'))
+
 
 const SentryRoutes = Sentry.withSentryReactRouterV6Routing(Routes)
 
@@ -152,6 +154,8 @@ export default function App() {
       <Suspense fallback={<AppLoading />}>
         <SentryRoutes>
           <Route path="/" element={<LandingPage />} />
+          <Route path="/blog" element={<BlogPage />} />
+          <Route path="/blog/:slug" element={<BlogPage />} />
           
           {/* Auth routes */}
           <Route path="/login" element={<AuthPage mode="login" />} />

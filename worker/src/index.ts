@@ -15,7 +15,231 @@ import { handleAdmin } from './routes/admin'
 import { handlePromos } from './routes/promos'
 import { handlePresignRoute } from './routes/upload'
 import { runCronJobs, runDataRetention } from './services/cron'
+import { blogPosts } from '../../config/blog'
 
+class MetaRewriter {
+  private title: string
+  private description: string
+  private url: string
+  private ogImage: string
+
+  constructor(title: string, description: string, url: string, ogImage: string) {
+    this.title = title
+    this.description = description
+    this.url = url
+    this.ogImage = ogImage
+  }
+
+  element(element: any) {
+    const name = element.getAttribute('name')
+    const property = element.getAttribute('property')
+    const rel = element.getAttribute('rel')
+
+    if (element.tagName === 'title') {
+      element.setInnerContent(this.title)
+    } else if (name === 'description') {
+      element.setAttribute('content', this.description)
+    } else if (property === 'og:title') {
+      element.setAttribute('content', this.title)
+    } else if (property === 'og:description') {
+      element.setAttribute('content', this.description)
+    } else if (property === 'og:url') {
+      element.setAttribute('content', this.url)
+    } else if (rel === 'canonical') {
+      element.setAttribute('href', this.url)
+    } else if (property === 'og:image') {
+      element.setAttribute('content', this.ogImage)
+    } else if (name === 'twitter:image') {
+      element.setAttribute('content', this.ogImage)
+    } else if (name === 'twitter:title') {
+      element.setAttribute('content', this.title)
+    } else if (name === 'twitter:description') {
+      element.setAttribute('content', this.description)
+    }
+  }
+}
+
+async function handleSitemap(request: Request, env: Env): Promise<Response> {
+  try {
+    const domain = 'https://bypostamaker.com'
+    let xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>${domain}/</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>${domain}/login</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>${domain}/signup</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>${domain}/privacy</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>${domain}/terms</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>${domain}/refund</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>${domain}/cookies</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>${domain}/shipping</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>${domain}/contact</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>${domain}/blog</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>`
+
+    for (const post of blogPosts) {
+      xml += `
+  <url>
+    <loc>${domain}/blog/${post.slug}</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>`
+    }
+
+    xml += '\n</urlset>'
+
+    return new Response(xml, {
+      headers: {
+        'Content-Type': 'application/xml; charset=utf-8',
+        'Cache-Control': 'public, max-age=3600'
+      }
+    })
+  } catch (err) {
+    console.error('Sitemap generation failed:', err)
+    return new Response('Internal Server Error', { status: 500 })
+  }
+}
+
+async function handleStaticPageSEO(request: Request, env: Env): Promise<Response> {
+  const url = new URL(request.url)
+  const path = url.pathname
+  const domain = 'https://bypostamaker.com'
+  const canonicalUrl = `${domain}${path}`
+
+  // 1. Resolve metadata for the route
+  let title = 'PostMaker — One prompt. Every platform. Download your kit.'
+  let description = 'Write one prompt. PostMaker generates platform-perfect posts for all 30+ social platforms and packages them into a ready-to-post content kit.'
+  let ogImage = `${domain}/og-image.svg`
+  let is404 = false
+
+  if (path.startsWith('/blog/')) {
+    const slug = path.substring(6)
+    const post = blogPosts.find(p => p.slug === slug)
+    if (post) {
+      title = `${post.title} | PostMaker Blog`
+      description = post.description
+      ogImage = post.ogImage || `${domain}/og-image.svg`
+    } else {
+      title = 'Post Not Found | PostMaker Blog'
+      description = 'The blog post you are looking for does not exist or has been moved.'
+      is404 = true
+    }
+  } else {
+    const staticRoutes: Record<string, { title: string; description: string }> = {
+      '/blog': {
+        title: 'PostMaker Blog — Social Media Tips, AI & Creation Strategy',
+        description: 'Learn how to multiply your reach, write perfect AI prompts, and optimize your social media strategy with PostMaker.'
+      },
+      '/privacy': {
+        title: 'Privacy Policy | PostMaker',
+        description: 'Read our privacy policy to understand how we collect, use, and protect your personal information.'
+      },
+      '/terms': {
+        title: 'Terms of Service | PostMaker',
+        description: 'Read our terms of service to understand your rights and responsibilities when using PostMaker.'
+      },
+      '/refund': {
+        title: 'Refund Policy | PostMaker',
+        description: 'Read our refund policy. We offer clear guidelines on refunds for our subscription plans.'
+      },
+      '/cookies': {
+        title: 'Cookie Policy | PostMaker',
+        description: 'Read our cookie policy to understand how we use cookies to improve your user experience.'
+      },
+      '/shipping': {
+        title: 'Shipping Policy | PostMaker',
+        description: 'Read our shipping policy details.'
+      },
+      '/contact': {
+        title: 'Contact Us | PostMaker',
+        description: 'Have questions or need help? Contact the PostMaker support team. We\'re here to assist you.'
+      }
+    }
+
+    const routeMeta = staticRoutes[path]
+    if (routeMeta) {
+      title = routeMeta.title
+      description = routeMeta.description
+    }
+  }
+
+  // 2. Fetch the SPA shell index.html from static assets
+  let assetResponse: Response
+  try {
+    // Constraint #2: construct a new request pointing explicitly to /index.html
+    const indexRequest = new Request(new URL('/index.html', request.url))
+    assetResponse = await env.ASSETS.fetch(indexRequest)
+    
+    if (!assetResponse.ok) {
+      throw new Error(`ASSETS.fetch returned status ${assetResponse.status}`)
+    }
+  } catch (err) {
+    console.error('Failed to fetch SPA shell index.html:', err)
+    return new Response('Asset Not Found', { status: 404 })
+  }
+
+  // 3. Apply HTMLRewriter transformations
+  try {
+    const rewriter = new HTMLRewriter()
+      .on('title', new MetaRewriter(title, description, canonicalUrl, ogImage))
+      .on('meta', new MetaRewriter(title, description, canonicalUrl, ogImage))
+      .on('link', new MetaRewriter(title, description, canonicalUrl, ogImage))
+
+    const transformedResponse = rewriter.transform(assetResponse)
+
+    // Constraint #3: Unknown blog post returns 404 status but serves the SPA shell
+    const status = is404 ? 404 : 200
+    
+    const newHeaders = new Headers(transformedResponse.headers)
+    newHeaders.set('Cache-Control', is404 ? 'no-cache' : 'public, max-age=3600')
+
+    return new Response(transformedResponse.body, {
+      status,
+      headers: newHeaders
+    })
+  } catch (err) {
+    console.error('HTMLRewriter failed:', err)
+    return assetResponse
+  }
+}
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -25,6 +249,24 @@ export default {
     if (request.method === 'OPTIONS') return withCors(new Response(null, { status: 204 }), env)
 
     try {
+      // ── Constraint #1: Public page and sitemap routes ───────────────────────
+      // Must be intercepted BEFORE auth guards and rate limiters.
+      if (path === '/sitemap.xml') {
+        return handleSitemap(request, env)
+      }
+      if (
+        !path.startsWith('/api/') &&
+        (path.startsWith('/blog') ||
+         path === '/privacy' ||
+         path === '/terms' ||
+         path === '/refund' ||
+         path === '/cookies' ||
+         path === '/shipping' ||
+         path === '/contact')
+      ) {
+        return handleStaticPageSEO(request, env)
+      }
+
       // ── Public routes ───────────────────────────────────────
       if (path.startsWith('/api/auth')) {
         // Scoped IP rate limiting for sensitive email routes
