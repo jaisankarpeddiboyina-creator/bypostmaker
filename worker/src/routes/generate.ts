@@ -169,6 +169,7 @@ export async function handleGenerate(
       // or platform groups are selected. The Promise.all below is text-only.
       let imageDescription: string | null = null
       if (imagePayload) {
+        await send('vision', { message: 'Analyzing image...' })
         let result: { description: string | null; errorType: 'timeout' | 'rate_limit' | 'error' | null }
         if (env.ENVIRONMENT !== 'production' && mockFailStage1) {
           result = { description: null, errorType: 'error' }

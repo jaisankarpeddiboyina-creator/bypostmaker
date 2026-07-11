@@ -27,6 +27,7 @@ export interface PlatformPost {
   status: 'pending' | 'generating' | 'done' | 'error'
   edited: boolean
   errorMessage?: string
+  statusText?: string
   extraFields?: Record<string, string>
 }
 
