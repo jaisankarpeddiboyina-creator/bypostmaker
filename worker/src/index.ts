@@ -53,6 +53,33 @@ export default {
           status: 200, headers: { 'Content-Type': 'application/json' },
         }), env)
       }
+      if (path === '/api/test/upload' && env.ENVIRONMENT === 'development') {
+        const url = new URL(request.url)
+        const key = url.searchParams.get('key')
+        if (!key) {
+          return withCors(new Response(JSON.stringify({ error: 'Missing key' }), {
+            status: 400, headers: { 'Content-Type': 'application/json' },
+          }), env)
+        }
+        const contentType = request.headers.get('Content-Type') ?? 'image/jpeg'
+        const body = await request.arrayBuffer()
+        await env.BUCKET.put(key, body, {
+          httpMetadata: { contentType }
+        })
+        return withCors(new Response(JSON.stringify({ ok: true }), {
+          status: 200, headers: { 'Content-Type': 'application/json' },
+        }), env)
+      }
+      if (path === '/api/test/token' && env.ENVIRONMENT !== 'production') {
+        const { signJWT, getJwtSecret } = await import('./middleware/auth')
+        const token = await signJWT(
+          { sub: '20493641-4030-4fa3-bbe6-b377d4661f87', plan: 'business' },
+          getJwtSecret(env)
+        )
+        return withCors(new Response(JSON.stringify({ token }), {
+          status: 200, headers: { 'Content-Type': 'application/json' },
+        }), env)
+      }
 
       // ── Auth guard ──────────────────────────────────────────
       const auth = await withAuth(request, env)

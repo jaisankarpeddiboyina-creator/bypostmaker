@@ -155,10 +155,22 @@ export function PlatformRail({ userPlan, onLockedClick }: PlatformRailProps) {
           align-items: center;
           gap: 4px;
           overflow-x: auto;
-          scrollbar-width: none;
           flex: 1;
+          padding-bottom: 6px;
         }
-        .platform-rail-scroll::-webkit-scrollbar { display: none; }
+        .platform-rail-scroll::-webkit-scrollbar {
+          height: 4px;
+        }
+        .platform-rail-scroll::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .platform-rail-scroll::-webkit-scrollbar-thumb {
+          background: var(--border);
+          border-radius: 99px;
+        }
+        .platform-rail-scroll::-webkit-scrollbar-thumb:hover {
+          background: var(--text-4);
+        }
 
         .platform-group {
           display: flex;
