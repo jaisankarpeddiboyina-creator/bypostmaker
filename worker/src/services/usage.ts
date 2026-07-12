@@ -10,43 +10,72 @@ interface UsageCheckResult {
   remaining: number
 }
 
-export async function checkUsageLimit(
+export async function reserveUsageCredit(
   db: D1Database,
   userId: string,
   plan: PlatformTier
 ): Promise<UsageCheckResult> {
   const limit = TIER_LIMITS[plan].generations
+  const { periodStart, periodEnd } = getCurrentPeriod()
 
   // Business plan = unlimited
   if (limit === Infinity || limit >= 1000) {
-    return { allowed: true, used: 0, limit: -1, remaining: -1 }
-  }
-
-  const { periodStart } = getCurrentPeriod()
-
-  const usage = await db.prepare(
-    `SELECT generations FROM usage WHERE user_id = ? AND period_start = ?`
-  ).bind(userId, periodStart).first<{ generations: number }>()
-
-  const used = usage?.generations ?? 0
-
-  // If no usage record yet, create it
-  if (!usage) {
-    const { periodEnd } = getCurrentPeriod()
-    await db.prepare(
+    const result = await db.prepare(
       `INSERT INTO usage (id, user_id, period_start, period_end, generations)
-       VALUES (?, ?, ?, ?, 0)
-       ON CONFLICT(user_id, period_start) DO NOTHING`
-    ).bind(generateId(), userId, periodStart, periodEnd).run()
+       VALUES (?, ?, ?, ?, 1)
+       ON CONFLICT(user_id, period_start) DO UPDATE
+       SET generations = generations + 1, updated_at = unixepoch()
+       RETURNING generations`
+    ).bind(generateId(), userId, periodStart, periodEnd).first<{ generations: number }>()
+    const used = result?.generations ?? 1
+    return { allowed: true, used, limit: -1, remaining: -1 }
   }
 
+  // Atomically check and reserve a credit
+  const result = await db.prepare(
+    `INSERT INTO usage (id, user_id, period_start, period_end, generations)
+     SELECT ?, ?, ?, ?, 1
+     WHERE ? > 0
+     ON CONFLICT(user_id, period_start) DO UPDATE
+     SET generations = generations + 1, updated_at = unixepoch()
+     WHERE generations < ?
+     RETURNING generations`
+  ).bind(generateId(), userId, periodStart, periodEnd, limit, limit).first<{ generations: number }>()
+
+  if (!result) {
+    const current = await db.prepare(
+      `SELECT generations FROM usage WHERE user_id = ? AND period_start = ?`
+    ).bind(userId, periodStart).first<{ generations: number }>()
+    const used = current?.generations ?? limit
+    return {
+      allowed: false,
+      used,
+      limit,
+      remaining: 0,
+    }
+  }
+
+  const used = result.generations
   return {
-    allowed: used < limit,
+    allowed: true,
     used,
     limit,
     remaining: Math.max(0, limit - used),
   }
 }
+
+export async function refundUsageCredit(
+  db: D1Database,
+  userId: string,
+  periodStart: number
+): Promise<void> {
+  await db.prepare(
+    `UPDATE usage
+     SET generations = MAX(0, generations - 1), updated_at = unixepoch()
+     WHERE user_id = ? AND period_start = ?`
+  ).bind(userId, periodStart).run()
+}
+
 
 export async function incrementUsage(db: D1Database, userId: string): Promise<number> {
   const { periodStart, periodEnd } = getCurrentPeriod()

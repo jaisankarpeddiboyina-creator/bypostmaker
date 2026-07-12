@@ -9,9 +9,10 @@ import type { PlatformTier } from '../../../config/platforms'
 import { createStreamingClient, detectLanguage, buildGroupSystemPrompt, parseGroupResponse, analyzeImage } from '../../../config/ai'
 import { PLATFORM_MAP, isPlatformAccessible, TIER_LIMITS } from '../../../config/platforms'
 import { generateId } from '../utils/id'
-import { checkUsageLimit, incrementUsage } from '../services/usage'
+import { reserveUsageCredit, refundUsageCredit } from '../services/usage'
 import { sendEmail } from '../services/email'
 import { MAX_IMAGE_SIZE_BYTES } from '../../../config/limits'
+import { getCurrentPeriod } from '../utils/period'
 
 
 // Sentinel: thrown when a 'fatal' SSE event has already been sent to the client
@@ -71,7 +72,8 @@ export async function handleGenerate(
   const accessibleIds = platformIds.filter(id => isPlatformAccessible(id, userPlan))
   if (accessibleIds.length === 0) return jsonError('No accessible platforms for your plan', 403)
 
-  const usageCheck = await checkUsageLimit(env.DB, userId, userPlan)
+  const { periodStart } = getCurrentPeriod()
+  const usageCheck = await reserveUsageCredit(env.DB, userId, userPlan)
   if (!usageCheck.allowed) {
     return jsonError(
       `You've used all ${TIER_LIMITS[userPlan].generations} generations this month. Upgrade to continue.`,
@@ -273,7 +275,8 @@ export async function handleGenerate(
         `UPDATE campaigns SET status = 'completed', generated_count = ?, updated_at = unixepoch() WHERE id = ?`
       ).bind(accessibleIds.length, campaignId).run()
 
-      const newUsed = await incrementUsage(env.DB, userId)
+      // Credit was reserved up front
+      const newUsed = usageCheck.used
 
       if (userPlan !== 'business') {
         const limit = TIER_LIMITS[userPlan].generations
@@ -299,6 +302,11 @@ export async function handleGenerate(
       success = true
     } catch (err) {
       console.error('Generate fatal error:', err)
+      try {
+        await refundUsageCredit(env.DB, userId, periodStart)
+      } catch (refundErr) {
+        console.error('Failed to refund usage credit:', refundErr)
+      }
       if (!(err instanceof FatalAlreadySentError)) {
         await send('fatal', { message: 'AI service temporarily unavailable. Your prompt is saved — try again in a moment.' })
       }
