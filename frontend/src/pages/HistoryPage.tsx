@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Clock, Copy, Check, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react'
+import { Clock, Copy, Check, ChevronLeft, ChevronRight, RefreshCw, ImageOff } from 'lucide-react'
 import { api } from '../lib/api'
 import { useAppStore } from '../store/app'
 import { PLATFORM_MAP } from '@@config/platforms'
@@ -10,6 +10,8 @@ interface HistoryCampaign {
   prompt: string
   platforms: string[]
   has_image: number
+  image_key: string | null
+  image_fetch_url: string | null
   has_video: number
   status: string
   generated_count: number
@@ -129,6 +131,24 @@ export default function HistoryPage() {
             {/* Expanded posts */}
             {expandedId === c.id && (
               <div className="history-posts">
+                {/* Image preview — only rendered when card is expanded */}
+                {c.has_image === 1 && (
+                  <div className="history-image-preview">
+                    {c.image_fetch_url ? (
+                      <img
+                        src={c.image_fetch_url}
+                        alt="Campaign image"
+                        className="history-img"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="history-img-expired">
+                        <ImageOff size={16} />
+                        <span>Image expired</span>
+                      </div>
+                    )}
+                  </div>
+                )}
                 {c.posts.map(post => (
                   <div key={post.platform_id} className="history-post">
                     <div className="history-post-header">
@@ -343,6 +363,25 @@ export default function HistoryPage() {
           padding: 16px 0;
         }
         .history-page-info { font-size: 13px; color: var(--text-3); }
+
+        .history-image-preview {
+          padding: 12px 20px 0;
+        }
+        .history-img {
+          width: 100%;
+          max-height: 200px;
+          object-fit: cover;
+          border-radius: var(--radius);
+          display: block;
+        }
+        .history-img-expired {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 12px;
+          color: var(--text-3);
+          padding: 8px 0;
+        }
       `}</style>
     </div>
   )

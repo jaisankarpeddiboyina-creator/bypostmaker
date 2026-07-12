@@ -44,6 +44,10 @@ export async function handleHistory(
       ...c,
       platforms: JSON.parse(c.platforms as string),
       posts: postsByCampaign[c.id] ?? [],
+      // image_fetch_url: constructed URL for the authenticated image-serving route.
+      // null when image_key is NULL (retention has run or no image was uploaded).
+      // The frontend uses this field — never the raw image_key — to load the image.
+      image_fetch_url: c.image_key ? `/api/image/${c.id}` : null,
     }))
   }
 

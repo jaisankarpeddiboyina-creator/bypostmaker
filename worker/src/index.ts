@@ -14,6 +14,7 @@ import { handleHealth } from './routes/health'
 import { handleAdmin } from './routes/admin'
 import { handlePromos } from './routes/promos'
 import { handlePresignRoute } from './routes/upload'
+import { handleImageRoute } from './routes/image'
 import { runCronJobs, runDataRetention } from './services/cron'
 import { blogPosts } from '../../config/blog'
 
@@ -380,6 +381,9 @@ export default {
 
       if (path.startsWith('/api/history'))
         return withCors(await handleHistory(request, env, userId), env)
+
+      if (path.startsWith('/api/image/') && request.method === 'GET')
+        return withCors(await handleImageRoute(request, env, userId), env)
 
       if (path.startsWith('/api/admin'))
         return withCors(await handleAdmin(request, env, userId, userRole), env)
