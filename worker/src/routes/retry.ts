@@ -1,7 +1,16 @@
 import type { Env } from '../../../config/ai'
 import type { PlatformTier } from '../../../config/platforms'
-import { createStreamingClient, detectLanguage, buildGroupSystemPrompt, parseGroupResponse } from '../../../config/ai'
-import { PLATFORM_MAP, isPlatformAccessible } from '../../../config/platforms'
+import {
+  createStreamingClient,
+  detectLanguage,
+  buildGroupSystemPrompt,
+  parseGroupResponse
+} from '../../../config/ai'
+import {
+  PLATFORM_MAP,
+  isPlatformAccessible,
+  TIER_LIMITS
+} from '../../../config/platforms'
 import { generateId } from '../utils/id'
 import {
   refundUsageCredit,
@@ -30,18 +39,61 @@ export async function handleRetry(
     return jsonError('Invalid request body', 400)
   }
 
-  const { campaignId, platformId } = body
-  if (!campaignId || !platformId) return jsonError('Missing required fields', 400)
-  if (!env.GROQ_API_KEY || !env.GEMINI_API_KEY) return jsonError('Missing AI keys', 500)
 
-  // Verify campaign belongs to this user and fetch the original prompt
+  const { campaignId, platformId } = body
+
+
+  if (!campaignId || !platformId) {
+    return jsonError('Missing required fields', 400)
+  }
+
+
+  if (!env.GROQ_API_KEY || !env.GEMINI_API_KEY) {
+    return jsonError('Missing AI keys', 500)
+  }
+
+
   const campaign = await env.DB.prepare(
-    'SELECT id, prompt FROM campaigns WHERE id = ? AND user_id = ?'
-  ).bind(campaignId, userId).first<{ id: string; prompt: string }>()
-  if (!campaign) return jsonError('Campaign not found', 404)
+    `SELECT id, prompt, status, platforms, image_description
+     FROM campaigns
+     WHERE id = ? AND user_id = ?`
+  )
+    .bind(campaignId, userId)
+    .first<{
+      id: string
+      prompt: string
+      status: string
+      platforms: string
+      image_description: string | null
+    }>()
+
+
+  if (!campaign) {
+    return jsonError('Campaign not found', 404)
+  }
+
+
+  let campaignPlatforms: string[]
+
+  try {
+    campaignPlatforms = JSON.parse(campaign.platforms)
+  } catch {
+    return jsonError('Invalid campaign data', 500)
+  }
+
+
+  if (!campaignPlatforms.includes(platformId)) {
+    return jsonError('Platform not part of this campaign', 400)
+  }
+
 
   const platform = PLATFORM_MAP[platformId]
-  if (!platform) return jsonError('Unknown platform', 400)
+
+
+  if (!platform) {
+    return jsonError('Unknown platform', 400)
+  }
+
 
   if (!isPlatformAccessible(platformId, userPlan)) {
     return jsonError(
@@ -50,87 +102,99 @@ export async function handleRetry(
     )
   }
 
-  // ── Resolve image context for vision retry ─────────────────────────────────
-  //
-  // Four-case resolution (in priority order):
-  //
-  //   Case A: image_description is cached in DB (non-null)
-  //           → Use it directly. Zero Gemini calls. (Happy path for all retries
-  //             after the first successful generation.)
-  //
-  //   Case B: image_description is null AND has_image=1 AND R2 object exists
-  //           → Re-run Stage 1 (analyzeImage). This covers old campaigns created
-  //             before this migration, where image_description was never stored.
-  //             Cache the result so future retries use Case A.
-  //
-  //   Case C: image_description is null AND has_image=1 AND image_key is null in DB
-  //           → Retention cron has already cleaned up this image. Proceed text-only
-  //             and signal the caller with imageDropped: true.
-  //
-  //   Case D: image_description is null AND has_image=1 AND image_key non-null but
-  //           R2 object is gone (retention race or manual deletion)
-  //           → Return 410 Gone. Do NOT silently fall back to text-only.
-  //
-  //   Case E: has_image=0 → text-only campaign, proceed normally (no image context).
 
-  let imageDescriptionForRetry: string | null = campaign.image_description ?? null
-  let imagePayload: { buffer: ArrayBuffer; contentType: string } | undefined = undefined
-  let imageDropped = false
-
-  if (!imageDescriptionForRetry && campaign.has_image) {
-    if (!campaign.image_key) {
-      // Case C: retention nulled the key
-      imageDropped = true
-    } else {
-      // Case B or D: key exists in DB — check R2
-      const object = await env.BUCKET.get(campaign.image_key)
-      if (!object) {
-        // Case D: key in DB but R2 object gone
-        console.error(`Retry: R2 object missing for campaign ${campaignId}, key ${campaign.image_key}`)
-        return new Response(
-          JSON.stringify({ error: 'Original image is no longer available (storage expired). Remove the image and try again.' }),
-          { status: 410, headers: { 'Content-Type': 'application/json' } }
-        )
-      }
-      // Case B: object exists — re-run Stage 1
-      imagePayload = {
-        buffer: await object.arrayBuffer(),
-        contentType: object.httpMetadata?.contentType ?? 'image/jpeg',
-      }
-
-      const { description } = await analyzeImage(env, imagePayload)
-      imagePayload = undefined // release buffer
-
-      if (description) {
-        imageDescriptionForRetry = description
-        // Cache for future retries (Case A path)
-        await env.DB.prepare(
-          'UPDATE campaigns SET image_description = ? WHERE id = ?'
-        ).bind(imageDescriptionForRetry, campaignId).run()
-      }
-      // If Stage 1 fails here, imageDescriptionForRetry stays null.
-      // Retry proceeds without image context — partial but still useful
-      // (better than a hard failure on retry).
-    }
+  if (
+    campaign.status !== 'failed' &&
+    campaign.status !== 'completed'
+  ) {
+    return jsonError(
+      'Campaign is not ready for retry',
+      409
+    )
   }
-  // Case E (has_image=0): imageDescriptionForRetry remains null, no image lookup needed.
+
+
+  /*
+    Billing rule:
+
+    failed campaign:
+      - Stage 1 failed
+      - New AI generation
+      - Charge credit
+
+    completed campaign:
+      - Platform retry only
+      - Cached campaign
+      - Free retry
+  */
+
+  const shouldChargeForRetry =
+    campaign.status === 'failed' &&
+    campaign.image_description === null
+
+
+  let reserved = false
+
 
   try {
-    const { streamGenerate } = createStreamingClient(env)
-    const language = detectLanguage(campaign.prompt)
-    const systemPrompt = buildGroupSystemPrompt([platform], language)
-    const userPrompt = `User's content: "${campaign.prompt}"\n\nGenerate a post for: ${platform.name}. Return only JSON.`
 
-    const stream = await streamGenerate({ systemPrompt, userPrompt })
+    if (shouldChargeForRetry) {
+
+      const reservation =
+        await reserveUsageCredit(
+          env.DB,
+          userId,
+          userPlan
+        )
+
+
+      if (!reservation.ok) {
+        return jsonError(
+          `You've used all ${TIER_LIMITS[userPlan].generations} generations this month. Upgrade to continue.`,
+          429
+        )
+      }
+
+
+      reserved = true
+    }
+
+
+    const { streamGenerate } =
+      createStreamingClient(env)
+
+
+    const language =
+      detectLanguage(campaign.prompt)
+
+
+    const systemPrompt =
+      buildGroupSystemPrompt(
+        [platform],
+        language
+      )
+
+
+    const userPrompt =
+      `User's content: "${campaign.prompt}"
+
+Generate a post for: ${platform.name}.
+Return only JSON.`
+
+
+    const stream =
+      await streamGenerate({
+        systemPrompt,
+        userPrompt
+      })
+
+
     let fullText = ''
 
 
-    for await (
-      const chunk of stream.textStream
-    ) {
+    for await (const chunk of stream.textStream) {
       fullText += chunk
     }
-
 
 
     const parsed =
@@ -144,13 +208,11 @@ export async function handleRetry(
       parsed[platformId]
 
 
-
     if (!content) {
       throw new Error(
         'Could not generate content'
       )
     }
-
 
 
     const updateResult =
@@ -172,7 +234,6 @@ export async function handleRetry(
         .run()
 
 
-
     if (updateResult.meta.changes === 0) {
 
       await env.DB.prepare(
@@ -190,9 +251,40 @@ export async function handleRetry(
         .run()
     }
 
-    return new Response(JSON.stringify({ content, platformId }), {
-      headers: { 'Content-Type': 'application/json' },
-    })
+
+    // Mark failed campaign as completed after successful retry
+    await env.DB.prepare(
+      `UPDATE campaigns
+       SET status = 'completed',
+           generated_count = (
+             SELECT COUNT(*)
+             FROM generated_posts
+             WHERE campaign_id = ?
+           ),
+           updated_at = unixepoch()
+       WHERE id = ?`
+    )
+      .bind(
+        campaignId,
+        campaignId
+      )
+      .run()
+
+
+
+    return new Response(
+      JSON.stringify({
+        content,
+        platformId
+      }),
+      {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+    )
+
+
   } catch (err) {
 
 
@@ -202,16 +294,13 @@ export async function handleRetry(
         env.DB,
         userId
       )
-        .catch(
-          refundError => {
-            console.error(
-              'Refund retry credit error:',
-              refundError
-            )
-          }
+      .catch(error => {
+        console.error(
+          'Refund retry credit error:',
+          error
         )
+      })
     }
-
 
 
     console.error(
@@ -220,18 +309,15 @@ export async function handleRetry(
     )
 
 
-
     if (
       err instanceof Error &&
       err.message === 'Could not generate content'
     ) {
-
       return jsonError(
         'Could not generate content — please try again.',
         500
       )
     }
-
 
 
     return jsonError(
@@ -255,8 +341,7 @@ function jsonError(
     {
       status,
       headers: {
-        'Content-Type':
-          'application/json'
+        'Content-Type': 'application/json'
       }
     }
   )
