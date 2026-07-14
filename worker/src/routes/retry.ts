@@ -16,6 +16,7 @@ import {
   refundUsageCredit,
   reserveUsageCredit
 } from '../services/usage'
+import { getCurrentPeriod } from '../utils/period'
 
 
 export async function handleRetry(
@@ -148,7 +149,7 @@ export async function handleRetry(
         )
 
 
-      if (!reservation.ok) {
+      if (!reservation.allowed) {
         return jsonError(
           `You've used all ${TIER_LIMITS[userPlan].generations} generations this month. Upgrade to continue.`,
           429
@@ -290,10 +291,13 @@ Return only JSON.`
 
     if (reserved) {
 
-      await refundUsageCredit(
-        env.DB,
-        userId
-      )
+      const { periodStart } = getCurrentPeriod()
+
+await refundUsageCredit(
+  env.DB,
+  userId,
+  periodStart
+)
       .catch(error => {
         console.error(
           'Refund retry credit error:',
