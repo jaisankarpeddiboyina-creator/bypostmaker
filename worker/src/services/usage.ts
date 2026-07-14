@@ -76,21 +76,6 @@ export async function refundUsageCredit(
   ).bind(userId, periodStart).run()
 }
 
-
-export async function incrementUsage(db: D1Database, userId: string): Promise<number> {
-  const { periodStart, periodEnd } = getCurrentPeriod()
-
-  const result = await db.prepare(
-    `INSERT INTO usage (id, user_id, period_start, period_end, generations)
-     VALUES (?, ?, ?, ?, 1)
-     ON CONFLICT(user_id, period_start) DO UPDATE
-     SET generations = generations + 1, updated_at = unixepoch()
-     RETURNING generations`
-  ).bind(generateId(), userId, periodStart, periodEnd).first<{ generations: number }>()
-
-  return result?.generations ?? 1
-}
-
 export async function getUsageSummary(db: D1Database, userId: string): Promise<{
   generations: number
   periodStart: number
