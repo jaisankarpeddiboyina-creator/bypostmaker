@@ -17,7 +17,7 @@ import { handlePresignRoute } from './routes/upload'
 import { handleImageRoute } from './routes/image'
 import { runCronJobs, runDataRetention } from './services/cron'
 import { blogPosts } from '../../config/blog'
-import { findMatchingRoute } from '../../config/routeRegistry'
+import { findMatchingRoute, ROUTE_REGISTRY } from '../../config/routeRegistry'
 
 class MetaRewriter {
   private title: string
@@ -57,6 +57,157 @@ class MetaRewriter {
       element.setAttribute('content', this.title)
     } else if (name === 'twitter:description') {
       element.setAttribute('content', this.description)
+    }
+  }
+}
+
+class StructuredDataInjector {
+  private schemas: string[]
+
+  constructor(path: string, domain: string) {
+    this.schemas = []
+
+    // 1. Organization schema (site-wide)
+    const orgSchema = {
+      '@context': 'https://schema.org',
+      '@type': 'Organization',
+      'name': 'PostMaker',
+      'url': domain,
+      'logo': `${domain}/favicon.svg`,
+      'description': 'AI-powered social media content generator for all 30+ platforms'
+    }
+    this.schemas.push(JSON.stringify(orgSchema))
+
+    // 2. BreadcrumbList schema (per route)
+    const breadcrumbs = this.generateBreadcrumbs(path, domain)
+    this.schemas.push(JSON.stringify(breadcrumbs))
+
+    // 3. SoftwareApplication schema (homepage only, no offers field)
+    if (path === '/') {
+      const appSchema = {
+        '@context': 'https://schema.org',
+        '@type': 'SoftwareApplication',
+        'name': 'PostMaker',
+        'applicationCategory': 'BusinessApplication',
+        'description': 'AI-powered social media content generator for all 30+ platforms',
+        'url': domain
+      }
+      this.schemas.push(JSON.stringify(appSchema))
+    }
+  }
+
+  private generateBreadcrumbs(path: string, domain: string) {
+    const segments = path.split('/').filter(Boolean)
+    const items: any[] = [
+      {
+        '@type': 'ListItem',
+        'position': 1,
+        'name': 'Home',
+        'item': domain
+      }
+    ]
+
+    let currentPath = ''
+    segments.forEach((segment, index) => {
+      currentPath += `/${segment}`
+      items.push({
+        '@type': 'ListItem',
+        'position': index + 2,
+        'name': segment.charAt(0).toUpperCase() + segment.slice(1),
+        'item': `${domain}${currentPath}`
+      })
+    })
+
+    return {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      'itemListElement': items
+    }
+  }
+
+  injectInto(element: any) {
+    const name = element.tagName.toLowerCase()
+    if (name === 'head') {
+      for (const schema of this.schemas) {
+        const script = element.document.createElement('script')
+        script.setAttribute('type', 'application/ld+json')
+        script.setInnerContent(schema)
+        element.appendChild(script)
+      }
+    }
+  }
+}
+
+// Simplified injector helper for HTMLRewriter
+class HeadInjector {
+  private schemas: string[]
+
+  constructor(path: string, domain: string) {
+    this.schemas = []
+
+    // 1. Organization schema
+    const orgSchema = {
+      '@context': 'https://schema.org',
+      '@type': 'Organization',
+      'name': 'PostMaker',
+      'url': domain,
+      'logo': `${domain}/favicon.svg`,
+      'description': 'AI-powered social media content generator for all 30+ platforms'
+    }
+    this.schemas.push(JSON.stringify(orgSchema))
+
+    // 2. BreadcrumbList schema
+    const breadcrumbs = this.generateBreadcrumbs(path, domain)
+    this.schemas.push(JSON.stringify(breadcrumbs))
+
+    // 3. SoftwareApplication (homepage only)
+    if (path === '/') {
+      const appSchema = {
+        '@context': 'https://schema.org',
+        '@type': 'SoftwareApplication',
+        'name': 'PostMaker',
+        'applicationCategory': 'BusinessApplication',
+        'description': 'AI-powered social media content generator for all 30+ platforms',
+        'url': domain
+      }
+      this.schemas.push(JSON.stringify(appSchema))
+    }
+  }
+
+  private generateBreadcrumbs(path: string, domain: string) {
+    const segments = path.split('/').filter(Boolean)
+    const items: any[] = [
+      {
+        '@type': 'ListItem',
+        'position': 1,
+        'name': 'Home',
+        'item': domain
+      }
+    ]
+
+    let currentPath = ''
+    segments.forEach((segment, index) => {
+      currentPath += `/${segment}`
+      items.push({
+        '@type': 'ListItem',
+        'position': index + 2,
+        'name': segment.charAt(0).toUpperCase() + segment.slice(1),
+        'item': `${domain}${currentPath}`
+      })
+    })
+
+    return {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      'itemListElement': items
+    }
+  }
+
+  element(element: any) {
+    if (element.tagName === 'head') {
+      for (const schema of this.schemas) {
+        element.append(`<script type="application/ld+json">${schema}</script>`, { html: true })
+      }
     }
   }
 }
@@ -117,12 +268,28 @@ async function handleSitemap(request: Request, env: Env): Promise<Response> {
     <priority>0.8</priority>
   </url>`
 
+    // Add registry routes (indexable entries)
+    for (const entry of ROUTE_REGISTRY) {
+      if (entry.indexable !== false) {
+        const priority = entry.priority ?? 0.5
+        const changefreq = entry.dynamic ? 'weekly' : 'monthly'
+        xml += `
+  <url>
+    <loc>${domain}${entry.pattern}</loc>
+    <changefreq>${changefreq}</changefreq>
+    <priority>${priority}</priority>
+  </url>`
+      }
+    }
+
+    // Add blog posts
     for (const post of blogPosts) {
       xml += `
   <url>
     <loc>${domain}/blog/${post.slug}</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
+    <lastmod>${post.date}</lastmod>
   </url>`
     }
 
@@ -231,12 +398,14 @@ async function handleStaticPageSEO(request: Request, env: Env): Promise<Response
     return new Response('Asset Not Found', { status: 404 })
   }
 
-  // 3. Apply HTMLRewriter transformations
+  // 3. Apply HTMLRewriter transformations (meta tags + structured data)
   try {
+    const headInjector = new HeadInjector(path, domain)
     const rewriter = new HTMLRewriter()
       .on('title', new MetaRewriter(title, description, finalCanonicalUrl, ogImage))
       .on('meta', new MetaRewriter(title, description, finalCanonicalUrl, ogImage))
       .on('link', new MetaRewriter(title, description, finalCanonicalUrl, ogImage))
+      .on('head', headInjector)
 
     const transformedResponse = rewriter.transform(assetResponse)
 
