@@ -16,6 +16,7 @@ import { handlePromos } from './routes/promos'
 import { handlePresignRoute } from './routes/upload'
 import { runCronJobs, runDataRetention } from './services/cron'
 import { blogPosts } from '../../config/blog'
+import { findMatchingRoute } from '../../config/routeRegistry'
 
 class MetaRewriter {
   private title: string
@@ -55,6 +56,80 @@ class MetaRewriter {
       element.setAttribute('content', this.title)
     } else if (name === 'twitter:description') {
       element.setAttribute('content', this.description)
+    }
+  }
+}
+
+// Injector for HTMLRewriter — appends JSON-LD structured data script tags into <head>
+class HeadInjector {
+  private schemas: string[]
+
+  constructor(path: string, domain: string) {
+    this.schemas = []
+
+    // 1. Organization schema
+    const orgSchema = {
+      '@context': 'https://schema.org',
+      '@type': 'Organization',
+      'name': 'PostMaker',
+      'url': domain,
+      'logo': `${domain}/favicon.svg`,
+      'description': 'AI-powered social media content generator for all 30+ platforms'
+    }
+    this.schemas.push(JSON.stringify(orgSchema))
+
+    // 2. BreadcrumbList schema
+    const breadcrumbs = this.generateBreadcrumbs(path, domain)
+    this.schemas.push(JSON.stringify(breadcrumbs))
+
+    // 3. SoftwareApplication (homepage only)
+    if (path === '/') {
+      const appSchema = {
+        '@context': 'https://schema.org',
+        '@type': 'SoftwareApplication',
+        'name': 'PostMaker',
+        'applicationCategory': 'BusinessApplication',
+        'description': 'AI-powered social media content generator for all 30+ platforms',
+        'url': domain
+      }
+      this.schemas.push(JSON.stringify(appSchema))
+    }
+  }
+
+  private generateBreadcrumbs(path: string, domain: string) {
+    const segments = path.split('/').filter(Boolean)
+    const items: any[] = [
+      {
+        '@type': 'ListItem',
+        'position': 1,
+        'name': 'Home',
+        'item': domain
+      }
+    ]
+
+    let currentPath = ''
+    segments.forEach((segment, index) => {
+      currentPath += `/${segment}`
+      items.push({
+        '@type': 'ListItem',
+        'position': index + 2,
+        'name': segment.charAt(0).toUpperCase() + segment.slice(1),
+        'item': `${domain}${currentPath}`
+      })
+    })
+
+    return {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      'itemListElement': items
+    }
+  }
+
+  element(element: any) {
+    if (element.tagName === 'head') {
+      for (const schema of this.schemas) {
+        element.append(`<script type="application/ld+json">${schema}</script>`, { html: true })
+      }
     }
   }
 }
@@ -115,12 +190,22 @@ async function handleSitemap(request: Request, env: Env): Promise<Response> {
     <priority>0.8</priority>
   </url>`
 
+    // NOTE: ROUTE_REGISTRY entries (/pricing, /vs, /vs/*, /for, /for/*) are
+    // intentionally NOT added to the sitemap yet. /pricing currently
+    // redirects client-side to /#pricing (see frontend/src/App.tsx) rather
+    // than rendering a real page — it has a snapshotKey in the registry,
+    // suggesting a real static page is planned, at which point it should
+    // be added. /vs and /for are dynamic prefix patterns with no concrete
+    // page instances yet. Revisit once real pages exist for any of these.
+
+    // Add blog posts
     for (const post of blogPosts) {
       xml += `
   <url>
     <loc>${domain}/blog/${post.slug}</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
+    <lastmod>${post.date}</lastmod>
   </url>`
     }
 
@@ -144,62 +229,75 @@ async function handleStaticPageSEO(request: Request, env: Env): Promise<Response
   const domain = 'https://bypostamaker.com'
   const canonicalUrl = `${domain}${path}`
 
-  // 1. Resolve metadata for the route
+  // 1. Resolve metadata for the route (defaults + registry override + existing fallbacks)
   let title = 'PostMaker — One prompt. Every platform. Download your kit.'
   let description = 'Write one prompt. PostMaker generates platform-perfect posts for all 30+ social platforms and packages them into a ready-to-post content kit.'
   let ogImage = `${domain}/og-image.svg`
   let is404 = false
 
-  if (path.startsWith('/blog/')) {
-    const slug = path.substring(6)
-    const post = blogPosts.find(p => p.slug === slug)
-    if (post) {
-      title = `${post.title} | PostMaker Blog`
-      description = post.description
-      ogImage = post.ogImage || `${domain}/og-image.svg`
-    } else {
-      title = 'Post Not Found | PostMaker Blog'
-      description = 'The blog post you are looking for does not exist or has been moved.'
-      is404 = true
-    }
+  // Registry override: prefer ROUTE_REGISTRY when it matches the path.
+  const registryMatch = findMatchingRoute(path)
+  if (registryMatch) {
+    if (registryMatch.title) title = registryMatch.title
+    if (registryMatch.description) description = registryMatch.description
+    if (registryMatch.ogImage) ogImage = registryMatch.ogImage
   } else {
-    const staticRoutes: Record<string, { title: string; description: string }> = {
-      '/blog': {
-        title: 'PostMaker Blog — Social Media Tips, AI & Creation Strategy',
-        description: 'Learn how to multiply your reach, write perfect AI prompts, and optimize your social media strategy with PostMaker.'
-      },
-      '/privacy': {
-        title: 'Privacy Policy | PostMaker',
-        description: 'Read our privacy policy to understand how we collect, use, and protect your personal information.'
-      },
-      '/terms': {
-        title: 'Terms of Service | PostMaker',
-        description: 'Read our terms of service to understand your rights and responsibilities when using PostMaker.'
-      },
-      '/refund': {
-        title: 'Refund Policy | PostMaker',
-        description: 'Read our refund policy. We offer clear guidelines on refunds for our subscription plans.'
-      },
-      '/cookies': {
-        title: 'Cookie Policy | PostMaker',
-        description: 'Read our cookie policy to understand how we use cookies to improve your user experience.'
-      },
-      '/shipping': {
-        title: 'Shipping Policy | PostMaker',
-        description: 'Read our shipping policy details.'
-      },
-      '/contact': {
-        title: 'Contact Us | PostMaker',
-        description: 'Have questions or need help? Contact the PostMaker support team. We\'re here to assist you.'
+    // Existing behavior: blog-specific resolution, then exact staticRoutes table.
+    if (path.startsWith('/blog/')) {
+      const slug = path.substring(6)
+      const post = blogPosts.find(p => p.slug === slug)
+      if (post) {
+        title = `${post.title} | PostMaker Blog`
+        description = post.description
+        ogImage = post.ogImage || `${domain}/og-image.svg`
+      } else {
+        title = 'Post Not Found | PostMaker Blog'
+        description = 'The blog post you are looking for does not exist or has been moved.'
+        is404 = true
+      }
+    } else {
+      const staticRoutes: Record<string, { title: string; description: string }> = {
+        '/blog': {
+          title: 'PostMaker Blog — Social Media Tips, AI & Creation Strategy',
+          description: 'Learn how to multiply your reach, write perfect AI prompts, and optimize your social media strategy with PostMaker.'
+        },
+        '/privacy': {
+          title: 'Privacy Policy | PostMaker',
+          description: 'Read our privacy policy to understand how we collect, use, and protect your personal information.'
+        },
+        '/terms': {
+          title: 'Terms of Service | PostMaker',
+          description: 'Read our terms of service to understand your rights and responsibilities when using PostMaker.'
+        },
+        '/refund': {
+          title: 'Refund Policy | PostMaker',
+          description: 'Read our refund policy. We offer clear guidelines on refunds for our subscription plans.'
+        },
+        '/cookies': {
+          title: 'Cookie Policy | PostMaker',
+          description: 'Read our cookie policy to understand how we use cookies to improve your user experience.'
+        },
+        '/shipping': {
+          title: 'Shipping Policy | PostMaker',
+          description: 'Read our shipping policy details.'
+        },
+        '/contact': {
+          title: 'Contact Us | PostMaker',
+          description: 'Have questions or need help? Contact the PostMaker support team. We\'re here to assist you.'
+        }
+      }
+
+      const routeMeta = staticRoutes[path]
+      if (routeMeta) {
+        title = routeMeta.title
+        description = routeMeta.description
       }
     }
-
-    const routeMeta = staticRoutes[path]
-    if (routeMeta) {
-      title = routeMeta.title
-      description = routeMeta.description
-    }
   }
+
+  // Use registry-provided canonical if present; otherwise use domain+path (canonicalUrl).
+  let finalCanonicalUrl = canonicalUrl
+  if (registryMatch && registryMatch.canonical) finalCanonicalUrl = registryMatch.canonical
 
   // 2. Fetch the SPA shell index.html from static assets
   let assetResponse: Response
@@ -216,12 +314,14 @@ async function handleStaticPageSEO(request: Request, env: Env): Promise<Response
     return new Response('Asset Not Found', { status: 404 })
   }
 
-  // 3. Apply HTMLRewriter transformations
+  // 3. Apply HTMLRewriter transformations (meta tags + structured data)
   try {
+    const headInjector = new HeadInjector(path, domain)
     const rewriter = new HTMLRewriter()
-      .on('title', new MetaRewriter(title, description, canonicalUrl, ogImage))
-      .on('meta', new MetaRewriter(title, description, canonicalUrl, ogImage))
-      .on('link', new MetaRewriter(title, description, canonicalUrl, ogImage))
+      .on('title', new MetaRewriter(title, description, finalCanonicalUrl, ogImage))
+      .on('meta', new MetaRewriter(title, description, finalCanonicalUrl, ogImage))
+      .on('link', new MetaRewriter(title, description, finalCanonicalUrl, ogImage))
+      .on('head', headInjector)
 
     const transformedResponse = rewriter.transform(assetResponse)
 
@@ -257,6 +357,7 @@ export default {
       if (
         !path.startsWith('/api/') &&
         (path.startsWith('/blog') ||
+         findMatchingRoute(path) ||
          path === '/privacy' ||
          path === '/terms' ||
          path === '/refund' ||
@@ -292,6 +393,33 @@ export default {
       if (path === '/api/test/retention' && env.ENVIRONMENT === 'development') {
         await runDataRetention(env)
         return withCors(new Response(JSON.stringify({ ok: true, message: 'Retention completed' }), {
+          status: 200, headers: { 'Content-Type': 'application/json' },
+        }), env)
+      }
+      if (path === '/api/test/upload' && env.ENVIRONMENT === 'development') {
+        const url = new URL(request.url)
+        const key = url.searchParams.get('key')
+        if (!key) {
+          return withCors(new Response(JSON.stringify({ error: 'Missing key' }), {
+            status: 400, headers: { 'Content-Type': 'application/json' },
+          }), env)
+        }
+        const contentType = request.headers.get('Content-Type') ?? 'image/jpeg'
+        const body = await request.arrayBuffer()
+        await env.BUCKET.put(key, body, {
+          httpMetadata: { contentType }
+        })
+        return withCors(new Response(JSON.stringify({ ok: true }), {
+          status: 200, headers: { 'Content-Type': 'application/json' },
+        }), env)
+      }
+      if (path === '/api/test/token' && env.ENVIRONMENT !== 'production') {
+        const { signJWT, getJwtSecret } = await import('./middleware/auth')
+        const token = await signJWT(
+          { sub: '20493641-4030-4fa3-bbe6-b377d4661f87', plan: 'business' },
+          getJwtSecret(env)
+        )
+        return withCors(new Response(JSON.stringify({ token }), {
           status: 200, headers: { 'Content-Type': 'application/json' },
         }), env)
       }
