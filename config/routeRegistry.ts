@@ -29,7 +29,7 @@ export const ROUTE_REGISTRY: RouteEntry[] = [
   {
     path: '/pricing',
     title: 'Pricing | PostMaker',
-    description: 'Simple, transparent pricing for PostMaker. Generate platform-perfect social content for 30+ platforms from a single prompt.',
+    description: 'Plans from Free (5 generations/month, 6 platforms) to Business ($49/mo, 1,000 generations, all 30+ platforms). Start free, no card needed.',
     snapshotKey: 'pricing'
   },
   {
