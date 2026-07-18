@@ -27,10 +27,6 @@ export interface Env {
   JWT_SECRET: string
   DB: D1Database
   BUCKET: R2Bucket
-  // Dedicated bucket for build-time pre-rendered route snapshots (SEO).
-  // Deliberately separate from BUCKET (user uploads) so a bad prerender
-  // deploy can never collide with or overwrite real user data.
-  SNAPSHOTS: R2Bucket
   ASSETS: { fetch: (request: Request) => Promise<Response> }
   CLOUDFLARE_ACCOUNT_ID: string
   R2_ACCESS_KEY_ID: string

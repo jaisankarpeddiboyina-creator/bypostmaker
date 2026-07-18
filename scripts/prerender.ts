@@ -1,7 +1,8 @@
 // scripts/prerender.ts
 //
 // Build-time static pre-rendering for PostMaker's public marketing/blog
-// pages. Runs AFTER `npm run build` (frontend/dist must already exist).
+// pages. Runs AFTER `npm run build` (frontend/dist must already exist —
+// this script ADDS files into it, it does not replace the build).
 //
 // What it does:
 //   1. Serves frontend/dist locally via `vite preview`.
@@ -11,14 +12,14 @@
 //      in an actual browser context is the only way to get correct HTML
 //      without hand-guarding every side effect for a Node environment).
 //   3. Waits for the SPA to actually render content into #root.
-//   4. Writes each page's full HTML to ./snapshots-out/<key>, mirroring
-//      the R2 key it will be uploaded under (see snapshotKeyForPath).
-//
-// Deliberately does NOT talk to R2/Cloudflare directly — it just
-// produces local files. The CI workflow uploads them with `wrangler r2
-// object put`, where the Cloudflare credentials already live. This
-// keeps the script runnable and testable on any machine with no cloud
-// access at all.
+//   4. Writes each page's full HTML directly into
+//      frontend/dist/__snapshots__/<...>.html — a REAL static file that
+//      gets uploaded automatically by the existing `wrangler deploy`
+//      step, same as any file in frontend/public/. No separate cloud
+//      bucket, no extra credentials, no new infrastructure.
+//   5. Writes frontend/dist/__snapshots__/manifest.json listing which
+//      routes were successfully rendered, so the Worker can cheaply know
+//      whether to look for a snapshot before fetching it.
 //
 // Failure handling: a single route failing to render (timeout, JS
 // error, etc.) is logged and skipped — it must NOT block the rest of
@@ -34,7 +35,8 @@ import { getPublicRoutes } from '../config/publicRoutes'
 
 const PREVIEW_PORT = 4173
 const PREVIEW_HOST = `http://localhost:${PREVIEW_PORT}`
-const OUT_DIR = path.resolve(__dirname, '../snapshots-out')
+const DIST_DIR = path.resolve(__dirname, '../frontend/dist')
+const SNAPSHOTS_DIR = path.join(DIST_DIR, '__snapshots__')
 const STARTUP_TIMEOUT_MS = 30_000
 const PAGE_TIMEOUT_MS = 15_000
 
@@ -45,9 +47,6 @@ function waitForServer(url: string, timeoutMs: number): Promise<void> {
       try {
         const res = await fetch(url)
         if (res.ok || res.status === 404) {
-          // Server is up and answering (404 is fine, just means SPA
-          // fallback hasn't kicked in yet for this exact check — the
-          // process is alive and responding).
           resolve()
           return
         }
@@ -66,6 +65,9 @@ function waitForServer(url: string, timeoutMs: number): Promise<void> {
 
 function startPreviewServer(): ChildProcess {
   const frontendDir = path.resolve(__dirname, '../frontend')
+  // Serves the ALREADY-BUILT dist/ as-is. Run before this script writes
+  // any snapshot files into dist/, so the server never serves its own
+  // in-progress output back to itself.
   return spawn(
     'npx',
     ['vite', 'preview', '--port', String(PREVIEW_PORT), '--strictPort'],
@@ -77,7 +79,7 @@ async function main() {
   const routes = getPublicRoutes()
   console.log(`Prerendering ${routes.length} public route(s)...`)
 
-  await mkdir(OUT_DIR, { recursive: true })
+  await mkdir(SNAPSHOTS_DIR, { recursive: true })
 
   const server = startPreviewServer()
   let serverExited = false
@@ -102,6 +104,7 @@ async function main() {
 
   let succeeded = 0
   let failed = 0
+  const manifestEntries: string[] = [] // snapshotAssetPath values that succeeded
 
   for (const route of routes) {
     try {
@@ -125,11 +128,16 @@ async function main() {
       )
 
       const html = await page.content()
-      const outPath = path.join(OUT_DIR, route.snapshotKey)
+
+      // route.snapshotAssetPath is a leading-slash asset path like
+      // '/__snapshots__/blog/my-post.html' — write it under DIST_DIR,
+      // stripping the leading '/' for a valid filesystem join.
+      const outPath = path.join(DIST_DIR, route.snapshotAssetPath.replace(/^\//, ''))
       await mkdir(path.dirname(outPath), { recursive: true })
       await writeFile(outPath, html, 'utf-8')
 
-      console.log(`  ✓ ${route.path} -> ${route.snapshotKey}`)
+      manifestEntries.push(route.snapshotAssetPath)
+      console.log(`  ✓ ${route.path} -> ${route.snapshotAssetPath}`)
       succeeded++
     } catch (err) {
       // Log and skip — one bad route must not take down the whole build.
@@ -140,6 +148,12 @@ async function main() {
 
   await browser.close()
   cleanup()
+
+  // Manifest lets the Worker know, cheaply, which routes actually got a
+  // snapshot — written even on partial failure so it always reflects
+  // exactly what's really on disk.
+  const manifestPath = path.join(SNAPSHOTS_DIR, 'manifest.json')
+  await writeFile(manifestPath, JSON.stringify({ routes: manifestEntries }, null, 2), 'utf-8')
 
   console.log(`Prerender complete: ${succeeded} succeeded, ${failed} failed.`)
 

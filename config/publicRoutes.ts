@@ -4,8 +4,12 @@
 // and eligible for a build-time pre-rendered HTML snapshot".
 //
 // Used by BOTH:
-//   - scripts/prerender.ts (build time: renders + uploads snapshots)
-//   - worker/src/index.ts   (request time: looks up a snapshot by key)
+//   - scripts/prerender.ts (build time: renders pages, writes them as real
+//     static files directly into frontend/dist/__snapshots__/, which get
+//     uploaded automatically by the normal `wrangler deploy` — no separate
+//     cloud bucket, no extra auth step, no new infrastructure)
+//   - worker/src/index.ts   (request time: looks up a snapshot by asset path
+//     via the existing ASSETS binding)
 //
 // Keeping this in one file means the two can never drift out of sync —
 // add a static page here once and both sides pick it up automatically.
@@ -15,8 +19,8 @@ import { blogPosts } from './blog'
 export interface PublicRoute {
   /** Concrete path, e.g. '/blog/my-post'. Never a pattern/wildcard. */
   path: string
-  /** R2 object key under the SNAPSHOTS bucket for this route's HTML. */
-  snapshotKey: string
+  /** Static asset path (under frontend/dist) this route's snapshot lives at. */
+  snapshotAssetPath: string
 }
 
 // Static public pages with fixed content (not user/DB driven).
@@ -35,14 +39,17 @@ const STATIC_PUBLIC_PATHS = [
 ] as const
 
 /**
- * Deterministic R2 key for a given concrete path.
- * '/'                -> 'snapshots/index.html'
- * '/blog'             -> 'snapshots/blog.html'
- * '/blog/my-post'     -> 'snapshots/blog/my-post.html'
+ * Deterministic static-asset path for a given concrete route path.
+ * '/'                -> '/__snapshots__/index.html'
+ * '/blog'             -> '/__snapshots__/blog.html'
+ * '/blog/my-post'     -> '/__snapshots__/blog/my-post.html'
+ *
+ * Lives under a dedicated '__snapshots__' folder so it can never collide
+ * with a real route or an existing static asset.
  */
-export function snapshotKeyForPath(path: string): string {
+export function snapshotAssetPathForRoute(path: string): string {
   const clean = path === '/' ? '/index' : path.replace(/\/+$/, '')
-  return `snapshots${clean}.html`
+  return `/__snapshots__${clean}.html`
 }
 
 /**
@@ -53,13 +60,16 @@ export function snapshotKeyForPath(path: string): string {
 export function getPublicRoutes(): PublicRoute[] {
   const routes: PublicRoute[] = STATIC_PUBLIC_PATHS.map(path => ({
     path,
-    snapshotKey: snapshotKeyForPath(path),
+    snapshotAssetPath: snapshotAssetPathForRoute(path),
   }))
 
   for (const post of blogPosts) {
     const path = `/blog/${post.slug}`
-    routes.push({ path, snapshotKey: snapshotKeyForPath(path) })
+    routes.push({ path, snapshotAssetPath: snapshotAssetPathForRoute(path) })
   }
 
   return routes
 }
+
+/** Where the build-time manifest of successfully-rendered snapshots lives. */
+export const SNAPSHOT_MANIFEST_ASSET_PATH = '/__snapshots__/manifest.json'

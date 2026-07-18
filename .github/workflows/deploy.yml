@@ -71,6 +71,16 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Prerender public routes
+        # Writes real HTML files straight into frontend/dist/__snapshots__/
+        # so they're picked up by the very next deploy step automatically.
+        # A single bad route logs + skips inside the script; only a
+        # systemic failure (0 routes rendered) exits non-zero here.
+        run: npm run prerender
+
       - name: Deploy worker (staging)
         run: ./worker/node_modules/.bin/wrangler deploy --env staging
         env:
@@ -110,6 +120,16 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Prerender public routes
+        # Writes real HTML files straight into frontend/dist/__snapshots__/
+        # so they're picked up by the very next deploy step automatically.
+        # A single bad route logs + skips inside the script; only a
+        # systemic failure (0 routes rendered) exits non-zero here.
+        run: npm run prerender
 
       - name: Deploy worker + assets (production)
         run: ./worker/node_modules/.bin/wrangler deploy --env production

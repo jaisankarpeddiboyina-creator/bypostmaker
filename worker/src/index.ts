@@ -17,7 +17,7 @@ import { handlePresignRoute } from './routes/upload'
 import { runCronJobs, runDataRetention } from './services/cron'
 import { blogPosts } from '../../config/blog'
 import { findMatchingRoute } from '../../config/routeRegistry'
-import { snapshotKeyForPath } from '../../config/publicRoutes'
+import { snapshotAssetPathForRoute, SNAPSHOT_MANIFEST_ASSET_PATH } from '../../config/publicRoutes'
 
 class MetaRewriter {
   private title: string
@@ -301,22 +301,44 @@ async function handleStaticPageSEO(request: Request, env: Env): Promise<Response
   if (registryMatch && registryMatch.canonical) finalCanonicalUrl = registryMatch.canonical
 
   // 2. Try a build-time pre-rendered snapshot first (real content for
-  //    crawlers that don't execute JS). Falls back to the empty SPA
-  //    shell below on ANY miss or error — this must never be fatal.
+  //    crawlers that don't execute JS). These are plain static files
+  //    bundled into the same asset deploy as everything else — no
+  //    separate bucket, no extra credentials. Falls back to the empty
+  //    SPA shell below on ANY miss or error — this must never be fatal.
   let assetResponse: Response | null = null
 
   if (!is404) {
     try {
-      const snapshotKey = snapshotKeyForPath(path)
-      const snapshotObject = await env.SNAPSHOTS.get(snapshotKey)
-      if (snapshotObject) {
-        assetResponse = new Response(snapshotObject.body, {
-          headers: { 'Content-Type': 'text/html; charset=utf-8' },
-        })
+      const manifestRequest = new Request(new URL(SNAPSHOT_MANIFEST_ASSET_PATH, request.url))
+      const manifestResponse = await env.ASSETS.fetch(manifestRequest)
+
+      if (manifestResponse.ok) {
+        const manifest = JSON.parse(await manifestResponse.text()) as { routes?: string[] }
+        const snapshotAssetPath = snapshotAssetPathForRoute(path)
+
+        if (Array.isArray(manifest.routes) && manifest.routes.includes(snapshotAssetPath)) {
+          const snapshotRequest = new Request(new URL(snapshotAssetPath, request.url))
+          const snapshotResponse = await env.ASSETS.fetch(snapshotRequest)
+
+          if (snapshotResponse.ok) {
+            const snapshotBody = await snapshotResponse.text()
+            // Sanity check: a real snapshot is a full rendered page, not
+            // the ~3KB empty SPA shell. Guards against the rare case the
+            // manifest lists a file that's somehow missing at request
+            // time (asset fallback would otherwise silently hand back
+            // the shell disguised as a 200).
+            if (snapshotBody.length > 1500) {
+              assetResponse = new Response(snapshotBody, {
+                headers: { 'Content-Type': 'text/html; charset=utf-8' },
+              })
+            }
+          }
+        }
       }
     } catch (err) {
-      // Snapshot bucket unavailable or object read failed — not fatal,
-      // just fall through to the SPA shell like before.
+      // Manifest missing/malformed (e.g. JSON.parse on the SPA shell's
+      // HTML when the manifest itself doesn't exist yet) or snapshot
+      // fetch failed — not fatal, just fall through to the shell.
       console.error('Snapshot lookup failed, falling back to SPA shell:', err)
     }
   }
