@@ -32,6 +32,12 @@ migrations_dir = "db/migrations"
 binding = "BUCKET"
 bucket_name = "postmaker-uploads"
 
+# Pre-rendered route snapshots for SEO (build-time static HTML).
+# Kept separate from BUCKET (user uploads) intentionally.
+[[r2_buckets]]
+binding = "SNAPSHOTS"
+bucket_name = "postmaker-snapshots"
+
 
 # ── Cron Triggers ────────────────────────────────────────────
 [triggers]
@@ -56,6 +62,10 @@ migrations_dir = "db/migrations"
 binding = "BUCKET"
 bucket_name = "postmaker-uploads-dev"
 
+[[env.development.r2_buckets]]
+binding = "SNAPSHOTS"
+bucket_name = "postmaker-snapshots-dev"
+
 
 # ── Staging Environment ──────────────────────────────────────
 [env.staging]
@@ -76,6 +86,10 @@ migrations_dir = "db/migrations"
 binding = "BUCKET"
 bucket_name = "postmaker-uploads-staging"
 
+[[env.staging.r2_buckets]]
+binding = "SNAPSHOTS"
+bucket_name = "postmaker-snapshots-staging"
+
 
 # ── Production Environment ───────────────────────────────────
 [env.production]
@@ -94,6 +108,10 @@ migrations_dir = "db/migrations"
 [[env.production.r2_buckets]]
 binding = "BUCKET"
 bucket_name = "postmaker-uploads"
+
+[[env.production.r2_buckets]]
+binding = "SNAPSHOTS"
+bucket_name = "postmaker-snapshots"
 
 
 # ── Secrets (set via: wrangler secret put SECRET_NAME) ───────

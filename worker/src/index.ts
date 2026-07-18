@@ -17,6 +17,7 @@ import { handlePresignRoute } from './routes/upload'
 import { runCronJobs, runDataRetention } from './services/cron'
 import { blogPosts } from '../../config/blog'
 import { findMatchingRoute } from '../../config/routeRegistry'
+import { snapshotKeyForPath } from '../../config/publicRoutes'
 
 class MetaRewriter {
   private title: string
@@ -299,19 +300,42 @@ async function handleStaticPageSEO(request: Request, env: Env): Promise<Response
   let finalCanonicalUrl = canonicalUrl
   if (registryMatch && registryMatch.canonical) finalCanonicalUrl = registryMatch.canonical
 
-  // 2. Fetch the SPA shell index.html from static assets
-  let assetResponse: Response
-  try {
-    // Constraint #2: construct a new request pointing explicitly to /index.html
-    const indexRequest = new Request(new URL('/index.html', request.url))
-    assetResponse = await env.ASSETS.fetch(indexRequest)
-    
-    if (!assetResponse.ok) {
-      throw new Error(`ASSETS.fetch returned status ${assetResponse.status}`)
+  // 2. Try a build-time pre-rendered snapshot first (real content for
+  //    crawlers that don't execute JS). Falls back to the empty SPA
+  //    shell below on ANY miss or error — this must never be fatal.
+  let assetResponse: Response | null = null
+
+  if (!is404) {
+    try {
+      const snapshotKey = snapshotKeyForPath(path)
+      const snapshotObject = await env.SNAPSHOTS.get(snapshotKey)
+      if (snapshotObject) {
+        assetResponse = new Response(snapshotObject.body, {
+          headers: { 'Content-Type': 'text/html; charset=utf-8' },
+        })
+      }
+    } catch (err) {
+      // Snapshot bucket unavailable or object read failed — not fatal,
+      // just fall through to the SPA shell like before.
+      console.error('Snapshot lookup failed, falling back to SPA shell:', err)
     }
-  } catch (err) {
-    console.error('Failed to fetch SPA shell index.html:', err)
-    return new Response('Asset Not Found', { status: 404 })
+  }
+
+  // 2b. Fetch the SPA shell index.html from static assets (fallback path,
+  // and also the path for unknown-blog-post 404s which never had a snapshot).
+  if (!assetResponse) {
+    try {
+      // Constraint #2: construct a new request pointing explicitly to /index.html
+      const indexRequest = new Request(new URL('/index.html', request.url))
+      assetResponse = await env.ASSETS.fetch(indexRequest)
+
+      if (!assetResponse.ok) {
+        throw new Error(`ASSETS.fetch returned status ${assetResponse.status}`)
+      }
+    } catch (err) {
+      console.error('Failed to fetch SPA shell index.html:', err)
+      return new Response('Asset Not Found', { status: 404 })
+    }
   }
 
   // 3. Apply HTMLRewriter transformations (meta tags + structured data)
