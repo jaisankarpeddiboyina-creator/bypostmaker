@@ -20,6 +20,7 @@ const LegalPage = lazy(() => import('./pages/LegalPage'))
 const AuthPage = lazy(() => import('./pages/AuthPage'))
 const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'))
 const BlogPage = lazy(() => import('./pages/BlogPage'))
+const PricingPage = lazy(() => import('./pages/PricingPage'))
 
 
 const SentryRoutes = Sentry.withSentryReactRouterV6Routing(Routes)
@@ -190,7 +191,7 @@ export default function App() {
           <Route path="/cookies"  element={<LegalPage page="cookies" />} />
           <Route path="/shipping" element={<LegalPage page="shipping" />} />
           <Route path="/contact"  element={<LegalPage page="contact" />} />
-          <Route path="/pricing" element={<Navigate to="/#pricing" replace />} />
+          <Route path="/pricing" element={<PricingPage />} />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </SentryRoutes>

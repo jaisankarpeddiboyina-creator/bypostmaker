@@ -24,11 +24,9 @@ export interface PublicRoute {
 }
 
 // Static public pages with fixed content (not user/DB driven).
-// NOTE: '/pricing' is intentionally excluded — it's a client-side
-// redirect to '/#pricing' in App.tsx, not a real page. Pre-rendering
-// it would hand search engines a redirect stub instead of content.
 const STATIC_PUBLIC_PATHS = [
   '/',
+  '/pricing',
   '/blog',
   '/privacy',
   '/terms',
