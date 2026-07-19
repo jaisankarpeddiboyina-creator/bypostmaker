@@ -14,11 +14,11 @@ Last updated: ${UPDATED}
 
 ## What We Collect
 
-When you sign in with Google, we receive your name, email address, and profile photo. We store these to create and identify your account. We do not receive or store your Google password.
+You can create an account using Google sign-in or with your email and password. If you use Google, we receive your name, email address, and profile photo — we do not receive or store your Google password. If you sign up with email, we store your email address and a securely hashed version of your password; we never store your password in plain text.
 
 When you use PostMaker, we store the prompts you submit, the content generated for your campaigns, your platform selections, and your subscription and usage data.
 
-We do not store uploaded images or videos. These are used only to generate and package your content kit and are discarded immediately after.
+Uploaded images are stored to generate your content kit and remain accessible in your generation history for the retention period matching your plan (see Data Retention below), after which they are automatically deleted.
 
 ## How We Use It
 
@@ -210,7 +210,7 @@ India
 
 ## Response Time
 
-We respond to all queries within 24 hours on business days.
+We respond to all queries within 24 hours on business days. Formal requests (data access/deletion, billing disputes) may take longer, as noted in our Privacy and Refund policies.
     `,
   },
 }

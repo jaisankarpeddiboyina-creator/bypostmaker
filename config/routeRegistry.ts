@@ -1,66 +1,79 @@
 // config/routeRegistry.ts
-//
-// Central registry for routes that need SEO metadata overrides but aren't
-// (yet) simple static pages handled by the staticRoutes table in
-// worker/src/index.ts. Supports exact paths and prefix patterns ("/vs/*").
-//
-// Consumed by worker/src/index.ts via findMatchingRoute(path) to:
-//   1. decide whether a request should be routed to handleStaticPageSEO()
-//   2. resolve title/description/ogImage/canonical overrides for that route
+// Registry of public, indexable marketing routes to drive Worker routing and CI snapshot generation.
+
+export type RoutePattern = string // exact path or pattern like '/vs/*' or '/for/*'
 
 export interface RouteEntry {
-  /** Exact path ("/pricing") or prefix pattern ending in "/*" ("/vs/*") */
-  path: string
+  pattern: RoutePattern
   title?: string
   description?: string
-  ogImage?: string
-  /** Overrides the default domain+path canonical URL when set */
   canonical?: string
-  /**
-   * Identifier for a pre-rendered static snapshot of this route, once one
-   * exists. Not yet consumed anywhere — reserved for when /pricing (or
-   * others) gets a real server-rendered page instead of the current
-   * client-side redirect to /#pricing.
-   */
+  ogImage?: string
+  indexable?: boolean
   snapshotKey?: string
+  dynamic?: boolean
+  priority?: number
 }
 
 export const ROUTE_REGISTRY: RouteEntry[] = [
   {
-    path: '/pricing',
-    title: 'Pricing | PostMaker',
-    description: 'Plans from Free (5 generations/month, 6 platforms) to Business ($49/mo, 1,000 generations, all 30+ platforms). Start free, no card needed.',
-    snapshotKey: 'pricing'
+    pattern: '/pricing',
+    title: 'Pricing — PostMaker',
+    description: 'Choose a plan that fits your creator workflow.',
+    indexable: true,
+    snapshotKey: 'snapshots/pricing.html',
+    priority: 0.8
+  },
+  // Comparison pages (dynamic under /vs/*)
+  {
+    pattern: '/vs',
+    title: 'Product comparisons — PostMaker',
+    description: 'Compare PostMaker with other products and platforms.',
+    indexable: true,
+    dynamic: true
   },
   {
-    path: '/vs/*',
-    title: 'PostMaker Comparison | PostMaker',
-    description: 'See how PostMaker compares for AI-powered social media content generation across 30+ platforms.'
+    pattern: '/vs/*',
+    title: 'Product comparisons — PostMaker',
+    description: 'Compare PostMaker with other products and platforms.',
+    indexable: true,
+    dynamic: true
+  },
+  // Platform pages (dynamic under /for/*)
+  {
+    pattern: '/for',
+    title: 'Platform pages — PostMaker',
+    description: 'Platform-specific landing pages (LinkedIn, Instagram, etc.)',
+    indexable: true,
+    dynamic: true
   },
   {
-    path: '/for/*',
-    title: 'PostMaker for Your Use Case | PostMaker',
-    description: 'See how PostMaker helps you generate platform-perfect social content for your specific use case.'
+    pattern: '/for/*',
+    title: 'Platform pages — PostMaker',
+    description: 'Platform-specific landing pages (LinkedIn, Instagram, etc.)',
+    indexable: true,
+    dynamic: true
   }
 ]
 
 /**
- * Returns the matching registry entry for a given path, or undefined.
- * Exact paths match first. Prefix entries ("/vs/*") match only the exact
- * prefix itself or the prefix followed by "/", so "/for" never matches
- * unrelated paths like "/forgot-password".
+ * Find a matching route entry for a given request path.
+ * Supports exact matches and prefix patterns ending with '/*'.
  */
 export function findMatchingRoute(path: string): RouteEntry | undefined {
-  const exact = ROUTE_REGISTRY.find(entry => !entry.path.endsWith('/*') && entry.path === path)
-  if (exact) return exact
+  // Normalize path: ensure it starts with '/'
+  if (!path.startsWith('/')) path = '/' + path
 
   for (const entry of ROUTE_REGISTRY) {
-    if (!entry.path.endsWith('/*')) continue
-    const prefix = entry.path.slice(0, -2) // strip trailing "/*"
-    if (path === prefix || path.startsWith(prefix + '/')) {
-      return entry
+    const p = entry.pattern
+    if (p.endsWith('/*')) {
+      const prefix = p.slice(0, -1) // '/vs/*' => '/vs/'
+      // Match /vs (exact) or any subpath /vs/... 
+      if (path === prefix.slice(0, -1) || path.startsWith(prefix)) return entry
+    } else {
+      // exact match
+      if (p === path) return entry
     }
   }
-
   return undefined
 }

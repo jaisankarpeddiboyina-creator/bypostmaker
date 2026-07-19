@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { Sparkles, X, Download, Loader2, ImageIcon, Video } from 'lucide-react'
 import { useAppStore } from '../store/app'
 import { PlatformRail } from '../components/PlatformRail'
@@ -27,10 +27,31 @@ export default function AppPage() {
   } = useAppStore()
 
   const [downloadProgress, setDownloadProgress] = useState<string | null>(null)
+  const [generationStatus, setGenerationStatus] = useState<string>('Generating…')
 
   const abortRef = useRef<AbortController | null>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
   const videoInputRef = useRef<HTMLInputElement>(null)
+  const slowVisionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const failsafeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const clearTimers = useCallback(() => {
+    if (slowVisionTimeoutRef.current) {
+      clearTimeout(slowVisionTimeoutRef.current)
+      slowVisionTimeoutRef.current = null
+    }
+    if (failsafeTimeoutRef.current) {
+      clearTimeout(failsafeTimeoutRef.current)
+      failsafeTimeoutRef.current = null
+    }
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      if (slowVisionTimeoutRef.current) clearTimeout(slowVisionTimeoutRef.current)
+      if (failsafeTimeoutRef.current) clearTimeout(failsafeTimeoutRef.current)
+    }
+  }, [])
 
   const handleGenerate = useCallback(async () => {
     if (!prompt.trim()) { addToast('Enter a prompt first', 'error'); return }
@@ -42,7 +63,25 @@ export default function AppPage() {
       return
     }
 
+    clearTimers()
     setIsGenerating(true)
+    setGenerationStatus(imageFiles.length > 0 ? 'Uploading image...' : 'Generating captions...')
+
+    // Pre-initialize campaign state with "Uploading image..." status
+    const initialPosts = Object.fromEntries(
+      selectedPlatforms.map(id => [id, {
+        platformId: id,
+        content: '',
+        status: 'pending' as const,
+        edited: false,
+        statusText: imageFiles.length > 0 ? 'Uploading image...' : 'Preparing...',
+      }])
+    )
+
+    setCampaign({
+      id: '', prompt: prompt.trim(), platforms: selectedPlatforms,
+      posts: initialPosts, videoUrl: null, imageFiles, videoFile,
+    })
 
     let uploadedImageKey: string | null = null
 
@@ -65,22 +104,31 @@ export default function AppPage() {
         uploadedImageKey = objectKey
       } catch (err: any) {
         setIsGenerating(false)
+        clearTimers()
         addToast(err?.message || 'Image upload failed. Please try again.', 'error')
+        setCampaign(null)
         return
       }
     }
 
-    // Init all selected platforms as pending
-    const initialPosts = Object.fromEntries(
-      selectedPlatforms.map(id => [id, {
-        platformId: id, content: '', status: 'pending' as const, edited: false,
-      }])
-    )
-
-    setCampaign({
-      id: '', prompt: prompt.trim(), platforms: selectedPlatforms,
-      posts: initialPosts, videoUrl: null, imageFiles, videoFile,
-    })
+    // Set failsafe timer (45 seconds)
+    failsafeTimeoutRef.current = setTimeout(() => {
+      abortRef.current?.abort()
+      setIsGenerating(false)
+      clearTimers()
+      addToast('This is taking longer than expected — you can try again', 'error')
+      
+      // Update all pending/generating cards to error state
+      selectedPlatforms.forEach(id => {
+        const post = useAppStore.getState().campaign?.posts[id]
+        if (post?.status === 'generating' || post?.status === 'pending') {
+          updatePost(id, {
+            status: 'error',
+            errorMessage: 'Request timed out.',
+          })
+        }
+      })
+    }, 45000)
 
     abortRef.current = api.generate.stream(
       prompt.trim(), selectedPlatforms, uploadedImageKey, videoFile,
@@ -97,41 +145,81 @@ export default function AppPage() {
               if (!prev) return null
               const posts = { ...prev.posts }
               for (const id of selectedPlatforms) {
-                posts[id] = { ...posts[id], status: 'generating' }
+                posts[id] = { 
+                  ...posts[id], 
+                  status: 'generating',
+                  statusText: 'Generating caption...',
+                }
               }
               return { ...prev, posts }
             })
+            setGenerationStatus('Generating captions...')
+            break
+
+          case 'vision':
+            if (slowVisionTimeoutRef.current) {
+              clearTimeout(slowVisionTimeoutRef.current)
+            }
+            
+            setCampaign(prev => {
+              if (!prev) return null
+              const posts = { ...prev.posts }
+              for (const id of selectedPlatforms) {
+                posts[id] = { ...posts[id], statusText: 'Analyzing image...' }
+              }
+              return { ...prev, posts }
+            })
+            setGenerationStatus('Analyzing image...')
+
+            // Set 7-second timer for slow vision message
+            slowVisionTimeoutRef.current = setTimeout(() => {
+              setGenerationStatus('Analyzing image (slow)...')
+              selectedPlatforms.forEach(id => {
+                const post = useAppStore.getState().campaign?.posts[id]
+                if (post?.status === 'generating' || post?.status === 'pending') {
+                  updatePost(id, {
+                    statusText: 'Still analyzing image, this can take up to 20 seconds...',
+                  })
+                }
+              })
+            }, 7000)
             break
 
           case 'platform':
-            updatePost(d.platformId as string, { content: d.content as string, status: 'done' })
+            if (slowVisionTimeoutRef.current) {
+              clearTimeout(slowVisionTimeoutRef.current)
+              slowVisionTimeoutRef.current = null
+            }
+            updatePost(d.platformId as string, { content: d.content as string, status: 'done', statusText: undefined })
             break
 
           case 'error':
             updatePost(d.platformId as string, {
-              status: 'error', errorMessage: d.message as string,
+              status: 'error', errorMessage: d.message as string, statusText: undefined,
             })
             break
 
           case 'done':
             setIsGenerating(false)
+            clearTimers()
             addToast('Content kit ready', 'success')
             break
 
           case 'fatal':
             setIsGenerating(false)
+            clearTimers()
             addToast((d.message as string) ?? 'Generation failed', 'error')
             selectedPlatforms.forEach(id => {
               const post = useAppStore.getState().campaign?.posts[id]
               if (post?.status === 'generating' || post?.status === 'pending') {
-                updatePost(id, { status: 'error', errorMessage: 'Generation failed' })
+                updatePost(id, { status: 'error', errorMessage: 'Generation failed', statusText: undefined })
               }
             })
             break
         }
       }
     )
-  }, [prompt, selectedPlatforms, imageFiles, videoFile, usage])
+  }, [prompt, selectedPlatforms, imageFiles, videoFile, usage, clearTimers, addToast, setCampaign, updatePost, setUpgradeReason, setShowUpgradeModal])
 
   const handleStop = () => {
     abortRef.current?.abort()
@@ -240,7 +328,7 @@ export default function AppPage() {
             </div>
 
             <div className="media-row">
-              <input ref={imageInputRef} type="file" accept="image/*" multiple style={{ display: 'none' }}
+              <input ref={imageInputRef} type="file" accept="image/*" style={{ display: 'none' }}
                 onChange={e => {
                   const files = Array.from(e.target.files ?? [])
                   const imageSupportedPlatforms = selectedPlatforms
@@ -259,7 +347,8 @@ export default function AppPage() {
                   setImageFiles(cappedArray)
                 }} />
               <button className={`media-btn ${imageFiles.length > 0 ? 'active' : ''}`}
-                onClick={() => imageInputRef.current?.click()} disabled={isGenerating}>
+                onClick={() => imageInputRef.current?.click()} disabled={isGenerating}
+                title="Add one image for AI to analyze (JPEG, PNG, WEBP, or GIF · max 15MB)">
                 <ImageIcon size={14} />
                 {imageFiles.length > 1
                   ? `${imageFiles.length} images`
@@ -297,9 +386,9 @@ export default function AppPage() {
                 Generate {selectedPlatforms.length > 0 ? `(${selectedPlatforms.length})` : ''}
               </button>
             ) : (
-              <button className="btn btn-ghost generate-btn" onClick={handleStop}>
+              <button className="btn btn-primary generate-btn" disabled style={{ opacity: 0.7, cursor: 'not-allowed' }}>
                 <Loader2 size={15} className="spin" />
-                Generating… Stop
+                {generationStatus}
               </button>
             )}
 

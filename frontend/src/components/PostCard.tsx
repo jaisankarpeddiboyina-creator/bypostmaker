@@ -50,6 +50,15 @@ export function PostCard({ platformId, post, campaignId, imageFiles, videoFile, 
   const extraFieldDefs = PLATFORM_EXTRA_FIELDS[platformId] ?? []
 
   const [imageUrls, setImageUrls] = useState<string[]>([])
+  const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current)
+      }
+    }
+  }, [])
 
   useEffect(() => {
     if (!platform || platform.maxImages === 0 || platform.imagePosition === 'none' || imageFiles.length === 0) {
@@ -235,25 +244,60 @@ export function PostCard({ platformId, post, campaignId, imageFiles, videoFile, 
   }
 
   const handleRetry = useCallback(async () => {
-    updatePost(platformId, { status: 'generating', content: '', errorMessage: undefined })
+    if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current)
+
+    updatePost(platformId, { status: 'generating', content: '', errorMessage: undefined, statusText: 'Retrying...' })
+
+    let active = true
+
+    retryTimeoutRef.current = setTimeout(() => {
+      if (active) {
+        active = false
+        updatePost(platformId, {
+          status: 'error',
+          errorMessage: 'Retry timed out. Please try again.',
+        })
+        addToast('Retry taking longer than expected — you can try again', 'error')
+      }
+    }, 45000)
+
     try {
       const result = await api.generate.retry(campaignId, platformId)
-      updatePost(platformId, { content: result.content, status: 'done' })
+      if (active) {
+        active = false
+        if (retryTimeoutRef.current) {
+          clearTimeout(retryTimeoutRef.current)
+          retryTimeoutRef.current = null
+        }
+        updatePost(platformId, { content: result.content, status: 'done', statusText: undefined })
+        if (result.imageDropped) {
+          addToast('Image expired — regenerated from text only', 'info')
+        }
+      }
     } catch (err: any) {
-      updatePost(platformId, {
-        status: 'error',
-        errorMessage: err.message ?? 'Could not generate — try again!',
-      })
+      if (active) {
+        active = false
+        if (retryTimeoutRef.current) {
+          clearTimeout(retryTimeoutRef.current)
+          retryTimeoutRef.current = null
+        }
+        updatePost(platformId, {
+          status: 'error',
+          errorMessage: err.message ?? 'Could not generate — try again!',
+          statusText: undefined,
+        })
+      }
     }
-  }, [platformId, campaignId, updatePost])
+  }, [platformId, campaignId, updatePost, addToast])
+
 
   const shareUrl = platform?.shareUrl(post.content, extraFields)
   const charLimit = platform?.charLimit
   const charCount = post.content.length
   const isOverLimit = charLimit ? charCount > charLimit : false
 
-  if (post.status === 'pending') return <CardSkeleton />
-  if (post.status === 'generating') return <CardGenerating name={platform?.name ?? platformId} />
+  if (post.status === 'pending') return <CardSkeleton statusText={post.statusText} />
+  if (post.status === 'generating') return <CardGenerating name={platform?.name ?? platformId} statusText={post.statusText} />
   if (post.status === 'error') return <CardError name={platform?.name ?? platformId} message={post.errorMessage ?? 'Generation failed'} brandColor={platform?.brandColor} onRetry={handleRetry} />
 
   return (
@@ -603,10 +647,13 @@ export function PostCard({ platformId, post, campaignId, imageFiles, videoFile, 
   )
 }
 
-function CardSkeleton() {
+function CardSkeleton({ statusText }: { statusText?: string }) {
   return (
     <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: 14, minWidth: 280, maxWidth: 340, flexShrink: 0 }}>
-      <div className="shimmer" style={{ height: 11, width: '40%', marginBottom: 14 }} />
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+        <div className="shimmer" style={{ height: 11, width: '40%' }} />
+        {statusText && <span style={{ fontSize: 10, color: 'var(--text-3)' }}>{statusText}</span>}
+      </div>
       <div className="shimmer" style={{ height: 10, width: '100%', marginBottom: 6 }} />
       <div className="shimmer" style={{ height: 10, width: '88%', marginBottom: 6 }} />
       <div className="shimmer" style={{ height: 10, width: '72%' }} />
@@ -614,10 +661,13 @@ function CardSkeleton() {
   )
 }
 
-function CardGenerating({ name }: { name: string }) {
+function CardGenerating({ name, statusText }: { name: string; statusText?: string }) {
   return (
     <div style={{ background: 'var(--card)', border: '1px solid var(--accent)', borderRadius: 'var(--radius-lg)', padding: 14, minWidth: 280, maxWidth: 340, flexShrink: 0 }}>
-      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>{name}</div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{name}</div>
+        {statusText && <span style={{ fontSize: 10, color: 'var(--accent)', fontWeight: 500 }}>{statusText}</span>}
+      </div>
       <div style={{ display: 'flex', gap: 5, padding: '6px 0 10px' }}>
         <div className="gen-dot" /><div className="gen-dot" /><div className="gen-dot" />
       </div>

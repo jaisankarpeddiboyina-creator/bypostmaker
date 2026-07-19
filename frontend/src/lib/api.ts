@@ -160,7 +160,7 @@ export const api = {
     },
 
     retry: (campaignId: string, platformId: string) =>
-      request<{ content: string; platformId: string }>('/generate/retry', {
+      request<{ content: string; platformId: string; imageDropped?: boolean }>('/generate/retry', {
         method: 'POST',
         body: JSON.stringify({ campaignId, platformId }),
       }),

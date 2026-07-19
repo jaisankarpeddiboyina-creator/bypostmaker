@@ -14,9 +14,10 @@ import { handleHealth } from './routes/health'
 import { handleAdmin } from './routes/admin'
 import { handlePromos } from './routes/promos'
 import { handlePresignRoute } from './routes/upload'
+import { handleImageRoute } from './routes/image'
 import { runCronJobs, runDataRetention } from './services/cron'
 import { blogPosts } from '../../config/blog'
-import { findMatchingRoute } from '../../config/routeRegistry'
+import { findMatchingRoute, ROUTE_REGISTRY } from '../../config/routeRegistry'
 import { snapshotAssetPathForRoute, SNAPSHOT_MANIFEST_ASSET_PATH } from '../../config/publicRoutes'
 
 class MetaRewriter {
@@ -191,13 +192,19 @@ async function handleSitemap(request: Request, env: Env): Promise<Response> {
     <priority>0.8</priority>
   </url>`
 
-    // NOTE: ROUTE_REGISTRY entries (/pricing, /vs, /vs/*, /for, /for/*) are
-    // intentionally NOT added to the sitemap yet. /pricing currently
-    // redirects client-side to /#pricing (see frontend/src/App.tsx) rather
-    // than rendering a real page — it has a snapshotKey in the registry,
-    // suggesting a real static page is planned, at which point it should
-    // be added. /vs and /for are dynamic prefix patterns with no concrete
-    // page instances yet. Revisit once real pages exist for any of these.
+    // Add registry routes (indexable entries)
+    for (const entry of ROUTE_REGISTRY) {
+      if (entry.indexable !== false) {
+        const priority = entry.priority ?? 0.5
+        const changefreq = entry.dynamic ? 'weekly' : 'monthly'
+        xml += `
+  <url>
+    <loc>${domain}${entry.pattern}</loc>
+    <changefreq>${changefreq}</changefreq>
+    <priority>${priority}</priority>
+  </url>`
+      }
+    }
 
     // Add blog posts
     for (const post of blogPosts) {
@@ -527,6 +534,9 @@ export default {
 
       if (path.startsWith('/api/history'))
         return withCors(await handleHistory(request, env, userId), env)
+
+      if (path.startsWith('/api/image/') && request.method === 'GET')
+        return withCors(await handleImageRoute(request, env, userId), env)
 
       if (path.startsWith('/api/admin'))
         return withCors(await handleAdmin(request, env, userId, userRole), env)

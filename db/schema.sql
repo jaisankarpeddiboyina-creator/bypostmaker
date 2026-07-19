@@ -96,6 +96,7 @@ CREATE TABLE IF NOT EXISTS campaigns (
   status          TEXT NOT NULL DEFAULT 'generating'
                   CHECK (status IN ('generating','completed','failed')),
   generated_count INTEGER NOT NULL DEFAULT 0,
+  image_description TEXT,                        -- Stage 1 Gemini vision output; NULL = no image or Stage 1 not yet run
   created_at      INTEGER NOT NULL DEFAULT (unixepoch()),
   updated_at      INTEGER NOT NULL DEFAULT (unixepoch())
 );

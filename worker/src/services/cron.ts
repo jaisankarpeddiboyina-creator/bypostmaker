@@ -13,10 +13,8 @@ export async function runCronJobs(cron: string, env: Env): Promise<void> {
       ])
     }
 
-    // Midnight UTC — usage period reset check
-    if (cron === '0 0 * * *') {
-      await runPeriodResetCheck(env)
-    }
+  
+  
   } catch (err) {
     console.error('Cron job error:', err)
   }
@@ -114,33 +112,3 @@ async function runDBHealthCheck(env: Env): Promise<void> {
   }
 }
 
-
-// ── Period Reset Check ────────────────────────────────────────
-// Ensure usage records exist for current period for all users
-async function runPeriodResetCheck(env: Env): Promise<void> {
-  const now = new Date()
-  // Only run on the 1st of the month
-  if (now.getDate() !== 1) return
-
-  const periodStart = Math.floor(
-    new Date(now.getFullYear(), now.getMonth(), 1).getTime() / 1000
-  )
-  const periodEnd = Math.floor(
-    new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).getTime() / 1000
-  )
-
-  // Create fresh usage records for all users for new period
-  const { results: users } = await env.DB.prepare(
-    'SELECT id FROM users'
-  ).all<{ id: string }>()
-
-  for (const user of users ?? []) {
-    await env.DB.prepare(
-      `INSERT INTO usage (id, user_id, period_start, period_end, generations)
-       VALUES (?, ?, ?, ?, 0)
-       ON CONFLICT(user_id, period_start) DO NOTHING`
-    ).bind(generateId(), user.id, periodStart, periodEnd).run()
-  }
-
-  console.log(`Period reset: created usage records for ${users?.length ?? 0} users`)
-}

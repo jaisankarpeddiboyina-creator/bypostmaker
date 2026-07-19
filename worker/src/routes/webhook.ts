@@ -5,9 +5,7 @@
 
 import type { Env } from '../../../config/ai'
 import type { PlatformTier } from '../../../config/platforms'
-import { generateId } from '../utils/id'
 import { sendEmail } from '../services/email'
-import { getCurrentPeriod } from '../utils/period'
 
 export async function handleWebhook(
   request: Request,
@@ -47,8 +45,7 @@ export async function handleWebhook(
 }
 
 async function processWebhookEvent(event: RazorpayWebhookEvent, env: Env, ctx: ExecutionContext): Promise<void> {
-  const entity = event.payload?.subscription?.entity ?? event.payload?.payment?.entity
-
+  
   switch (event.event) {
     // ── Subscription activated ───────────────────────────────
     case 'subscription.activated': {
@@ -59,8 +56,7 @@ async function processWebhookEvent(event: RazorpayWebhookEvent, env: Env, ctx: E
       const plan = getPlanFromRazorpayPlanId(sub.plan_id, env)
       const now = Math.floor(Date.now() / 1000)
       const periodEnd = sub.current_end ?? now + 30 * 24 * 60 * 60
-      const { periodStart, periodEnd: calendarPeriodEnd } = getCurrentPeriod()
-
+     
       await env.DB.batch([
         env.DB.prepare(
           `UPDATE users SET plan = ?, plan_status = 'active', updated_at = unixepoch() WHERE id = ?`
@@ -70,11 +66,7 @@ async function processWebhookEvent(event: RazorpayWebhookEvent, env: Env, ctx: E
            WHERE razorpay_sub_id = ?`
         ).bind(now, periodEnd, sub.id),
         // Reset usage for new billing period
-        env.DB.prepare(
-          `INSERT INTO usage (id, user_id, period_start, period_end, generations)
-           VALUES (?, ?, ?, ?, 0)
-           ON CONFLICT(user_id, period_start) DO UPDATE SET generations = 0, updated_at = unixepoch()`
-        ).bind(generateId(), userId, periodStart, calendarPeriodEnd),
+       
       ])
 
       // Look for older active/authenticated subscriptions to cancel
@@ -126,9 +118,7 @@ async function processWebhookEvent(event: RazorpayWebhookEvent, env: Env, ctx: E
       const plan = getPlanFromRazorpayPlanId(sub.plan_id, env)
       const now = Math.floor(Date.now() / 1000)
       const periodEnd = sub.current_end ?? now + 30 * 24 * 60 * 60
-      const { periodStart, periodEnd: calendarPeriodEnd } = getCurrentPeriod()
-
-      // BUG-9: Detect if this charge is healing a missed 'activated' event.
+     // BUG-9: Detect if this charge is healing a missed 'activated' event.
       const prevStatus = await env.DB.prepare(
         `SELECT status FROM subscriptions WHERE razorpay_sub_id = ?`
       ).bind(sub.id).first<{ status: string }>()
@@ -145,11 +135,7 @@ async function processWebhookEvent(event: RazorpayWebhookEvent, env: Env, ctx: E
            WHERE razorpay_sub_id = ?`
         ).bind(now, periodEnd, sub.id),
         // Reset usage for new billing period
-        env.DB.prepare(
-          `INSERT INTO usage (id, user_id, period_start, period_end, generations)
-           VALUES (?, ?, ?, ?, 0)
-           ON CONFLICT(user_id, period_start) DO UPDATE SET generations = 0, updated_at = unixepoch()`
-        ).bind(generateId(), userId, periodStart, calendarPeriodEnd),
+      
       ])
       break
     }
@@ -250,7 +236,7 @@ async function verifyRazorpaySignature(
     .map(b => b.toString(16).padStart(2, '0'))
     .join('')
 
-  return expectedSignature === signature
+  return expectedSignature === signature.trim()
 }
 
 // ── DB Helpers ────────────────────────────────────────────────
@@ -258,7 +244,7 @@ async function verifyRazorpaySignature(
 // rows somehow share the same razorpay_sub_id (defensive — should not happen in practice).
 async function getUserByRazorpaySubId(db: D1Database, subId: string): Promise<string | null> {
   const result = await db.prepare(
-    'SELECT user_id FROM subscriptions WHERE razorpay_sub_id = ? ORDER BY created_at DESC'
+    'SELECT user_id FROM subscriptions WHERE razorpay_sub_id = ? ORDER BY created_at DESC LIMIT 1'
   ).bind(subId).first<{ user_id: string }>()
   return result?.user_id ?? null
 }

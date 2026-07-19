@@ -112,3 +112,4 @@ bucket_name = "postmaker-uploads"
 # GOOGLE_CLIENT_ID
 # GOOGLE_CLIENT_SECRET
 # JWT_SECRET
+# VISION_MODEL            (model name for image/vision generation, e.g. gemini-2.5-flash)
