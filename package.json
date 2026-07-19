@@ -5,13 +5,16 @@
   "scripts": {
     "dev": "concurrently \"npm run dev --prefix worker\" \"npm run dev --prefix frontend\"",
     "build": "npm run build --prefix frontend",
-    "deploy": "npm run build && npm run deploy:production --prefix worker",
-    "deploy:staging": "npm run build && npm run deploy:staging --prefix worker",
+    "prerender": "tsx scripts/prerender.ts",
+    "deploy": "npm run build && npm run prerender && npm run deploy:production --prefix worker",
+    "deploy:staging": "npm run build && npm run prerender && npm run deploy:staging --prefix worker",
     "db:migrate": "npm run db:migrate:prod --prefix worker",
     "type-check": "concurrently \"npm run type-check --prefix worker\" \"npm run type-check --prefix frontend\""
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "playwright": "^1.48.0",
+    "tsx": "^4.19.1"
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.83",

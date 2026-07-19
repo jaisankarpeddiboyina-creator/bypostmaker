@@ -18,6 +18,7 @@ import { handleImageRoute } from './routes/image'
 import { runCronJobs, runDataRetention } from './services/cron'
 import { blogPosts } from '../../config/blog'
 import { findMatchingRoute, ROUTE_REGISTRY } from '../../config/routeRegistry'
+import { snapshotAssetPathForRoute, SNAPSHOT_MANIFEST_ASSET_PATH } from '../../config/publicRoutes'
 
 class MetaRewriter {
   private title: string
@@ -61,84 +62,7 @@ class MetaRewriter {
   }
 }
 
-class StructuredDataInjector {
-  private schemas: string[]
-
-  constructor(path: string, domain: string) {
-    this.schemas = []
-
-    // 1. Organization schema (site-wide)
-    const orgSchema = {
-      '@context': 'https://schema.org',
-      '@type': 'Organization',
-      'name': 'PostMaker',
-      'url': domain,
-      'logo': `${domain}/favicon.svg`,
-      'description': 'AI-powered social media content generator for all 30+ platforms'
-    }
-    this.schemas.push(JSON.stringify(orgSchema))
-
-    // 2. BreadcrumbList schema (per route)
-    const breadcrumbs = this.generateBreadcrumbs(path, domain)
-    this.schemas.push(JSON.stringify(breadcrumbs))
-
-    // 3. SoftwareApplication schema (homepage only, no offers field)
-    if (path === '/') {
-      const appSchema = {
-        '@context': 'https://schema.org',
-        '@type': 'SoftwareApplication',
-        'name': 'PostMaker',
-        'applicationCategory': 'BusinessApplication',
-        'description': 'AI-powered social media content generator for all 30+ platforms',
-        'url': domain
-      }
-      this.schemas.push(JSON.stringify(appSchema))
-    }
-  }
-
-  private generateBreadcrumbs(path: string, domain: string) {
-    const segments = path.split('/').filter(Boolean)
-    const items: any[] = [
-      {
-        '@type': 'ListItem',
-        'position': 1,
-        'name': 'Home',
-        'item': domain
-      }
-    ]
-
-    let currentPath = ''
-    segments.forEach((segment, index) => {
-      currentPath += `/${segment}`
-      items.push({
-        '@type': 'ListItem',
-        'position': index + 2,
-        'name': segment.charAt(0).toUpperCase() + segment.slice(1),
-        'item': `${domain}${currentPath}`
-      })
-    })
-
-    return {
-      '@context': 'https://schema.org',
-      '@type': 'BreadcrumbList',
-      'itemListElement': items
-    }
-  }
-
-  injectInto(element: any) {
-    const name = element.tagName.toLowerCase()
-    if (name === 'head') {
-      for (const schema of this.schemas) {
-        const script = element.document.createElement('script')
-        script.setAttribute('type', 'application/ld+json')
-        script.setInnerContent(schema)
-        element.appendChild(script)
-      }
-    }
-  }
-}
-
-// Simplified injector helper for HTMLRewriter
+// Injector for HTMLRewriter — appends JSON-LD structured data script tags into <head>
 class HeadInjector {
   private schemas: string[]
 
@@ -383,19 +307,64 @@ async function handleStaticPageSEO(request: Request, env: Env): Promise<Response
   let finalCanonicalUrl = canonicalUrl
   if (registryMatch && registryMatch.canonical) finalCanonicalUrl = registryMatch.canonical
 
-  // 2. Fetch the SPA shell index.html from static assets
-  let assetResponse: Response
-  try {
-    // Constraint #2: construct a new request pointing explicitly to /index.html
-    const indexRequest = new Request(new URL('/index.html', request.url))
-    assetResponse = await env.ASSETS.fetch(indexRequest)
-    
-    if (!assetResponse.ok) {
-      throw new Error(`ASSETS.fetch returned status ${assetResponse.status}`)
+  // 2. Try a build-time pre-rendered snapshot first (real content for
+  //    crawlers that don't execute JS). These are plain static files
+  //    bundled into the same asset deploy as everything else — no
+  //    separate bucket, no extra credentials. Falls back to the empty
+  //    SPA shell below on ANY miss or error — this must never be fatal.
+  let assetResponse: Response | null = null
+
+  if (!is404) {
+    try {
+      const manifestRequest = new Request(new URL(SNAPSHOT_MANIFEST_ASSET_PATH, request.url))
+      const manifestResponse = await env.ASSETS.fetch(manifestRequest)
+
+      if (manifestResponse.ok) {
+        const manifest = JSON.parse(await manifestResponse.text()) as { routes?: string[] }
+        const snapshotAssetPath = snapshotAssetPathForRoute(path)
+
+        if (Array.isArray(manifest.routes) && manifest.routes.includes(snapshotAssetPath)) {
+          const snapshotRequest = new Request(new URL(snapshotAssetPath, request.url))
+          const snapshotResponse = await env.ASSETS.fetch(snapshotRequest)
+
+          if (snapshotResponse.ok) {
+            const snapshotBody = await snapshotResponse.text()
+            // Sanity check: a real snapshot is a full rendered page, not
+            // the ~3KB empty SPA shell. Guards against the rare case the
+            // manifest lists a file that's somehow missing at request
+            // time (asset fallback would otherwise silently hand back
+            // the shell disguised as a 200).
+            if (snapshotBody.length > 1500) {
+              assetResponse = new Response(snapshotBody, {
+                headers: { 'Content-Type': 'text/html; charset=utf-8' },
+              })
+            }
+          }
+        }
+      }
+    } catch (err) {
+      // Manifest missing/malformed (e.g. JSON.parse on the SPA shell's
+      // HTML when the manifest itself doesn't exist yet) or snapshot
+      // fetch failed — not fatal, just fall through to the shell.
+      console.error('Snapshot lookup failed, falling back to SPA shell:', err)
     }
-  } catch (err) {
-    console.error('Failed to fetch SPA shell index.html:', err)
-    return new Response('Asset Not Found', { status: 404 })
+  }
+
+  // 2b. Fetch the SPA shell index.html from static assets (fallback path,
+  // and also the path for unknown-blog-post 404s which never had a snapshot).
+  if (!assetResponse) {
+    try {
+      // Constraint #2: construct a new request pointing explicitly to /index.html
+      const indexRequest = new Request(new URL('/index.html', request.url))
+      assetResponse = await env.ASSETS.fetch(indexRequest)
+
+      if (!assetResponse.ok) {
+        throw new Error(`ASSETS.fetch returned status ${assetResponse.status}`)
+      }
+    } catch (err) {
+      console.error('Failed to fetch SPA shell index.html:', err)
+      return new Response('Asset Not Found', { status: 404 })
+    }
   }
 
   // 3. Apply HTMLRewriter transformations (meta tags + structured data)

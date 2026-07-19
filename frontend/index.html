@@ -38,18 +38,10 @@
   <!-- Razorpay — required for subscription checkout -->
   <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
-  <!-- Structured Data -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    "name": "PostMaker",
-    "applicationCategory": "BusinessApplication",
-    "description": "AI-powered social media content generator for all 30+ platforms",
-    "url": "https://bypostamaker.com",
-    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
-  }
-  </script>
+  <!-- Structured data (Organization, BreadcrumbList, SoftwareApplication)
+       is injected server-side per route by the Worker's HeadInjector —
+       see worker/src/index.ts. Do not add a static JSON-LD block here,
+       it will duplicate/conflict with that injection. -->
 </head>
 <body>
   <div id="root"></div>
