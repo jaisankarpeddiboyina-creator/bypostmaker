@@ -17,6 +17,7 @@ import { handlePresignRoute } from './routes/upload'
 import { handleImageRoute } from './routes/image'
 import { runCronJobs, runDataRetention } from './services/cron'
 import { blogPosts } from '../../config/blog'
+export { GroqRateLimiter } from './services/limiter'
 
 class MetaRewriter {
   private title: string

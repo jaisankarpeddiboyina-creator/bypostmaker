@@ -1,8 +1,9 @@
 import type { Env } from '../../../config/ai'
 import type { PlatformTier } from '../../../config/platforms'
-import { createStreamingClient, detectLanguage, buildGroupSystemPrompt, parseGroupResponse, analyzeImage } from '../../../config/ai'
+import { createStreamingClient, detectLanguage, buildGroupSystemPrompt, parseGroupResponse, analyzeImage, buildImageContext } from '../../../config/ai'
 import { PLATFORM_MAP, isPlatformAccessible } from '../../../config/platforms'
 import { generateId } from '../utils/id'
+import { acquireGroqSlot, releaseGroqSlot, GROQ_RATE_LIMITS } from '../services/limiter'
 
 export async function handleRetry(
   request: Request,
@@ -112,16 +113,27 @@ export async function handleRetry(
     const language = detectLanguage(campaign.prompt)
     const systemPrompt = buildGroupSystemPrompt([platform], language)
 
-    // Inject image description context if available.
-    const imageContext = imageDescriptionForRetry
-      ? `\n\nImage context (the user's uploaded photo — use this to write a visuals-informed caption):\n${imageDescriptionForRetry}`
-      : ''
+    // Inject image description context if available using shared helper.
+    const imageContext = buildImageContext(imageDescriptionForRetry)
     const userPrompt = `User's content: "${campaign.prompt}"${imageContext}\n\nGenerate a post for: ${platform.name}. Return only JSON.`
 
-    // Text-only call — no image param. Stage 1 description is in the user prompt.
-    const stream = await streamGenerate({ systemPrompt, userPrompt })
+    const estimatedTokens = imageDescriptionForRetry
+      ? GROQ_RATE_LIMITS.ESTIMATED_TOKENS_IMAGE
+      : GROQ_RATE_LIMITS.ESTIMATED_TOKENS_TEXT
+
+    const waitMs = await acquireGroqSlot(env, estimatedTokens)
+    if (waitMs > 0) {
+      console.log(`[retry] Platform ${platformId} queued for ${waitMs}ms by global rate limiter`)
+    }
+
     let fullText = ''
-    for await (const chunk of stream.textStream) fullText += chunk
+    try {
+      // Text-only call — no image param. Stage 1 description is in the user prompt.
+      const stream = await streamGenerate({ systemPrompt, userPrompt })
+      for await (const chunk of stream.textStream) fullText += chunk
+    } finally {
+      await releaseGroqSlot(env)
+    }
 
     const parsed = parseGroupResponse(fullText, [platformId])
     const content = parsed[platformId]

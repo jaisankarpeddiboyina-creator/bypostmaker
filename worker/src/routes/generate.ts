@@ -6,13 +6,14 @@
 
 import type { Env } from '../../../config/ai'
 import type { PlatformTier } from '../../../config/platforms'
-import { createStreamingClient, detectLanguage, buildGroupSystemPrompt, parseGroupResponse, analyzeImage } from '../../../config/ai'
+import { createStreamingClient, detectLanguage, buildGroupSystemPrompt, parseGroupResponse, analyzeImage, buildImageContext } from '../../../config/ai'
 import { PLATFORM_MAP, isPlatformAccessible, TIER_LIMITS } from '../../../config/platforms'
 import { generateId } from '../utils/id'
 import { reserveUsageCredit, refundUsageCredit } from '../services/usage'
 import { sendEmail } from '../services/email'
 import { MAX_IMAGE_SIZE_BYTES } from '../../../config/limits'
 import { getCurrentPeriod } from '../utils/period'
+import { acquireGroqSlot, releaseGroqSlot, GROQ_RATE_LIMITS } from '../services/limiter'
 
 
 // Sentinel: thrown when a 'fatal' SSE event has already been sent to the client
@@ -221,13 +222,18 @@ export async function handleGenerate(
           const platforms = ids.map(id => PLATFORM_MAP[id]).filter(Boolean) as typeof PLATFORM_MAP[string][]
           const systemPrompt = buildGroupSystemPrompt(platforms, language)
 
-          // Inject the Stage 1 image description into the user prompt.
-          // buildGroupSystemPrompt() is unchanged — the description arrives as
-          // additional context in the user message, not in the system prompt.
-          const imageContext = imageDescription
-            ? `\n\nImage context (the user's uploaded photo — use this to write visuals-informed captions):\n${imageDescription}`
-            : ''
+          // Inject the Stage 1 image description into the user prompt using shared helper.
+          const imageContext = buildImageContext(imageDescription)
           const userPrompt = `User's content: "${prompt}"${imageContext}\n\nGenerate posts for: ${platforms.map(p => p.name).join(', ')}. Return only JSON.`
+
+          const estimatedTokens = imageDescription
+            ? GROQ_RATE_LIMITS.ESTIMATED_TOKENS_IMAGE
+            : GROQ_RATE_LIMITS.ESTIMATED_TOKENS_TEXT
+
+          const waitMs = await acquireGroqSlot(env, estimatedTokens)
+          if (waitMs > 0) {
+            console.log(`[generate] Group ${group} queued for ${waitMs}ms by global rate limiter`)
+          }
 
           try {
             // STAGE2_MOCK_FAIL_GROUP: test-only failure simulation.
@@ -267,6 +273,8 @@ export async function handleGenerate(
             for (const id of ids) {
               await send('error', { platformId: id, message: 'AI was momentarily busy — tap retry!' })
             }
+          } finally {
+            await releaseGroqSlot(env)
           }
         })
       )
