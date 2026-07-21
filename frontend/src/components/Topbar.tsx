@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Menu, Sparkles, LogOut, Settings, Shield } from 'lucide-react'
+import { Menu, Sparkles, LayoutGrid, PenTool } from 'lucide-react'
 import { useAppStore } from '../store/app'
 
 interface TopbarProps {
@@ -7,9 +7,11 @@ interface TopbarProps {
 }
 
 export function Topbar({ onMenuClick }: TopbarProps) {
-  const { user, usage } = useAppStore()
+  const { user, usage, campaign, isGenerating, viewMode, setViewMode, selectedPlatforms } = useAppStore()
   const location = useLocation()
   const navigate = useNavigate()
+
+  const isCreatePage = location.pathname.startsWith('/app/create')
 
   const getPageTitle = () => {
     const path = location.pathname
@@ -21,7 +23,13 @@ export function Topbar({ onMenuClick }: TopbarProps) {
     return 'Dashboard'
   }
 
-  const showCreateButton = !location.pathname.startsWith('/app/create')
+  const showCreateButton = !isCreatePage
+
+  // Calculate live progress for Results tab label during generation
+  const postsList = campaign ? Object.values(campaign.posts) : []
+  const completedCount = postsList.filter(p => p.status === 'done' || p.status === 'error').length
+  const totalCount = selectedPlatforms.length || postsList.length
+  const resultsTabLabel = isGenerating ? `Results (${completedCount}/${totalCount})` : 'Results'
 
   return (
     <header className="app-topbar">
@@ -30,6 +38,28 @@ export function Topbar({ onMenuClick }: TopbarProps) {
           <Menu size={20} />
         </button>
         <h1 className="topbar-title">{getPageTitle()}</h1>
+
+        {/* View Toggle Tab Control on /app/create when campaign exists */}
+        {isCreatePage && campaign !== null && (
+          <div className="view-toggle-pill">
+            <button
+              type="button"
+              className={`view-toggle-item ${viewMode === 'create' ? 'active' : ''}`}
+              onClick={() => setViewMode('create')}
+            >
+              <PenTool size={12} />
+              <span>Create</span>
+            </button>
+            <button
+              type="button"
+              className={`view-toggle-item ${viewMode === 'results' ? 'active' : ''}`}
+              onClick={() => setViewMode('results')}
+            >
+              <LayoutGrid size={12} />
+              <span>{resultsTabLabel}</span>
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="topbar-right">
@@ -48,7 +78,10 @@ export function Topbar({ onMenuClick }: TopbarProps) {
         {user && showCreateButton && (
           <button
             className="btn btn-primary btn-sm topbar-create-btn"
-            onClick={() => navigate('/app/create')}
+            onClick={() => {
+              setViewMode('create')
+              navigate('/app/create')
+            }}
           >
             <Sparkles size={13} />
             <span>Create Post</span>
@@ -72,7 +105,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
         .topbar-left {
           display: flex;
           align-items: center;
-          gap: var(--space-3);
+          gap: var(--space-4);
         }
 
         .mobile-menu-toggle {
@@ -95,6 +128,44 @@ export function Topbar({ onMenuClick }: TopbarProps) {
           font-weight: 700;
           color: var(--color-text-primary);
           letter-spacing: -0.02em;
+        }
+
+        /* View Toggle Segment Control */
+        .view-toggle-pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 2px;
+          padding: 3px;
+          background: var(--color-bg);
+          border: 1px solid var(--color-border);
+          border-radius: var(--radius-pill);
+          margin-left: 8px;
+        }
+
+        .view-toggle-item {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          padding: 5px 12px;
+          border-radius: var(--radius-pill);
+          border: none;
+          background: transparent;
+          color: var(--color-text-secondary);
+          font-family: var(--font-body);
+          font-size: 12.5px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all var(--transition);
+        }
+
+        .view-toggle-item:hover {
+          color: var(--color-text-primary);
+        }
+
+        .view-toggle-item.active {
+          background: var(--color-surface);
+          color: var(--color-primary-start);
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
         }
 
         .topbar-right {
@@ -149,7 +220,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
           }
 
           .topbar-create-btn {
-            display: none; /* Hide contextual button on narrow mobile screens to prevent squishing */
+            display: none;
           }
         }
       `}</style>
