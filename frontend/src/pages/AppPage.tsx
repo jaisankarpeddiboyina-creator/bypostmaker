@@ -1,6 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { useAppStore } from '../store/app'
-import { PlatformRail } from '../components/PlatformRail'
 import { CreateStepPanel } from '../components/CreateStepPanel'
 import { GenerationSummaryRail } from '../components/GenerationSummaryRail'
 import { ResultsView } from '../components/ResultsView'
@@ -215,8 +214,6 @@ export default function AppPage() {
 
   return (
     <div className="app-layout">
-      <PlatformRail userPlan={user?.plan ?? 'free'} onLockedClick={handleLockedPlatform} />
-
       <div className="app-body">
         {viewMode === 'create' ? (
           <div className="create-view-wrapper">

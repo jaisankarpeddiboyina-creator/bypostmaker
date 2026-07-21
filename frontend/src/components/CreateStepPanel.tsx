@@ -832,8 +832,25 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
         }
 
         @media (max-width: 640px) {
+          .step-card {
+            padding: 16px 14px;
+            gap: 12px;
+          }
+          .step-panel-title {
+            font-size: 19px;
+          }
+          .step-panel-subtitle {
+            font-size: 13px;
+          }
           .platform-selection-grid {
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+          }
+          .platform-card-item {
+            padding: 8px 10px;
+          }
+          .platform-card-name {
+            font-size: 11.5px;
           }
         }
       `}</style>
