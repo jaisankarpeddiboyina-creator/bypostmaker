@@ -17,6 +17,8 @@ import { handlePresignRoute } from './routes/upload'
 import { handleImageRoute } from './routes/image'
 import { runCronJobs, runDataRetention } from './services/cron'
 import { blogPosts } from '../../config/blog'
+import { vsPages } from '../../config/vsPages'
+import { forPages } from '../../config/forPages'
 import { findMatchingRoute, ROUTE_REGISTRY } from '../../config/routeRegistry'
 import { snapshotAssetPathForRoute, SNAPSHOT_MANIFEST_ASSET_PATH } from '../../config/publicRoutes'
 
@@ -217,6 +219,26 @@ async function handleSitemap(request: Request, env: Env): Promise<Response> {
   </url>`
     }
 
+    // Add comparison pages (concrete slugs — see config/vsPages.ts)
+    for (const entry of vsPages) {
+      xml += `
+  <url>
+    <loc>${domain}/vs/${entry.slug}</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>`
+    }
+
+    // Add audience/use-case pages (concrete slugs — see config/forPages.ts)
+    for (const entry of forPages) {
+      xml += `
+  <url>
+    <loc>${domain}/for/${entry.slug}</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>`
+    }
+
     xml += '\n</urlset>'
 
     return new Response(xml, {
@@ -261,6 +283,30 @@ async function handleStaticPageSEO(request: Request, env: Env): Promise<Response
       } else {
         title = 'Post Not Found | PostMaker Blog'
         description = 'The blog post you are looking for does not exist or has been moved.'
+        is404 = true
+      }
+    } else if (path.startsWith('/vs/')) {
+      const slug = path.substring(4)
+      const entry = vsPages.find(p => p.slug === slug)
+      if (entry) {
+        title = entry.title
+        description = entry.description
+        ogImage = entry.ogImage || `${domain}/og-image.svg`
+      } else {
+        title = 'Comparison Not Found | PostMaker'
+        description = 'The comparison you are looking for does not exist or has been moved.'
+        is404 = true
+      }
+    } else if (path.startsWith('/for/')) {
+      const slug = path.substring(5)
+      const entry = forPages.find(p => p.slug === slug)
+      if (entry) {
+        title = entry.title
+        description = entry.description
+        ogImage = entry.ogImage || `${domain}/og-image.svg`
+      } else {
+        title = 'Page Not Found | PostMaker'
+        description = 'The page you are looking for does not exist or has been moved.'
         is404 = true
       }
     } else {
@@ -410,6 +456,10 @@ export default {
       if (
         !path.startsWith('/api/') &&
         (path.startsWith('/blog') ||
+         path === '/vs' || path.startsWith('/vs/') ||
+         // Exact/subpath match only — NOT startsWith('/for'), which would
+         // also incorrectly match the existing /forgot-password route.
+         path === '/for' || path.startsWith('/for/') ||
          findMatchingRoute(path) ||
          path === '/privacy' ||
          path === '/terms' ||

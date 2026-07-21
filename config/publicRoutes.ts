@@ -15,6 +15,8 @@
 // add a static page here once and both sides pick it up automatically.
 
 import { blogPosts } from './blog'
+import { vsPages } from './vsPages'
+import { forPages } from './forPages'
 
 export interface PublicRoute {
   /** Concrete path, e.g. '/blog/my-post'. Never a pattern/wildcard. */
@@ -24,10 +26,14 @@ export interface PublicRoute {
 }
 
 // Static public pages with fixed content (not user/DB driven).
+// NOTE: '/pricing' is intentionally excluded — it's a client-side
+// redirect to '/#pricing' in App.tsx, not a real page. Pre-rendering
+// it would hand search engines a redirect stub instead of content.
 const STATIC_PUBLIC_PATHS = [
   '/',
-  '/pricing',
   '/blog',
+  '/vs',
+  '/for',
   '/privacy',
   '/terms',
   '/refund',
@@ -52,8 +58,10 @@ export function snapshotAssetPathForRoute(path: string): string {
 
 /**
  * Full list of concrete public routes eligible for pre-rendering.
- * Expands blog slugs from config/blog.ts so new posts are picked up
- * automatically on the next build — nothing to hand-maintain.
+ * Expands blog slugs from config/blog.ts, comparison slugs from
+ * config/vsPages.ts, and audience slugs from config/forPages.ts so new
+ * entries are picked up automatically on the next build — nothing to
+ * hand-maintain, and nothing to keep in sync manually.
  */
 export function getPublicRoutes(): PublicRoute[] {
   const routes: PublicRoute[] = STATIC_PUBLIC_PATHS.map(path => ({
@@ -63,6 +71,16 @@ export function getPublicRoutes(): PublicRoute[] {
 
   for (const post of blogPosts) {
     const path = `/blog/${post.slug}`
+    routes.push({ path, snapshotAssetPath: snapshotAssetPathForRoute(path) })
+  }
+
+  for (const entry of vsPages) {
+    const path = `/vs/${entry.slug}`
+    routes.push({ path, snapshotAssetPath: snapshotAssetPathForRoute(path) })
+  }
+
+  for (const entry of forPages) {
+    const path = `/for/${entry.slug}`
     routes.push({ path, snapshotAssetPath: snapshotAssetPathForRoute(path) })
   }
 

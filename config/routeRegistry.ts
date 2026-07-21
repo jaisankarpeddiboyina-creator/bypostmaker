@@ -24,35 +24,26 @@ export const ROUTE_REGISTRY: RouteEntry[] = [
     snapshotKey: 'snapshots/pricing.html',
     priority: 0.8
   },
-  // Comparison pages (dynamic under /vs/*)
+  // Comparison list page. NOTE: no '/vs/*' wildcard entry here — that
+  // pattern was being emitted literally into sitemap.xml as an invalid
+  // '.../vs/*' URL (findMatchingRoute only needs exact entries; concrete
+  // /vs/:slug pages are matched via an explicit path prefix check in the
+  // Worker and listed individually in the sitemap from config/vsPages.ts,
+  // the same way /blog/:slug already works).
   {
     pattern: '/vs',
-    title: 'Product comparisons — PostMaker',
-    description: 'Compare PostMaker with other products and platforms.',
-    indexable: true,
-    dynamic: true
+    title: 'Compare PostMaker — See How We Stack Up',
+    description: 'Compare PostMaker with other social media content tools.',
+    indexable: true
   },
-  {
-    pattern: '/vs/*',
-    title: 'Product comparisons — PostMaker',
-    description: 'Compare PostMaker with other products and platforms.',
-    indexable: true,
-    dynamic: true
-  },
-  // Platform pages (dynamic under /for/*)
+  // Audience/use-case list page. Same reasoning as '/vs' above — no
+  // '/for/*' wildcard entry; concrete /for/:slug pages come from
+  // config/forPages.ts.
   {
     pattern: '/for',
-    title: 'Platform pages — PostMaker',
-    description: 'Platform-specific landing pages (LinkedIn, Instagram, etc.)',
-    indexable: true,
-    dynamic: true
-  },
-  {
-    pattern: '/for/*',
-    title: 'Platform pages — PostMaker',
-    description: 'Platform-specific landing pages (LinkedIn, Instagram, etc.)',
-    indexable: true,
-    dynamic: true
+    title: 'PostMaker For Every Team — Find Your Use Case',
+    description: 'See how PostMaker fits your specific workflow.',
+    indexable: true
   }
 ]
 
