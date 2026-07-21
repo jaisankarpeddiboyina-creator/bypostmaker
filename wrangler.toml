@@ -32,6 +32,16 @@ migrations_dir = "db/migrations"
 binding = "BUCKET"
 bucket_name = "postmaker-uploads"
 
+# ── Durable Objects ──────────────────────────────────────────
+[durable_objects]
+bindings = [
+  { name = "GROQ_LIMITER", class_name = "GroqRateLimiter" }
+]
+
+[[migrations]]
+tag = "v1"
+new_classes = ["GroqRateLimiter"]
+
 
 # ── Cron Triggers ────────────────────────────────────────────
 [triggers]

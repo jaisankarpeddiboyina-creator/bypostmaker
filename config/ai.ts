@@ -35,6 +35,7 @@ export interface Env {
   VISION_MODEL: string
   DOMAIN: string
   ENVIRONMENT: 'development' | 'staging' | 'production'
+  GROQ_LIMITER?: DurableObjectNamespace
   // Test-only mock flags — hard-gated to non-production in analyzeImage() / generate.ts
   STAGE1_MOCK_FAIL?: string
   STAGE2_MOCK_FAIL_GROUP?: string
@@ -367,6 +368,11 @@ OUTPUT RULES:
 
 PLATFORMS:
 ${instructions}`
+}
+
+export function buildImageContext(imageDescription: string | null): string {
+  if (!imageDescription) return ''
+  return `\n\nImage context (the user's uploaded photo — use this to write visuals-informed captions):\n${imageDescription}`
 }
 
 export function parseGroupResponse(text: string, platformIds: string[]): Record<string, string> {

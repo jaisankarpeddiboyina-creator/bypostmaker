@@ -21,6 +21,7 @@ import { vsPages } from '../../config/vsPages'
 import { forPages } from '../../config/forPages'
 import { findMatchingRoute, ROUTE_REGISTRY } from '../../config/routeRegistry'
 import { snapshotAssetPathForRoute, SNAPSHOT_MANIFEST_ASSET_PATH } from '../../config/publicRoutes'
+export { GroqRateLimiter } from './services/limiter'
 
 class MetaRewriter {
   private title: string
