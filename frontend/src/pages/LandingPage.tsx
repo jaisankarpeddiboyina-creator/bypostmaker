@@ -3,6 +3,7 @@ import { Sparkles, Download, Zap, Globe, ArrowRight, Check } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '../store/app'
 import { api } from '../lib/api'
+import { PLANS } from '../config/pricing'
 
 const PLATFORMS_PREVIEW = [
   'Twitter','LinkedIn','Instagram','Reddit','TikTok',
@@ -29,41 +30,7 @@ export default function LandingPage() {
     navigate('/signup')
   }
 
-  const plans = [
-    {
-      key: 'free',
-      name: 'Free',
-      price: { usd: '$0', inr: '₹0' },
-      gens: 5,
-      platforms: 6,
-      features: ['5 generations/month', '6 platforms', 'Full content kit download', 'Image resizing (beta)'],
-    },
-    {
-      key: 'starter',
-      name: 'Starter',
-      price: { usd: '$9', inr: '₹299' },
-      gens: 50,
-      platforms: 30,
-      features: ['50 generations/month', 'All 30+ platforms', '30-day history', 'AI refinement'],
-    },
-    {
-      key: 'pro',
-      name: 'Pro',
-      price: { usd: '$19', inr: '₹799' },
-      gens: 200,
-      platforms: 30,
-      features: ['200 generations/month', 'All 30+ platforms', '90-day history', 'Priority generation'],
-      featured: true,
-    },
-    {
-      key: 'business',
-      name: 'Business',
-      price: { usd: '$49', inr: '₹1,999' },
-      gens: 1000,
-      platforms: 30,
-      features: ['1,000 generations/month', 'All 30+ platforms', '1-year history', 'API access (coming soon)'],
-    },
-  ]
+  const plans = PLANS
 
   return (
     <div className="landing">
@@ -124,45 +91,19 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Why PostMaker */}
-      <section className="section" id="why">
-        <div className="section-inner">
-          <div className="section-label">Why PostMaker</div>
-          <h2 className="section-title">One post never looks right everywhere else</h2>
-          <p className="section-intro">
-            A tweet doesn't work as a LinkedIn post. A LinkedIn post reads stiff on Threads.
-            And whatever you wrote for Instagram needs a completely different shape on Reddit,
-            where obvious self-promotion gets you downvoted in minutes. Most people solve this
-            by either posting the same text everywhere and quietly underperforming on every
-            platform but one, or by manually rewriting each version themselves — which turns a
-            five-minute idea into an hour of busywork. PostMaker exists to close that gap: you
-            write what you want to say once, and it comes back out the other side already
-            shaped for wherever it's going.
-          </p>
-        </div>
-      </section>
-
       {/* How it works */}
       <section className="section" id="features">
         <div className="section-inner">
           <div className="section-label">How it works</div>
           <h2 className="section-title">Three steps to your content kit</h2>
-          <p className="section-intro">
-            There's no dashboard to learn and no content calendar to fill in ahead of time.
-            You pick where you're posting, describe what you want to say, and PostMaker
-            handles the platform-specific work — tone, length, hashtags, formatting quirks —
-            that would otherwise mean opening ten tabs and rewriting the same idea ten
-            different ways.
-          </p>
 
           <div className="steps">
             <div className="step">
               <div className="step-num">1</div>
               <h3 className="step-title">Pick your platforms</h3>
               <p className="step-desc">
-                Select from 30+ social platforms in one click. Mix and match — Twitter,
-                LinkedIn, Reddit, TikTok, and more — based on where your audience actually
-                spends time, not just where you remembered to post last week.
+                Select from 30+ social platforms. Mix and match — Twitter, LinkedIn,
+                Reddit, TikTok, and more in one go.
               </p>
             </div>
             <div className="step-arrow"><ArrowRight size={18} /></div>
@@ -170,10 +111,8 @@ export default function LandingPage() {
               <div className="step-num">2</div>
               <h3 className="step-title">Write one prompt</h3>
               <p className="step-desc">
-                Describe your content in plain language, the way you'd explain it to a
-                friend. Add an image or video if you have one, and PostMaker handles tone,
-                format, hashtags, and character limits for every platform you picked —
-                automatically, without you needing to know each platform's unwritten rules.
+                Describe your content. Add an image or video if you have one.
+                PostMaker handles tone, format, and character limits for each platform.
               </p>
             </div>
             <div className="step-arrow"><ArrowRight size={18} /></div>
@@ -181,10 +120,8 @@ export default function LandingPage() {
               <div className="step-num">3</div>
               <h3 className="step-title">Download your kit</h3>
               <p className="step-desc">
-                Get a ZIP with platform-organised folders — post text, correctly resized
-                images, share links, and everything else ready to upload. No more guessing
-                which image dimensions a platform wants this month, or manually cropping the
-                same photo six different ways before lunch.
+                Get a ZIP with platform-organised folders — post text, resized images,
+                share links, everything ready to upload.
               </p>
             </div>
           </div>
@@ -196,45 +133,38 @@ export default function LandingPage() {
         <div className="section-inner">
           <div className="section-label">Features</div>
           <h2 className="section-title">Built for people who post seriously</h2>
-          <p className="section-intro">
-            These aren't nice-to-haves bolted onto a generic AI writer. Every feature below
-            exists because posting the same idea across 30+ networks surfaces a specific,
-            repeatable annoyance — mismatched formats, inconsistent tone, images that are the
-            wrong size for half your platforms — and we built PostMaker specifically to remove
-            that annoyance rather than ask you to work around it.
-          </p>
 
           <div className="features-grid">
             {[
               {
                 icon: <Zap size={18} />,
                 title: 'Parallel generation',
-                desc: 'All platforms generated simultaneously, not one after another — your full kit is ready in seconds, not the twenty minutes it would take to write each version by hand.',
+                desc: 'All platforms generated simultaneously — full kit in seconds, not minutes.',
               },
               {
                 icon: <Globe size={18} />,
                 title: 'Platform-native tone',
-                desc: 'Every platform has its own tone, format, and character rules — what reads well on LinkedIn gets ignored on Reddit. PostMaker learns and follows all of them, so you don\'t have to memorize a single one.',
+                desc: 'Every platform has its own tone, format, and character rules. AI follows all of them.',
               },
               {
                 icon: <Download size={18} />,
                 title: 'Download-ready kit',
-                desc: 'One ZIP file, folders per platform — post text and correctly resized images, organised and named so you know exactly what goes where the moment you open it.',
+                desc: 'ZIP with folders per platform — post text and resized images, organised and ready to upload.',
               },
               {
                 icon: <Sparkles size={18} />,
                 title: 'AI refinement',
-                desc: 'Not happy with one specific post? Chat with the AI to refine just that platform\'s version without touching anything else — one targeted fix instead of starting over on all 30+.',
+                desc: 'Not happy with a post? Chat with AI to refine just that platform. One call, not all 30+.',
               },
               {
                 icon: <Check size={18} />,
                 title: 'Inline editing',
-                desc: 'Edit any card directly in the browser, the same way you\'d edit a normal text box. Your changes persist in the final kit when you download it, so nothing gets lost in between.',
+                desc: 'Edit any card directly. Your changes persist in the kit when you download.',
               },
               {
                 icon: <Globe size={18} />,
                 title: 'Any language',
-                desc: 'Write your prompt in Hindi, Spanish, Arabic, or dozens of other languages, and PostMaker generates every platform\'s post in that same language — no separate translation step required.',
+                desc: 'Write your prompt in Hindi, Spanish, Arabic — AI generates all posts in the same language.',
               },
             ].map((f, i) => (
               <div key={i} className="feature-card">
@@ -247,51 +177,11 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Who it's for */}
-      <section className="section" id="who">
-        <div className="section-inner">
-          <div className="section-label">Who it's for</div>
-          <h2 className="section-title">Built for how you actually work</h2>
-
-          <div className="features-grid">
-            {[
-              {
-                title: 'Solo founders',
-                desc: 'You are marketing, support, and product in one person. PostMaker turns one product update into a week of platform-ready posts, so social media stops eating the hours you need for everything else.',
-              },
-              {
-                title: 'Social media managers',
-                desc: 'Managing several client accounts across different platforms means constant context-switching. PostMaker keeps every client\'s voice consistent while cutting out the manual rewriting that fills up most of a workday.',
-              },
-              {
-                title: 'Agencies',
-                desc: 'Deliverables multiply fast when every client wants a presence on every platform. PostMaker lets you produce a full multi-platform kit per client without adding headcount or slipping deadlines.',
-              },
-              {
-                title: 'Independent creators',
-                desc: 'Your best ideas don\'t always arrive with the energy to format them six different ways. Write it once while it\'s fresh, and let PostMaker handle the platform-specific busywork after.',
-              },
-            ].map((a, i) => (
-              <div key={i} className="feature-card">
-                <h3 className="feature-title">{a.title}</h3>
-                <p className="feature-desc">{a.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Pricing */}
       <section className="section" id="pricing">
         <div className="section-inner">
           <div className="section-label">Pricing</div>
           <h2 className="section-title">Simple, honest pricing</h2>
-          <p className="section-intro">
-            Every plan includes the full content kit, not a stripped-down version. What
-            changes as you move up is how many generations you get per month and how many
-            platforms you can target at once — so you only pay for volume, never for
-            features you'd otherwise expect to already be included.
-          </p>
 
           <div className="pricing-toggle">
             <span className={billingCurrency === 'usd' ? 'active' : ''}>USD</span>
@@ -315,7 +205,7 @@ export default function LandingPage() {
                   {plan.key !== 'free' && <span className="pricing-period">/month</span>}
                 </div>
                 <div className="pricing-platforms">
-                  {plan.platforms === 6 ? plan.platforms : `${plan.platforms}+`} platforms · {plan.gens === -1 ? 'Unlimited' : plan.gens} gen/mo
+                  {plan.key === 'free' ? plan.platforms : `${plan.platforms}+`} platforms · {plan.gens === -1 ? 'Unlimited' : plan.gens} gen/mo
                 </div>
                 <ul className="pricing-features">
                   {plan.features.map((f, i) => (
@@ -331,25 +221,6 @@ export default function LandingPage() {
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* Closing */}
-      <section className="section" id="trust">
-        <div className="section-inner" style={{ textAlign: 'center' }}>
-          <h2 className="section-title" style={{ marginBottom: '16px' }}>
-            Write once. Stop rewriting forever.
-          </h2>
-          <p className="section-intro" style={{ marginLeft: 'auto', marginRight: 'auto' }}>
-            PostMaker was built by people who got tired of opening the same ten tabs every
-            time they wanted to share one idea. If that sounds familiar, the free plan gives
-            you five generations across six platforms with no credit card required — enough
-            to see whether it actually saves you the time we think it will.
-          </p>
-          <button className="btn hero-btn-primary" onClick={handleCTA} style={{ margin: '24px auto 0' }}>
-            <Sparkles size={16} />
-            {user ? 'Open PostMaker' : 'Start free — no card needed'}
-          </button>
         </div>
       </section>
 
@@ -560,13 +431,6 @@ export default function LandingPage() {
           color: var(--text-1);
           margin-bottom: 48px;
           letter-spacing: -0.03em;
-        }
-        .section-intro {
-          font-size: 15px;
-          color: var(--text-2);
-          line-height: 1.75;
-          max-width: 640px;
-          margin: -28px auto 40px;
         }
 
         /* Steps */
