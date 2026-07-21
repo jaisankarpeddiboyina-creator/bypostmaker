@@ -84,6 +84,9 @@ interface AppStore {
 
   currency: 'usd' | 'inr'
   setCurrency: (c: 'usd' | 'inr') => void
+
+  viewMode: 'create' | 'results'
+  setViewMode: (v: 'create' | 'results') => void
 }
 
 export const useAppStore = create<AppStore>((set, get) => ({
@@ -141,4 +144,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   currency: 'usd',
   setCurrency: (c) => set({ currency: c }),
+
+  viewMode: 'create',
+  setViewMode: (v) => set({ viewMode: v }),
 }))

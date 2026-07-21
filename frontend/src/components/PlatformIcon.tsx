@@ -7,6 +7,7 @@ import {
   SiYoutube, SiYoutubeshorts, SiPinterest, SiTwitch, SiClubhouse,
   SiDribbble, SiBehance, SiTelegram, SiWhatsapp
 } from '@icons-pack/react-simple-icons'
+import { PLATFORM_MAP } from '@@config/platforms'
 
 const ICON_MAP: Record<string, React.ComponentType<{ size?: string | number; color?: string; title?: string }>> = {
   twitter:      SiX,
@@ -48,17 +49,30 @@ function LinkedInIcon({ size = 24, color = 'currentColor' }: { size?: number; co
   )
 }
 
-export function PlatformIcon({ id, size = 24, color = 'currentColor' }: { id: string; size?: number; color?: string }) {
-  if (id === 'linkedin') return <LinkedInIcon size={size} color={color} />
+export function PlatformIcon({
+  id,
+  size = 24,
+  color,
+  useBrandColor = true,
+}: {
+  id: string
+  size?: number
+  color?: string
+  useBrandColor?: boolean
+}) {
+  const brandColor = PLATFORM_MAP[id]?.brandColor ?? '#7c3aed'
+  const effectiveColor = color ?? (useBrandColor ? brandColor : 'currentColor')
+
+  if (id === 'linkedin') return <LinkedInIcon size={size} color={effectiveColor} />
 
   const Icon = ICON_MAP[id]
-  if (Icon) return <Icon size={size} color={color} title={id} />
+  if (Icon) return <Icon size={size} color={effectiveColor} title={id} />
 
   // Fallback for slack, lemon8, betalist — letter in circle
   return (
     <svg width={size} height={size} viewBox="0 0 24 24">
-      <circle cx="12" cy="12" r="10" fill={color} opacity="0.5" />
-      <text x="12" y="16" textAnchor="middle" fontSize="9" fill="white" fontWeight="700">
+      <circle cx="12" cy="12" r="10" fill={effectiveColor} opacity="0.9" />
+      <text x="12" y="15.5" textAnchor="middle" fontSize="9" fill="white" fontWeight="700">
         {id.slice(0, 2).toUpperCase()}
       </text>
     </svg>

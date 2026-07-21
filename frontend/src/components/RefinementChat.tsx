@@ -377,6 +377,21 @@ export function RefinementChat({ platformId, campaignId, onClose }: RefinementCh
         }
 
         .spin { animation: spin 1s linear infinite; }
+
+        @media (max-width: 768px) {
+          .refinement-panel {
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1000;
+            border-left: none;
+            box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.2);
+          }
+          .refinement-message-content {
+            max-width: 80%;
+          }
+        }
       `}</style>
     </div>
   )
