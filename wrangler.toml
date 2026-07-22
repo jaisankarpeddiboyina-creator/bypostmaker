@@ -101,6 +101,14 @@ database_name = "postmaker-db"
 database_id = "5a7acba9-31aa-41fc-98ab-1553102423d7"
 migrations_dir = "db/migrations"
 
+[[env.production.durable_objects.bindings]]
+name = "GROQ_LIMITER"
+class_name = "GroqRateLimiter"
+
+[[env.production.migrations]]
+tag = "v1"
+new_classes = ["GroqRateLimiter"]
+
 [[env.production.r2_buckets]]
 binding = "BUCKET"
 bucket_name = "postmaker-uploads"
