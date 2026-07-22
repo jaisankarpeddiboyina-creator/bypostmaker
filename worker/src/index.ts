@@ -1,6 +1,6 @@
 import type { Env } from '../../config/ai'
 import { withAuth } from './middleware/auth'
-import { withRateLimit, withIpRateLimit, withPresignRateLimit } from './middleware/rateLimit'
+import { withRateLimit, withIpRateLimit, withPresignRateLimit, withThumbnailRateLimit } from './middleware/rateLimit'
 import { withCors } from './middleware/cors'
 import { handleAuth } from './routes/auth'
 import { handleGenerate } from './routes/generate'
@@ -15,7 +15,10 @@ import { handleAdmin } from './routes/admin'
 import { handlePromos } from './routes/promos'
 import { handlePresignRoute } from './routes/upload'
 import { handleImageRoute } from './routes/image'
+import { handleBrandKit } from './routes/brand-kit'
+import { handleThumbnailRoute } from './routes/thumbnail'
 import { runCronJobs, runDataRetention } from './services/cron'
+
 import { blogPosts } from '../../config/blog'
 import { vsPages } from '../../config/vsPages'
 import { forPages } from '../../config/forPages'
@@ -585,6 +588,20 @@ export default {
 
       if (path.startsWith('/api/history'))
         return withCors(await handleHistory(request, env, userId), env)
+
+      if (path.startsWith('/api/brand-kit'))
+        return withCors(await handleBrandKit(request, env, userId), env)
+
+      if (path.startsWith('/api/studio/thumbnail') && request.method === 'POST') {
+        const thumbRl = await withThumbnailRateLimit(request, env, userId)
+        if (!thumbRl.ok) {
+          return withCors(new Response(JSON.stringify({ error: 'Thumbnail generation rate limit reached (5 requests per 10 minutes). Please wait.' }), {
+            status: 429,
+            headers: { 'Content-Type': 'application/json', 'Retry-After': String(thumbRl.retryAfter ?? 600) },
+          }), env)
+        }
+        return withCors(await handleThumbnailRoute(request, env, userId, userPlan), env)
+      }
 
       if (path.startsWith('/api/image/') && request.method === 'GET')
         return withCors(await handleImageRoute(request, env, userId), env)

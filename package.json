@@ -20,6 +20,7 @@
     "@ai-sdk/google": "^3.0.83",
     "@ai-sdk/groq": "^3.0.42",
     "@ailink/sdk": "^0.3.0",
+    "@playwright/test": "^1.61.1",
     "ai": "^6.0.208"
   }
 }

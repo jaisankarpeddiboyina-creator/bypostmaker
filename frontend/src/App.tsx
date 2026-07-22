@@ -22,6 +22,10 @@ const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'))
 const BlogPage = lazy(() => import('./pages/BlogPage'))
 const VsPage = lazy(() => import('./pages/VsPage'))
 const ForPage = lazy(() => import('./pages/ForPage'))
+const BrandKitPage = lazy(() => import('./pages/BrandKitPage'))
+const StudioPage = lazy(() => import('./pages/StudioPage'))
+const ThumbnailMakerPage = lazy(() => import('./pages/ThumbnailMakerPage'))
+
 
 
 const SentryRoutes = Sentry.withSentryReactRouterV6Routing(Routes)
@@ -184,6 +188,16 @@ export default function App() {
           <Route path="/app/settings" element={
             <AuthGuard><AppShell><SettingsPage /></AppShell></AuthGuard>
           } />
+          <Route path="/app/brand-kit" element={
+            <AuthGuard><AppShell><BrandKitPage /></AppShell></AuthGuard>
+          } />
+          <Route path="/app/studio" element={
+            <AuthGuard><AppShell><StudioPage /></AppShell></AuthGuard>
+          } />
+          <Route path="/app/studio/thumbnail" element={
+            <AuthGuard><AppShell><ThumbnailMakerPage /></AppShell></AuthGuard>
+          } />
+
 
           <Route path="/admin" element={
             <AdminGuard><AppShell><AdminPage /></AppShell></AdminGuard>

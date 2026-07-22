@@ -95,3 +95,34 @@ export async function withPresignRateLimit(
 
   return { ok: true }
 }
+
+const THUMBNAIL_WINDOW_MS = 10 * 60 * 1000 // 10 minutes
+const MAX_REQUESTS_THUMBNAIL = 5 // 5 requests per 10 minutes
+
+// withThumbnailRateLimit — 5 req / 10 min per user for /api/studio/thumbnail.
+// Uses a separate key namespace ("thumbnail:") in requestCounts Map.
+export async function withThumbnailRateLimit(
+  _request: Request,
+  _env: Env,
+  userId: string
+): Promise<RateLimitResult> {
+  const now = Date.now()
+  const key = `thumbnail:${userId}`
+
+  let entry = requestCounts.get(key)
+
+  if (!entry || now > entry.resetAt) {
+    entry = { count: 0, resetAt: now + THUMBNAIL_WINDOW_MS }
+    requestCounts.set(key, entry)
+  }
+
+  entry.count++
+
+  if (entry.count > MAX_REQUESTS_THUMBNAIL) {
+    const retryAfter = Math.ceil((entry.resetAt - now) / 1000)
+    return { ok: false, retryAfter }
+  }
+
+  return { ok: true }
+}
+
