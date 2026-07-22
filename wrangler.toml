@@ -107,7 +107,7 @@ class_name = "GroqRateLimiter"
 
 [[env.production.migrations]]
 tag = "v1"
-new_classes = ["GroqRateLimiter"]
+new_sqlite_classes = ["GroqRateLimiter"]
 
 [[env.production.r2_buckets]]
 binding = "BUCKET"
