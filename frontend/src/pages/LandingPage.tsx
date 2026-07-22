@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Sparkles, Download, Zap, Globe, ArrowRight, Check } from 'lucide-react'
+import { Sparkles, Download, Zap, Globe, ArrowRight, Check, ChevronDown } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '../store/app'
 import { api } from '../lib/api'
 import { PLANS } from '../config/pricing'
+import { faqEntries } from '../../../config/faq'
 
 const PLATFORMS_PREVIEW = [
   'Twitter','LinkedIn','Instagram','Reddit','TikTok',
@@ -15,6 +16,7 @@ export default function LandingPage() {
   const navigate = useNavigate()
   const { user, currency, setCurrency } = useAppStore()
   const [billingCurrency, setBillingCurrency] = useState<'usd'|'inr'>(currency)
+  const [openFaqId, setOpenFaqId] = useState<string | null>(null)
   const authUrl = import.meta.env.DEV ? '/api/auth/dev' : '/api/auth/google'
 
   useEffect(() => { setBillingCurrency(currency) }, [currency])
@@ -220,6 +222,37 @@ export default function LandingPage() {
                 </button>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="section" id="faq">
+        <div className="section-inner">
+          <div className="section-label">FAQ</div>
+          <h2 className="section-title">Questions, answered</h2>
+          <p className="section-intro">
+            Everything you need to know before you get started. Don't see your question?
+            Reach out at <a href="mailto:support@bypostamaker.com">support@bypostamaker.com</a>.
+          </p>
+
+          <div className="faq-list">
+            {faqEntries.map(entry => {
+              const isOpen = openFaqId === entry.id
+              return (
+                <div key={entry.id} className={`faq-item ${isOpen ? 'open' : ''}`}>
+                  <button
+                    className="faq-question"
+                    onClick={() => setOpenFaqId(isOpen ? null : entry.id)}
+                    aria-expanded={isOpen}
+                  >
+                    <span>{entry.question}</span>
+                    <ChevronDown size={18} className="faq-chevron" />
+                  </button>
+                  <p className="faq-answer">{entry.answer}</p>
+                </div>
+              )
+            })}
           </div>
         </div>
       </section>
@@ -610,6 +643,64 @@ export default function LandingPage() {
           width: 100%;
           justify-content: center;
           height: 40px;
+        }
+
+        /* FAQ */
+        .faq-list {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          max-width: 720px;
+          margin: 0 auto;
+        }
+        .faq-item {
+          background: var(--card);
+          border: 1px solid var(--border);
+          border-radius: var(--radius-lg);
+          overflow: hidden;
+          transition: border-color var(--transition);
+        }
+        .faq-item.open {
+          border-color: var(--accent);
+        }
+        .faq-question {
+          width: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          padding: 18px 20px;
+          background: transparent;
+          border: none;
+          cursor: pointer;
+          text-align: left;
+          font-family: var(--font-body);
+          font-size: 15px;
+          font-weight: 600;
+          color: var(--text-1);
+        }
+        .faq-chevron {
+          flex-shrink: 0;
+          color: var(--text-3);
+          transition: transform var(--transition);
+        }
+        .faq-item.open .faq-chevron {
+          transform: rotate(180deg);
+          color: var(--accent);
+        }
+        .faq-answer {
+          display: none;
+          padding: 0 20px 18px;
+          font-size: 14px;
+          line-height: 1.6;
+          color: var(--text-2);
+        }
+        .faq-item.open .faq-answer {
+          display: block;
+        }
+        .faq-answer a,
+        .section-intro a {
+          color: var(--accent);
         }
 
         /* Footer */
