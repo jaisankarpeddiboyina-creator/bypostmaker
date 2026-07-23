@@ -86,6 +86,15 @@ migrations_dir = "db/migrations"
 binding = "BUCKET"
 bucket_name = "postmaker-uploads-staging"
 
+[env.staging.durable_objects]
+bindings = [
+  { name = "GROQ_LIMITER", class_name = "GroqRateLimiter" }
+]
+
+[[env.staging.migrations]]
+tag = "v1"
+new_sqlite_classes = ["GroqRateLimiter"]
+
 
 # ── Production Environment ───────────────────────────────────
 [env.production]

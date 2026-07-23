@@ -68,3 +68,31 @@ PostMaker is a live production SaaS application that generates platform-tailored
    - **Phase 3: Execution & Empirical Verification**: Implement code, run tests (`npm run type-check`, `npm run build`), verify D1 queries and API responses, and run UI screenshots.
 2. **Evidence Standard**: A feature is ONLY "working" when backed up by actual command outputs, API response JSON, D1 query rows, or screenshot files. "Should work" or "structurally correct" is strictly invalid.
 3. **Incident History Caution**: In a previous session, a summary claimed the AI Thumbnail Maker was "fully working end-to-end" when `thumbnail.ts` was actually returning `placehold.co` placeholder URLs. Always distinguish between metadata/scoring logic and real model generation.
+4. **How to Ship Code**: See Section 7 below — use `scripts/ship.sh` exclusively.
+
+---
+
+## 7. Shipping Code — The Only Sanctioned Deploy Path
+
+**`bash scripts/ship.sh` is the only way anyone pushes code to `staging` or `main` in this repository. Do not run `git push` manually outside this script.**
+
+This rule exists because a push to `main` via admin bypass (commit `7b4d959`, July 23 2026) skipped type-check and created an untracked merge state that required a full CI investigation to untangle. The script enforces the sequence that CI also runs, locally, before any push reaches GitHub.
+
+### What the script does (in order, stops on any failure):
+
+1. **Clean git status** — refuses to run with uncommitted changes
+2. **Branch guard** — only runs on `staging` or `main`, never on feature branches
+3. **Fast-forward pull only** — aborts if branches have diverged (surfaces it as an explicit error rather than auto-merging)
+4. **`npm ci`** in root, `worker/`, and `frontend/` — mirrors exactly what GitHub Actions runs; never `npm install`
+5. **`npm run type-check`** — stops and prints all TypeScript errors if any
+6. **`npm run build`** — stops and prints build errors if any
+7. **`git push origin <branch>`** — only reached if all above pass
+
+### Important caveat the script says explicitly:
+
+> Pushing successfully ≠ deploy succeeded. Check the Actions tab after every push:
+> https://github.com/jaisankarpeddiboyina-creator/bypostmaker/actions
+
+### Lockfile discipline:
+- Always run `npm install` (not manual edits) when changing `package.json` — then commit both files together.
+- `npm ci` in the ship script and in CI will fail if `package-lock.json` is out of sync with `package.json`.
