@@ -6,6 +6,7 @@ import {
   buildGroupSystemPrompt,
   parseGroupResponse,
   buildImageContext,
+  analyzeImage,
 } from '../../../config/ai'
 import {
   PLATFORM_MAP,
@@ -24,7 +25,8 @@ export async function handleRetry(
   request: Request,
   env: Env,
   userId: string,
-  userPlan: PlatformTier
+  userPlan: PlatformTier,
+  ctx: ExecutionContext
 ): Promise<Response> {
   let body: {
     campaignId: string
@@ -51,7 +53,7 @@ export async function handleRetry(
   }
 
   const campaign = await env.DB.prepare(
-    `SELECT id, prompt, status, platforms, image_description
+    `SELECT id, prompt, status, platforms, image_description, image_key
      FROM campaigns
      WHERE id = ? AND user_id = ?`
   )
@@ -62,6 +64,7 @@ export async function handleRetry(
       status: string
       platforms: string
       image_description: string | null
+      image_key: string | null
     }>()
 
   if (!campaign) {
@@ -94,22 +97,52 @@ export async function handleRetry(
     return jsonError('Campaign is not ready for retry', 409)
   }
 
-  /*
-    Billing rule:
+  let imageDescription = campaign.image_description
 
-    failed campaign:
-      - Stage 1 failed
-      - New AI generation
-      - Charge credit
+  if (!imageDescription || imageDescription === 'null') {
+    imageDescription = null
+    const imgRows = await env.DB.prepare(
+      `SELECT image_key FROM campaign_images WHERE campaign_id = ? ORDER BY sort_order ASC`
+    ).bind(campaignId).all<{ image_key: string }>()
 
-    completed campaign:
-      - Platform retry only
-      - Cached campaign
-      - Free retry
-  */
+    let keys: string[] = []
+    if (imgRows.results && imgRows.results.length > 0) {
+      keys = imgRows.results.map(r => r.image_key)
+    } else if (campaign.image_key) {
+      keys = [campaign.image_key]
+    }
+
+    if (keys.length > 0) {
+      // Phase 1: Fetch all R2 objects in parallel
+      const objs = await Promise.all(keys.map(k => env.BUCKET.get(k)))
+      const payloads: Array<{ buffer: ArrayBuffer; contentType: string }> = []
+
+      // Phase 2: Read buffers in parallel (only for objects that exist)
+      const validObjs = objs.filter((o): o is NonNullable<typeof o> => o !== null)
+      if (validObjs.length > 0) {
+        const buffers = await Promise.all(
+          validObjs.map(async (obj) => ({
+            buffer: await obj.arrayBuffer(),
+            contentType: obj.httpMetadata?.contentType ?? 'image/jpeg',
+          }))
+        )
+        payloads.push(...buffers)
+      }
+
+      if (payloads.length > 0) {
+        const visionResult = await analyzeImage(env, payloads)
+        if (visionResult.description) {
+          imageDescription = visionResult.description
+          await env.DB.prepare(
+            `UPDATE campaigns SET image_description = ? WHERE id = ?`
+          ).bind(imageDescription, campaignId).run()
+        }
+      }
+    }
+  }
 
   const shouldChargeForRetry =
-    campaign.status === 'failed' && campaign.image_description === null
+    campaign.status === 'failed' && imageDescription === null
 
   let reserved = false
 
@@ -131,11 +164,10 @@ export async function handleRetry(
     const language = detectLanguage(campaign.prompt)
     const systemPrompt = buildGroupSystemPrompt([platform], language)
 
-    // Restore image context from campaign.image_description if present (Fix 2)
-    const imageContext = buildImageContext(campaign.image_description)
+    const imageContext = buildImageContext(imageDescription)
     const userPrompt = `User's content: "${campaign.prompt}"${imageContext}\n\nGenerate a post for: ${platform.name}.\nReturn only JSON.`
 
-    const estimatedTokens = campaign.image_description
+    const estimatedTokens = imageDescription
       ? GROQ_RATE_LIMITS.ESTIMATED_TOKENS_IMAGE
       : GROQ_RATE_LIMITS.ESTIMATED_TOKENS_TEXT
 
@@ -184,32 +216,32 @@ export async function handleRetry(
         .run()
     }
 
-    // Mark failed campaign as completed after successful retry
-    await env.DB.prepare(
-      `UPDATE campaigns
-       SET status = 'completed',
-           generated_count = (
-             SELECT COUNT(*)
-             FROM generated_posts
-             WHERE campaign_id = ?
-           ),
-           updated_at = unixepoch()
-       WHERE id = ?`
+    // Return the content immediately — don't block the response on the
+    // housekeeping campaign status update. Defer it to waitUntil() so the
+    // Worker's request lifecycle ends as soon as the client has its data.
+    const response = new Response(
+      JSON.stringify({ content, platformId }),
+      { headers: { 'Content-Type': 'application/json' } }
     )
-      .bind(campaignId, campaignId)
-      .run()
 
-    return new Response(
-      JSON.stringify({
-        content,
-        platformId,
-      }),
-      {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
+    ctx.waitUntil(
+      env.DB.prepare(
+        `UPDATE campaigns
+         SET status = 'completed',
+             generated_count = (
+               SELECT COUNT(*)
+               FROM generated_posts
+               WHERE campaign_id = ?
+             ),
+             updated_at = unixepoch()
+         WHERE id = ?`
+      )
+        .bind(campaignId, campaignId)
+        .run()
+        .catch(err => console.error('[retry] Campaign status update failed:', err))
     )
+
+    return response
   } catch (err) {
     if (reserved) {
       const { periodStart } = getCurrentPeriod()

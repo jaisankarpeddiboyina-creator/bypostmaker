@@ -38,7 +38,9 @@ export interface Env {
   GROQ_LIMITER?: DurableObjectNamespace
   // Test-only mock flags — hard-gated to non-production in analyzeImage() / generate.ts
   STAGE1_MOCK_FAIL?: string
+  STAGE1_MOCK_SUCCESS?: string
   STAGE2_MOCK_FAIL_GROUP?: string
+  STAGE2_MOCK_SUCCESS?: string
 }
 
 // ── AILink Instance Factory ───────────────────────────────────
@@ -113,7 +115,7 @@ export function createAIClient(env: Env) {
 // environment variables exist in the production Worker binding.
 export async function analyzeImage(
   env: Env,
-  image: { buffer: ArrayBuffer; contentType: string }
+  images: { buffer: ArrayBuffer; contentType: string } | Array<{ buffer: ArrayBuffer; contentType: string }>
 ): Promise<{ description: string | null; errorType: 'timeout' | 'rate_limit' | 'error' | null }> {
   // Hard gate: test mock only runs in development/staging
   if (env.ENVIRONMENT !== 'production' && env.STAGE1_MOCK_FAIL === 'true') {
@@ -121,30 +123,33 @@ export async function analyzeImage(
     return { description: null, errorType: 'error' }
   }
 
+  if (env.ENVIRONMENT !== 'production' && env.STAGE1_MOCK_SUCCESS === 'true') {
+    console.log('[analyzeImage] STAGE1_MOCK_SUCCESS active — returning mock description (test mode)')
+    return {
+      description: JSON.stringify({
+        subjects: "Re-analyzed collection of 4 images via Gemini Vision",
+        mood: "Restored on retry",
+        colors: "Vibrant collection",
+        composition: "Grid of 4 images"
+      }),
+      errorType: null
+    }
+  }
+
+  const imageList = Array.isArray(images) ? images : [images]
+  if (imageList.length === 0 || imageList.length > 4) {
+    console.error('[analyzeImage] Invalid image count:', imageList.length)
+    return { description: null, errorType: 'error' }
+  }
+
   const geminiProvider = createGoogleGenerativeAI({ apiKey: env.GEMINI_API_KEY })
   const model = geminiProvider(env.VISION_MODEL)
 
-  // Stage 1 timeout: 15 seconds.
-  // Reasoning: Cloudflare Workers have a ~30s wall-clock limit for subrequest chains.
-  // Stage 1 (15s max) + Stage 2 (10s max per group, parallel) = 25s max combined.
-  // This leaves a 5s buffer for D1 writes, SSE flushes, and the finally block — safe.
-  // Gemini 2.5-flash typically responds in 3–8s for this structured-output vision call.
-  // 15s gives ~2× headroom on the typical case while keeping the combined ceiling safe.
   const abortController = new AbortController()
   const timeoutId = setTimeout(() => abortController.abort(), 15_000)
 
-  try {
-    const result = await generateText({
-      model,
-      abortSignal: abortController.signal,
-      maxOutputTokens: 512, // description is short prose/JSON, not long-form
-      messages: [
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'text',
-              text: `Analyze this image and return a structured description as valid JSON only — no markdown fences, no explanation.
+  const promptText = imageList.length === 1
+    ? `Analyze this image and return a structured description as valid JSON only — no markdown fences, no explanation.
 
 Format:
 {
@@ -157,14 +162,40 @@ Format:
   "style": "photographic style (candid, portrait, product shot, landscape, graphic, etc.)"
 }
 
-Be specific — this description will be used by another AI to write platform captions without seeing the image.`,
-            },
-            {
-              type: 'image',
-              image: image.buffer,
-              mediaType: image.contentType,
-            },
-          ],
+Be specific — this description will be used by another AI to write platform captions without seeing the image.`
+    : `Analyze these ${imageList.length} images together as a collection and return a structured description as valid JSON only — no markdown fences, no explanation.
+
+Format:
+{
+  "subjects": "primary subjects or people across all images (expressions, activities, items)",
+  "setting": "locations or environments depicted across images",
+  "mood": "overall emotional tone, theme, or atmosphere of the collection",
+  "colors": "dominant colors and overall palette across images",
+  "composition": "framing, perspectives, and visual relationships between images",
+  "notable_details": "key text, logos, products, objects, or specific details visible across images",
+  "style": "photographic or visual styles presented"
+}
+
+Be specific — this description will be used by another AI to write platform captions without seeing the images.`
+
+  const contentParts: any[] = [
+    { type: 'text', text: promptText },
+    ...imageList.map(img => ({
+      type: 'image',
+      image: img.buffer,
+      mediaType: img.contentType,
+    }))
+  ]
+
+  try {
+    const result = await generateText({
+      model,
+      abortSignal: abortController.signal,
+      maxOutputTokens: 512,
+      messages: [
+        {
+          role: 'user',
+          content: contentParts,
         },
       ],
     })
@@ -222,6 +253,18 @@ Be specific — this description will be used by another AI to write platform ca
 // retry route's fallback path (when image_description is null and the R2 object
 // still exists — rare, legacy campaigns only).
 export function createStreamingClient(env: Env) {
+  if (env.ENVIRONMENT !== 'production' && env.STAGE2_MOCK_SUCCESS === 'true') {
+    return {
+      streamGenerate: async () => {
+        return {
+          textStream: (async function* () {
+            yield JSON.stringify({ twitter: "Successfully regenerated post content for Twitter on retry!" })
+          })()
+        }
+      }
+    }
+  }
+
   const ai = new AILink({
     provider: 'groq',
     providerKey: env.GROQ_API_KEY,
