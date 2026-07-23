@@ -221,15 +221,11 @@ export const api = {
         method: 'PUT',
         body: JSON.stringify(data),
       }),
-  },
-
-  // ── AI Thumbnail Maker ──────────────────────────────────────
-  thumbnail: {
-    generate: (prompt: string, title: string, platform = 'YouTube') =>
-      request<{ ok: boolean; concepts: any[]; brandKitApplied: boolean; remainingCredits: number }>('/studio/thumbnail', {
-        method: 'POST',
-        body: JSON.stringify({ prompt, title, platform }),
+    delete: () =>
+      request<{ ok: boolean; message: string }>('/brand-kit', {
+        method: 'DELETE',
       }),
   },
 }
+
 

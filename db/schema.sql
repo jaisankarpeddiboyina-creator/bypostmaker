@@ -179,6 +179,11 @@ CREATE TABLE IF NOT EXISTS brand_kits (
   fonts             TEXT NOT NULL DEFAULT '{"heading":{"family":"Plus Jakarta Sans","weight":"700"},"body":{"family":"Plus Jakarta Sans","weight":"400"},"accent":{"family":"Great Vibes","weight":"400"}}',
   voice             TEXT NOT NULL DEFAULT '{"tone":"Friendly, Confident","language":"English (US)","dos":"Use positive words, short sentences, emojis","donts":"Avoid complex jargon, negative words"}',
   social_links      TEXT NOT NULL DEFAULT '{"instagram":"","facebook":"","twitter":"","linkedin":"","website":""}',
+  platform_links    TEXT NOT NULL DEFAULT '[]',
+  products_services TEXT NOT NULL DEFAULT '',
+  target_audience   TEXT NOT NULL DEFAULT '',
+  competitors       TEXT NOT NULL DEFAULT '',
+  brand_guidelines  TEXT NOT NULL DEFAULT '',
   created_at        INTEGER NOT NULL DEFAULT (unixepoch()),
   updated_at        INTEGER NOT NULL DEFAULT (unixepoch())
 );

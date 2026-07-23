@@ -84,6 +84,14 @@ resolved via `payments.currency()` first. Don't hardcode USD.
    (not to the API). Skipping step 2 means "upload" silently does nothing.
 3. `objectKey` from step 1 is what gets passed as `imageKey` into `/generate`.
 
+## Brand Kit
+| Action | Call | Method | Body | Returns |
+|---|---|---|---|---|
+| Get Brand Kit | `GET /api/brand-kit` | GET | — | `{ brandKit: { name, logo_object_key, logo_dark_key, logo_icon_key, colors, fonts, voice, social_links, platform_links, products_services, target_audience, competitors, brand_guidelines, updated_at } }` |
+| Save Brand Kit | `PUT /api/brand-kit` | PUT | `{ name, logo_object_key, logo_dark_key, logo_icon_key, colors, fonts, voice, platform_links, products_services, target_audience, competitors, brand_guidelines }` | `{ ok: true, message: 'Brand kit saved successfully' }` |
+| Delete Brand Kit | `DELETE /api/brand-kit` | DELETE | — | `{ ok: true, message: 'Brand kit deleted successfully' }` |
+| Stream Brand Asset | `GET /api/brand-kit?assetKey=uploads/...` | GET | — | Streams R2 object binary body (200 OK) if `assetKey` matches user's own stored logo key (`logo_object_key`/`logo_dark_key`/`logo_icon_key`); returns 404 error JSON otherwise. |
+
 ---
 
 ## NOT YET BUILT — endpoints referenced by the new designs but absent from both API and DB schema
@@ -100,7 +108,6 @@ looks real — mark these components clearly as mocked until backend exists.
 | "Create Similar" (reuse original image) | same as above |
 | My Generations status/thumbnails | same as above |
 | Templates page | no `templates` table, no CRUD endpoints |
-| Brand Kit page | no `brand_kit_assets` table, no CRUD endpoints |
 | Notifications bell | no `notifications` table, no list/mark-read endpoints |
 | Analytics — Total Downloads, Top Platforms breakdown | `usage` table only tracks generation counts per period; no per-platform or download tracking |
 | Global search ("Search anything...") | no search endpoint |

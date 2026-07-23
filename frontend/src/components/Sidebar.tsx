@@ -3,8 +3,8 @@ import { useState, useRef, useEffect } from 'react'
 import {
   LayoutDashboard,
   Sparkles,
-  Wand2,
   Palette,
+
   History,
   CreditCard,
   Settings,
@@ -47,8 +47,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const navItems = [
     { label: 'Dashboard', path: '/app', icon: LayoutDashboard },
     { label: 'Create Post', path: '/app/create', icon: Sparkles },
-    { label: 'AI Studio', path: '/app/studio', icon: Wand2 },
     { label: 'Brand Kit', path: '/app/brand-kit', icon: Palette },
+
     { label: 'My Generations', path: '/app/history', icon: History },
     { label: 'Billing', path: '/app/billing', icon: CreditCard },
     { label: 'Settings', path: '/app/settings', icon: Settings },
