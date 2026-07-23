@@ -30,13 +30,38 @@
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <meta name="theme-color" content="#F72585" />
 
-  <!-- Fonts -->
+  <!-- ════════════════════════════════════════════════════════
+       PageSpeed: DNS pre-connect + prefetch for third parties
+       ════════════════════════════════════════════════════════ -->
+  <!-- Google Fonts CDN — pre-connect cuts 100–300 ms on first request -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <!-- Razorpay — DNS prefetch only (no TLS handshake) since it loads on-demand -->
+  <link rel="dns-prefetch" href="https://checkout.razorpay.com" />
 
-  <!-- Razorpay — required for subscription checkout -->
-  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <!-- ════════════════════════════════════════════════════════
+       PageSpeed: Non-render-blocking Google Fonts
+       Technique: load as print stylesheet, swap to all after load.
+       noscript fallback ensures fonts load for JS-disabled crawlers.
+       ════════════════════════════════════════════════════════ -->
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;500&display=swap"
+    media="print"
+    onload="this.media='all'"
+  />
+  <noscript>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;500&display=swap"
+    />
+  </noscript>
+
+  <!-- ════════════════════════════════════════════════════════
+       PageSpeed: Razorpay — deferred so it never blocks parsing.
+       Required for subscription checkout; loads in background.
+       ════════════════════════════════════════════════════════ -->
+  <script defer src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
   <!-- Structured data (Organization, BreadcrumbList, SoftwareApplication)
        is injected server-side per route by the Worker's HeadInjector —
