@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
-import { Sparkles, Download, Zap, Globe, ArrowRight, Check } from 'lucide-react'
+import { Sparkles, Download, Zap, Globe, ArrowRight, Check, ChevronDown, Wand2, FolderOpen, CreditCard, type LucideIcon } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '../store/app'
 import { api } from '../lib/api'
 import { PLANS } from '../config/pricing'
+import { faqEntries } from '../../../config/faq'
+import { testimonials } from '../../../config/testimonials'
 
 const PLATFORMS_PREVIEW = [
   'Twitter','LinkedIn','Instagram','Reddit','TikTok',
@@ -11,10 +13,38 @@ const PLATFORMS_PREVIEW = [
   'Product Hunt','Medium','Pinterest','Telegram','GitHub',
 ]
 
+interface WhyPoint {
+  icon: LucideIcon
+  title: string
+  description: string
+}
+
+// Data-driven so adding/removing a differentiator is a one-line change here,
+// not a JSX + CSS edit. Grid layout below reflows automatically regardless
+// of how many entries this array has.
+const WHY_POINTS: WhyPoint[] = [
+  {
+    icon: Wand2,
+    title: 'One prompt, every platform',
+    description: 'Describe your idea once. PostMaker adapts tone, length, and formatting automatically for each of the 30+ platforms you select — no manual rewriting per platform.',
+  },
+  {
+    icon: FolderOpen,
+    title: 'Everything organized, ready to post',
+    description: 'Download a single ZIP with platform-organized folders — post text, resized images, and share links all in place, ready to upload.',
+  },
+  {
+    icon: CreditCard,
+    title: 'Start free, no card required',
+    description: 'Try PostMaker with the Free plan before you pay for anything — no credit card needed to get started.',
+  },
+]
+
 export default function LandingPage() {
   const navigate = useNavigate()
   const { user, currency, setCurrency } = useAppStore()
   const [billingCurrency, setBillingCurrency] = useState<'usd'|'inr'>(currency)
+  const [openFaqId, setOpenFaqId] = useState<string | null>(null)
   const authUrl = import.meta.env.DEV ? '/api/auth/dev' : '/api/auth/google'
 
   useEffect(() => { setBillingCurrency(currency) }, [currency])
@@ -177,6 +207,56 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Why PostMaker — real, verifiable differentiators (no invented stats) */}
+      <section className="section" id="why">
+        <div className="section-inner">
+          <div className="section-label">Why PostMaker</div>
+          <h2 className="section-title">Built to remove the busywork, not add more of it</h2>
+
+          <div className="why-grid">
+            {WHY_POINTS.map(point => (
+              <div className="why-card" key={point.title}>
+                <point.icon size={22} className="why-icon" />
+                <h3 className="why-title">{point.title}</h3>
+                <p className="why-desc">{point.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials — only renders once config/testimonials.ts has real,
+          permission-cleared quotes. Intentionally absent otherwise. */}
+      {testimonials.length > 0 && (
+        <section className="section" id="testimonials">
+          <div className="section-inner">
+            <div className="section-label">What people are saying</div>
+            <h2 className="section-title">Loved by the people using it</h2>
+
+            <div className="testimonials-grid">
+              {testimonials.map(t => (
+                <div key={t.id} className="testimonial-card">
+                  <p className="testimonial-quote">&ldquo;{t.quote}&rdquo;</p>
+                  <div className="testimonial-author">
+                    {t.avatarUrl ? (
+                      <img src={t.avatarUrl} alt={t.authorName} className="testimonial-avatar" />
+                    ) : (
+                      <div className="testimonial-avatar testimonial-avatar-fallback">
+                        {t.authorName.charAt(0)}
+                      </div>
+                    )}
+                    <div>
+                      <div className="testimonial-name">{t.authorName}</div>
+                      <div className="testimonial-role">{t.authorRole}</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Pricing */}
       <section className="section" id="pricing">
         <div className="section-inner">
@@ -220,6 +300,37 @@ export default function LandingPage() {
                 </button>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="section" id="faq">
+        <div className="section-inner">
+          <div className="section-label">FAQ</div>
+          <h2 className="section-title">Questions, answered</h2>
+          <p className="section-intro">
+            Everything you need to know before you get started. Don't see your question?
+            Reach out at <a href="mailto:support@bypostamaker.com">support@bypostamaker.com</a>.
+          </p>
+
+          <div className="faq-list">
+            {faqEntries.map(entry => {
+              const isOpen = openFaqId === entry.id
+              return (
+                <div key={entry.id} className={`faq-item ${isOpen ? 'open' : ''}`}>
+                  <button
+                    className="faq-question"
+                    onClick={() => setOpenFaqId(isOpen ? null : entry.id)}
+                    aria-expanded={isOpen}
+                  >
+                    <span>{entry.question}</span>
+                    <ChevronDown size={18} className="faq-chevron" />
+                  </button>
+                  <p className="faq-answer">{entry.answer}</p>
+                </div>
+              )
+            })}
           </div>
         </div>
       </section>
@@ -610,6 +721,142 @@ export default function LandingPage() {
           width: 100%;
           justify-content: center;
           height: 40px;
+        }
+
+        /* Why PostMaker */
+        .why-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+          gap: 16px;
+        }
+        .why-card {
+          padding: 28px;
+          background: var(--card);
+          border: 1px solid var(--border);
+          border-radius: var(--radius-lg);
+        }
+        .why-icon {
+          color: var(--accent);
+          margin-bottom: 14px;
+        }
+        .why-title {
+          font-size: 16px;
+          font-weight: 700;
+          color: var(--text-1);
+          margin-bottom: 8px;
+        }
+        .why-desc {
+          font-size: 14px;
+          line-height: 1.6;
+          color: var(--text-2);
+        }
+
+        /* Testimonials */
+        .testimonials-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+          gap: 16px;
+        }
+        .testimonial-card {
+          padding: 24px;
+          background: var(--card);
+          border: 1px solid var(--border);
+          border-radius: var(--radius-lg);
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+        .testimonial-quote {
+          font-size: 15px;
+          line-height: 1.6;
+          color: var(--text-1);
+        }
+        .testimonial-author {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+        .testimonial-avatar {
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          object-fit: cover;
+        }
+        .testimonial-avatar-fallback {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: var(--accent-subtle);
+          color: var(--accent);
+          font-weight: 700;
+          font-size: 14px;
+        }
+        .testimonial-name {
+          font-size: 14px;
+          font-weight: 600;
+          color: var(--text-1);
+        }
+        .testimonial-role {
+          font-size: 12px;
+          color: var(--text-3);
+        }
+
+        /* FAQ */
+        .faq-list {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          max-width: 720px;
+          margin: 0 auto;
+        }
+        .faq-item {
+          background: var(--card);
+          border: 1px solid var(--border);
+          border-radius: var(--radius-lg);
+          overflow: hidden;
+          transition: border-color var(--transition);
+        }
+        .faq-item.open {
+          border-color: var(--accent);
+        }
+        .faq-question {
+          width: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          padding: 18px 20px;
+          background: transparent;
+          border: none;
+          cursor: pointer;
+          text-align: left;
+          font-family: var(--font-body);
+          font-size: 15px;
+          font-weight: 600;
+          color: var(--text-1);
+        }
+        .faq-chevron {
+          flex-shrink: 0;
+          color: var(--text-3);
+          transition: transform var(--transition);
+        }
+        .faq-item.open .faq-chevron {
+          transform: rotate(180deg);
+          color: var(--accent);
+        }
+        .faq-answer {
+          display: none;
+          padding: 0 20px 18px;
+          font-size: 14px;
+          line-height: 1.6;
+          color: var(--text-2);
+        }
+        .faq-item.open .faq-answer {
+          display: block;
+        }
+        .faq-answer a,
+        .section-intro a {
+          color: var(--accent);
         }
 
         /* Footer */

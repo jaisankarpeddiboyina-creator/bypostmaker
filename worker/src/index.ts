@@ -22,6 +22,7 @@ import { runCronJobs, runDataRetention } from './services/cron'
 import { blogPosts } from '../../config/blog'
 import { vsPages } from '../../config/vsPages'
 import { forPages } from '../../config/forPages'
+import { faqEntries } from '../../config/faq'
 import { findMatchingRoute, ROUTE_REGISTRY } from '../../config/routeRegistry'
 import { snapshotAssetPathForRoute, SNAPSHOT_MANIFEST_ASSET_PATH } from '../../config/publicRoutes'
 export { GroqRateLimiter } from './services/limiter'
@@ -101,6 +102,23 @@ class HeadInjector {
         'url': domain
       }
       this.schemas.push(JSON.stringify(appSchema))
+
+      // 4. FAQPage schema — mainEntity is built from the same config/faq.ts
+      // array the visible homepage accordion renders from, so this can
+      // never drift out of sync with what's actually shown on the page.
+      const faqSchema = {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        'mainEntity': faqEntries.map(entry => ({
+          '@type': 'Question',
+          'name': entry.question,
+          'acceptedAnswer': {
+            '@type': 'Answer',
+            'text': entry.answer
+          }
+        }))
+      }
+      this.schemas.push(JSON.stringify(faqSchema))
     }
   }
 
