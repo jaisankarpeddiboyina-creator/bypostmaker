@@ -42,8 +42,58 @@
        is injected server-side per route by the Worker's HeadInjector —
        see worker/src/index.ts. Do not add a static JSON-LD block here,
        it will duplicate/conflict with that injection. -->
+
+  <!-- ════════════════════════════════════════════════════════
+       Google Tag Manager — head snippet
+       TODO: Replace GTM-XXXXXXX with your real GTM Container ID
+             (GTM → Admin → Container Settings)
+       ════════════════════════════════════════════════════════ -->
+  <script>
+    (function(w,d,s,l,i){
+      w[l]=w[l]||[];
+      w[l].push({'gtm.start': new Date().getTime(), event:'gtm.js'});
+      var f=d.getElementsByTagName(s)[0],
+          j=d.createElement(s),
+          dl=l!='dataLayer'?'&l='+l:'';
+      j.async=true;
+      j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;
+      f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-XXXXXXX');
+  </script>
+  <!-- End GTM head snippet -->
+
+  <!-- ════════════════════════════════════════════════════════
+       GA4 — direct loader (independent of GTM; used for
+       server-side gtag() calls from analytics.ts)
+       TODO: Replace G-XXXXXXXXXX with your real GA4 Measurement ID
+             (Analytics → Admin → Data Streams → Web Stream)
+       ════════════════════════════════════════════════════════ -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-XXXXXXXXXX', {
+      send_page_view: false  // Page views handled manually in analytics.ts
+    });
+  </script>
+  <!-- End GA4 -->
 </head>
 <body>
+  <!-- ════════════════════════════════════════════════════════
+       Google Tag Manager — body noscript fallback
+       TODO: Replace GTM-XXXXXXX with your real GTM Container ID
+       ════════════════════════════════════════════════════════ -->
+  <noscript>
+    <iframe
+      src="https://www.googletagmanager.com/ns.html?id=GTM-XXXXXXX"
+      height="0"
+      width="0"
+      style="display:none;visibility:hidden"
+    ></iframe>
+  </noscript>
+  <!-- End GTM body noscript -->
+
   <div id="root"></div>
   <script type="module" src="/src/main.tsx"></script>
 </body>

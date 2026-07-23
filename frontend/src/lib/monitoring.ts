@@ -5,9 +5,13 @@
 
 import * as Sentry from '@sentry/react'
 import posthog from 'posthog-js'
+import { initGA4 } from './analytics'
 
 export function initMonitoring() {
   const isDev = import.meta.env.DEV
+
+  // ── GA4 & GTM Initialisation ─────────────────────────────────
+  initGA4()
 
   // ── Sentry ─────────────────────────────────────────────────
   if (!isDev && import.meta.env.VITE_SENTRY_DSN) {
