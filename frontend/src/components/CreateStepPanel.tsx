@@ -28,7 +28,7 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
   const {
     prompt, setPrompt,
     selectedPlatforms, togglePlatform, setSelectedPlatforms,
-    imageFiles, setImageFiles,
+    imageFiles, setImageFiles, addImageFiles, removeImageFile,
     videoFile, setVideoFile,
     isGenerating, addToast
   } = useAppStore()
@@ -44,14 +44,19 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
     const files = Array.from(e.target.files ?? [])
     if (files.length === 0) return
 
-    const file = files[0]
-    if (file.size > MAX_IMAGE_SIZE_BYTES) {
-      addToast('Image file size exceeds the 15MB limit.', 'error')
-      e.target.value = ''
-      return
+    const validFiles: File[] = []
+    for (const file of files) {
+      if (file.size > MAX_IMAGE_SIZE_BYTES) {
+        addToast(`Image "${file.name}" exceeds the 15MB limit.`, 'error')
+      } else {
+        validFiles.push(file)
+      }
     }
 
-    setImageFiles([file])
+    if (validFiles.length > 0) {
+      addImageFiles(validFiles)
+    }
+    e.target.value = ''
   }
 
   const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -73,21 +78,28 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
     const files = Array.from(e.dataTransfer.files)
     if (files.length === 0) return
 
-    const file = files[0]
-    if (file.type.startsWith('image/')) {
-      if (file.size > MAX_IMAGE_SIZE_BYTES) {
-        addToast('Image file size exceeds 15MB limit.', 'error')
-        return
+    const imageDropList: File[] = []
+    let hasVideoMatch = false
+
+    for (const file of files) {
+      if (file.type.startsWith('image/')) {
+        if (file.size > MAX_IMAGE_SIZE_BYTES) {
+          addToast(`Image "${file.name}" exceeds 15MB limit.`, 'error')
+        } else {
+          imageDropList.push(file)
+        }
+      } else if (file.type.startsWith('video/') && !hasVideoMatch) {
+        if (file.size > VIDEO_MAX_MB * 1024 * 1024) {
+          addToast(`Video exceeds ${VIDEO_MAX_MB}MB limit.`, 'error')
+        } else {
+          setVideoFile(file)
+          hasVideoMatch = true
+        }
       }
-      setImageFiles([file])
-    } else if (file.type.startsWith('video/')) {
-      if (file.size > VIDEO_MAX_MB * 1024 * 1024) {
-        addToast(`Video exceeds ${VIDEO_MAX_MB}MB limit.`, 'error')
-        return
-      }
-      setVideoFile(file)
-    } else {
-      addToast('Please upload an image or video file.', 'error')
+    }
+
+    if (imageDropList.length > 0) {
+      addImageFiles(imageDropList)
     }
   }
 
@@ -97,7 +109,6 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
       .filter(p => isPlatformAccessible(p.id, userPlan))
       .map(p => p.id)
     
-    // If all accessible are already selected, clear selection, else select all accessible
     const allSelected = accessibleIds.every(id => selectedPlatforms.includes(id))
     if (allSelected) {
       setSelectedPlatforms([])
@@ -133,8 +144,10 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
         <div className="step-card-header">
           <div className="step-number">1</div>
           <div>
-            <h3 className="step-title">Upload Media</h3>
-            <p className="step-description">Add an image or video to repurpose across your social channels (Optional)</p>
+            <h3 className="step-title">
+              Upload Media {imageFiles.length > 0 && `(${imageFiles.length}/4)`}
+            </h3>
+            <p className="step-description">Attach up to 4 images or a video file (Optional)</p>
           </div>
         </div>
 
@@ -143,6 +156,7 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
             ref={imageInputRef}
             type="file"
             accept="image/*"
+            multiple
             style={{ display: 'none' }}
             onChange={handleImageSelect}
             disabled={isGenerating}
@@ -169,33 +183,64 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
               <div className="dropzone-content">
                 <p className="dropzone-text">
                   <button type="button" className="dropzone-link" onClick={() => imageInputRef.current?.click()} disabled={isGenerating}>
-                    Upload an image
+                    Upload up to 4 images
                   </button>
                   {' or '}
                   <button type="button" className="dropzone-link" onClick={() => videoInputRef.current?.click()} disabled={isGenerating}>
                     video file
                   </button>
                 </p>
-                <p className="dropzone-sub">Drag & drop or click to upload · JPG, PNG, WEBP (15MB) or MP4 (100MB)</p>
+                <p className="dropzone-sub">Drag & drop or click to upload · Max 4 JPG/PNG/WEBP (30MB total) or MP4 (100MB)</p>
               </div>
             </div>
           ) : (
             <div className="media-preview-card">
               {imageFiles.length > 0 && (
-                <div className="media-preview-row">
-                  <div className="media-preview-thumb">
-                    <img src={URL.createObjectURL(imageFiles[0])} alt="Upload preview" />
-                  </div>
-                  <div className="media-preview-info">
-                    <span className="media-preview-name">{imageFiles[0].name}</span>
-                    <span className="media-preview-meta">Image · {(imageFiles[0].size / (1024 * 1024)).toFixed(2)} MB</span>
-                  </div>
-                  <div className="media-preview-actions">
-                    <button className="btn-ghost btn-sm" onClick={() => imageInputRef.current?.click()} disabled={isGenerating}>
-                      Change
-                    </button>
-                    <button className="btn-icon" onClick={() => setImageFiles([])} disabled={isGenerating} title="Remove image">
-                      <X size={15} />
+                <div className="media-preview-grid">
+                  {imageFiles.map((file, idx) => (
+                    <div key={`${file.name}-${idx}`} className="media-preview-row">
+                      <div className="media-preview-thumb">
+                        <span className="order-badge">#{idx + 1}</span>
+                        <img src={URL.createObjectURL(file)} alt={`Upload ${idx + 1}`} />
+                      </div>
+                      <div className="media-preview-info">
+                        <span className="media-preview-name">{file.name}</span>
+                        <span className="media-preview-meta">Image · {(file.size / (1024 * 1024)).toFixed(2)} MB</span>
+                      </div>
+                      <div className="media-preview-actions">
+                        <button
+                          type="button"
+                          className="btn-icon"
+                          onClick={() => removeImageFile(idx)}
+                          disabled={isGenerating}
+                          title="Remove image"
+                        >
+                          <X size={15} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+
+                  <div className="media-grid-footer">
+                    {imageFiles.length < 4 ? (
+                      <button
+                        type="button"
+                        className="btn-ghost btn-sm"
+                        onClick={() => imageInputRef.current?.click()}
+                        disabled={isGenerating}
+                      >
+                        + Add another image ({imageFiles.length}/4)
+                      </button>
+                    ) : (
+                      <span className="max-images-badge">Max 4 images attached</span>
+                    )}
+                    <button
+                      type="button"
+                      className="btn-ghost btn-sm text-error"
+                      onClick={() => setImageFiles([])}
+                      disabled={isGenerating}
+                    >
+                      Remove All
                     </button>
                   </div>
                 </div>
@@ -211,10 +256,10 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
                     <span className="media-preview-meta">Video · {(videoFile.size / (1024 * 1024)).toFixed(2)} MB</span>
                   </div>
                   <div className="media-preview-actions">
-                    <button className="btn-ghost btn-sm" onClick={() => videoInputRef.current?.click()} disabled={isGenerating}>
+                    <button type="button" className="btn-ghost btn-sm" onClick={() => videoInputRef.current?.click()} disabled={isGenerating}>
                       Change
                     </button>
-                    <button className="btn-icon" onClick={() => setVideoFile(null)} disabled={isGenerating} title="Remove video">
+                    <button type="button" className="btn-icon" onClick={() => setVideoFile(null)} disabled={isGenerating} title="Remove video">
                       <X size={15} />
                     </button>
                   </div>
@@ -559,6 +604,12 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
           padding: 12px 16px;
         }
 
+        .media-preview-grid {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+
         .media-preview-row {
           display: flex;
           align-items: center;
@@ -566,6 +617,7 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
         }
 
         .media-preview-thumb {
+          position: relative;
           width: 48px;
           height: 48px;
           border-radius: var(--radius-sm);
@@ -576,6 +628,43 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
           display: flex;
           align-items: center;
           justify-content: center;
+        }
+
+        .order-badge {
+          position: absolute;
+          top: 2px;
+          left: 2px;
+          background: rgba(15, 23, 42, 0.85);
+          color: white;
+          font-size: 10px;
+          font-weight: 700;
+          padding: 1px 4px;
+          border-radius: 4px;
+          line-height: 1;
+          z-index: 2;
+        }
+
+        .media-grid-footer {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding-top: 8px;
+          border-top: 1px solid var(--color-border);
+          margin-top: 4px;
+        }
+
+        .max-images-badge {
+          font-size: 12px;
+          font-weight: 600;
+          color: var(--color-text-muted);
+          background: var(--color-surface);
+          padding: 4px 10px;
+          border-radius: var(--radius-pill);
+          border: 1px solid var(--color-border);
+        }
+
+        .text-error {
+          color: var(--color-error, #EF4444);
         }
 
         .media-preview-thumb img {

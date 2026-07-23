@@ -62,6 +62,9 @@ interface AppStore {
   imageFiles: File[]
   videoFile: File | null
   setImageFiles: (f: File[]) => void
+  addImageFiles: (f: File[]) => void
+  removeImageFile: (index: number) => void
+  reorderImageFiles: (fromIndex: number, toIndex: number) => void
   setVideoFile: (f: File | null) => void
 
   isGenerating: boolean
@@ -107,6 +110,30 @@ export const useAppStore = create<AppStore>((set, get) => ({
   imageFiles: [],
   videoFile: null,
   setImageFiles: (f) => set({ imageFiles: f }),
+  addImageFiles: (newFiles) => {
+    const current = get().imageFiles
+    const combined = [...current, ...newFiles]
+    if (combined.length > 4) {
+      get().addToast('Maximum 4 images allowed per campaign.', 'error')
+      return
+    }
+    const totalSize = combined.reduce((acc, f) => acc + f.size, 0)
+    if (totalSize > 30 * 1024 * 1024) {
+      get().addToast('Total combined image size exceeds 30MB limit.', 'error')
+      return
+    }
+    set({ imageFiles: combined })
+  },
+  removeImageFile: (index) => {
+    const current = get().imageFiles
+    set({ imageFiles: current.filter((_, i) => i !== index) })
+  },
+  reorderImageFiles: (fromIndex, toIndex) => {
+    const current = [...get().imageFiles]
+    const [moved] = current.splice(fromIndex, 1)
+    current.splice(toIndex, 0, moved)
+    set({ imageFiles: current })
+  },
   setVideoFile: (f) => set({ videoFile: f }),
 
   isGenerating: false,

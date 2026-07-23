@@ -74,25 +74,50 @@ export default function AppPage() {
       posts: initialPosts, videoUrl: null, imageFiles, videoFile,
     })
 
-    let uploadedImageKey: string | null = null
+    let uploadedImageKeys: string[] = []
 
     if (imageFiles.length > 0) {
       try {
-        const file = imageFiles[0]
-        if (file.size > MAX_IMAGE_SIZE_BYTES) {
-          throw new Error('Image file size exceeds the 15MB limit.')
+        const totalSize = imageFiles.reduce((sum, f) => sum + f.size, 0)
+        if (totalSize > 30 * 1024 * 1024) {
+          throw new Error('Total combined image size exceeds 30MB limit.')
         }
 
-        const { uploadUrl, objectKey } = await api.upload.presign(file.type, file.size)
+        const { items } = await api.upload.presignBatch(
+          imageFiles.map(f => ({ contentType: f.type, contentLength: f.size }))
+        )
 
-        const uploadRes = await fetch(uploadUrl, {
-          method: 'PUT',
-          headers: { 'Content-Type': file.type },
-          body: file,
-        })
+        const uploadResults = await Promise.allSettled(
+          items.map(async (item, i) => {
+            const res = await fetch(item.uploadUrl, {
+              method: 'PUT',
+              headers: { 'Content-Type': imageFiles[i].type },
+              body: imageFiles[i],
+            })
+            if (!res.ok) throw new Error(`Upload failed for image #${i + 1}`)
+            return item.objectKey
+          })
+        )
 
-        if (!uploadRes.ok) throw new Error('Upload failed')
-        uploadedImageKey = objectKey
+        const successfulKeys: string[] = []
+        let hasError = false
+
+        for (const res of uploadResults) {
+          if (res.status === 'fulfilled') {
+            successfulKeys.push(res.value)
+          } else {
+            hasError = true
+          }
+        }
+
+        if (hasError) {
+          if (successfulKeys.length > 0) {
+            await api.upload.cleanup(successfulKeys).catch(() => {})
+          }
+          throw new Error('One or more images failed to upload. Cleaned up transient files.')
+        }
+
+        uploadedImageKeys = successfulKeys
       } catch (err: any) {
         setIsGenerating(false)
         clearTimers()
@@ -122,7 +147,7 @@ export default function AppPage() {
     }, 45000)
 
     abortRef.current = api.generate.stream(
-      prompt.trim(), selectedPlatforms, uploadedImageKey, videoFile,
+      prompt.trim(), selectedPlatforms, uploadedImageKeys, videoFile,
       (event, data: unknown) => {
         const d = data as Record<string, unknown>
         switch (event) {

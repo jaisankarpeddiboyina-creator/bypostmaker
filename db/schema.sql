@@ -105,6 +105,20 @@ CREATE INDEX IF NOT EXISTS idx_campaigns_user    ON campaigns(user_id);
 CREATE INDEX IF NOT EXISTS idx_campaigns_created ON campaigns(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_campaigns_status  ON campaigns(status);
 
+-- ── Campaign Images (Multi-Image Support, max 4) ─────────────
+CREATE TABLE IF NOT EXISTS campaign_images (
+  id          TEXT PRIMARY KEY,
+  campaign_id TEXT NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+  user_id     TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  image_key   TEXT NOT NULL,
+  sort_order  INTEGER NOT NULL DEFAULT 0,
+  created_at  INTEGER NOT NULL DEFAULT (unixepoch())
+);
+
+CREATE INDEX IF NOT EXISTS idx_camp_images_campaign ON campaign_images(campaign_id);
+CREATE INDEX IF NOT EXISTS idx_camp_images_user     ON campaign_images(user_id);
+
+
 -- ── Generated Posts ───────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS generated_posts (
   id            TEXT PRIMARY KEY,

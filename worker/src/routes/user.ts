@@ -100,9 +100,33 @@ export async function handleUser(
       }
     }
 
-    // Step 2 — Delete all user data (order respects foreign keys)
+    // Step 2 — Purge user R2 objects
+    try {
+      const legacyKeys = await env.DB.prepare(
+        `SELECT image_key FROM campaigns WHERE user_id = ? AND image_key IS NOT NULL`
+      ).bind(userId).all<{ image_key: string }>()
+
+      const multiKeys = await env.DB.prepare(
+        `SELECT image_key FROM campaign_images WHERE user_id = ?`
+      ).bind(userId).all<{ image_key: string }>()
+
+      const allKeysToDelete = new Set<string>()
+      if (legacyKeys.results) legacyKeys.results.forEach(r => allKeysToDelete.add(r.image_key))
+      if (multiKeys.results) multiKeys.results.forEach(r => allKeysToDelete.add(r.image_key))
+
+      for (const key of allKeysToDelete) {
+        await env.BUCKET.delete(key).catch(err => {
+          console.error('Failed to delete R2 object on account delete:', key, err)
+        })
+      }
+    } catch (err) {
+      console.error('Error querying/deleting user R2 objects during account deletion:', err)
+    }
+
+    // Step 3 — Delete all user data (order respects foreign keys)
     await env.DB.batch([
       env.DB.prepare('DELETE FROM generated_posts WHERE user_id = ?').bind(userId),
+      env.DB.prepare('DELETE FROM campaign_images WHERE user_id = ?').bind(userId),
       env.DB.prepare('DELETE FROM campaigns WHERE user_id = ?').bind(userId),
       env.DB.prepare('DELETE FROM usage WHERE user_id = ?').bind(userId),
       env.DB.prepare('DELETE FROM subscriptions WHERE user_id = ?').bind(userId),
