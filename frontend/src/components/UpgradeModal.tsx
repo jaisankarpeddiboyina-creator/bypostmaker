@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useAppStore } from '../store/app'
 import { api, ApiError } from '../lib/api'
 import { trackEvent } from '../lib/monitoring'
+import { trackBeginCheckout, trackPurchase } from '../lib/analytics'
 
 const PLANS = {
   starter:  { name: 'Starter',  usd: 9,   inr: 299,   gens: 50,  platforms: 33, features: ['50 generations/month','All 30+ platforms','30-day history','AI refinement'] },
@@ -57,6 +58,8 @@ export function UpgradeModal() {
     setLoading(plan)
     trackEvent('checkout_started', { plan, currency })
     try {
+      const price = getPrice(plan as keyof typeof PLANS)
+      trackBeginCheckout(plan, price, currency.toUpperCase())
       const res = await api.payments.subscribe(plan, currency, promoApplied?.code)
       const rzp = new window.Razorpay({
         key: res.keyId,
@@ -66,6 +69,7 @@ export function UpgradeModal() {
         theme: { color: '#7c3aed' },
         handler: () => {
           trackEvent('subscription_created', { plan, currency })
+          trackPurchase(plan, price, currency.toUpperCase(), res.subscriptionId)
           setLoading(plan) // Keep loading indicator active during status check
           
           // Helper to reload user and usage limits

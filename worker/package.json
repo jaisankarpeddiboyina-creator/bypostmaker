@@ -12,16 +12,17 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.609.0",
-    "@aws-sdk/s3-request-presigner": "^3.609.0",
     "@ai-sdk/google": "^3.0.82",
     "@ai-sdk/groq": "^3.0.41",
     "@ailink/sdk": "^0.3.0",
+    "@aws-sdk/client-s3": "^3.609.0",
+    "@aws-sdk/s3-request-presigner": "^3.609.0",
     "ai": "^6.0.206"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240712.0",
     "typescript": "^5.5.3",
+    "workerd": "^1.20260724.1",
     "wrangler": "4.40.0"
   }
 }

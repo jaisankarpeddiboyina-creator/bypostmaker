@@ -11,13 +11,14 @@
   "dependencies": {
     "@icons-pack/react-simple-icons": "^13.11.1",
     "@sentry/react": "^8.20.0",
+    "jszip": "^3.10.1",
     "lucide-react": "^0.383.0",
     "posthog-js": "^1.148.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.24.0",
-    "zustand": "^5.0.14",
-    "jszip": "^3.10.1"
+    "web-vitals": "^6.0.0",
+    "zustand": "^5.0.14"
   },
   "devDependencies": {
     "@sentry/vite-plugin": "^2.22.0",
@@ -25,6 +26,7 @@
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
     "typescript": "^5.5.3",
-    "vite": "^5.3.3"
+    "vite": "^5.3.3",
+    "vite-plugin-compression": "^0.5.1"
   }
 }

@@ -11,6 +11,7 @@ export interface User {
   currency: 'usd' | 'inr'
   role: 'user' | 'beta' | 'admin'
   email_verified: number
+  created_at: number
 }
 
 export interface UsageInfo {

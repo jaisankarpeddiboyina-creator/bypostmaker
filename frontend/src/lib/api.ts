@@ -90,7 +90,7 @@ export const api = {
     stream: (
       prompt: string,
       platformIds: string[],
-      imageKey: string | null,
+      imageKeys: string[] | string | null,
       videoFile: File | null,
       onEvent: (event: string, data: unknown) => void
     ): AbortController => {
@@ -98,6 +98,10 @@ export const api = {
 
       ;(async () => {
         try {
+          const keysArray = Array.isArray(imageKeys)
+            ? imageKeys
+            : (typeof imageKeys === 'string' ? [imageKeys] : [])
+
           const res = await fetch(`${BASE}/generate`, {
             method: 'POST',
             credentials: 'include',
@@ -105,7 +109,8 @@ export const api = {
             body: JSON.stringify({
               prompt,
               platforms: platformIds,
-              imageKey,
+              imageKeys: keysArray,
+              imageKey: keysArray[0] ?? null,
               hasVideo: !!videoFile,
               videoName: videoFile?.name || null,
             }),
@@ -211,5 +216,33 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ contentType, contentLength }),
       }),
+
+    presignBatch: (files: Array<{ contentType: string; contentLength: number }>) =>
+      request<{ items: Array<{ uploadUrl: string; objectKey: string; sortOrder: number }> }>('/upload/presign-batch', {
+        method: 'POST',
+        body: JSON.stringify({ files }),
+      }),
+
+    cleanup: (keys: string[]) =>
+      request<{ ok: boolean; cleaned: number }>('/upload/cleanup', {
+        method: 'POST',
+        body: JSON.stringify({ keys }),
+      }),
+  },
+
+  // ── Brand Kit ───────────────────────────────────────────────
+  brandKit: {
+    get: () => request<{ brandKit: any }>('/brand-kit'),
+    save: (data: any) =>
+      request<{ ok: boolean; message: string }>('/brand-kit', {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+    delete: () =>
+      request<{ ok: boolean; message: string }>('/brand-kit', {
+        method: 'DELETE',
+      }),
   },
 }
+
+

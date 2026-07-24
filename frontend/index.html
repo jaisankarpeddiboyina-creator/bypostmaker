@@ -10,33 +10,96 @@
   <link rel="canonical" href="https://bypostamaker.com" />
 
   <!-- Open Graph -->
-  <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://bypostamaker.com" />
-  <meta property="og:title" content="PostMaker — One prompt. Every platform." />
+  <meta property="og:type"        content="website" />
+  <meta property="og:url"         content="https://bypostamaker.com" />
+  <meta property="og:title"       content="PostMaker — One prompt. Every platform." />
   <meta property="og:description" content="Write once. Generate platform-perfect posts for 30+ social platforms. Download your content kit instantly." />
-  <meta property="og:image" content="https://bypostamaker.com/og-image.svg" />
-  <meta property="og:image:width" content="1200" />
+  <meta property="og:image"       content="https://bypostamaker.com/og-image.png" />
+  <meta property="og:image:width"  content="1200" />
   <meta property="og:image:height" content="630" />
-  <meta property="og:site_name" content="PostMaker" />
+  <meta property="og:site_name"   content="PostMaker" />
 
   <!-- Twitter Card -->
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:site" content="@bypostamaker" />
-  <meta name="twitter:title" content="PostMaker — One prompt. Every platform." />
+  <meta name="twitter:card"        content="summary_large_image" />
+  <meta name="twitter:site"        content="@bypostamaker" />
+  <meta name="twitter:title"       content="PostMaker — One prompt. Every platform." />
   <meta name="twitter:description" content="Write once. Generate platform-perfect posts for 30+ social platforms." />
-  <meta name="twitter:image" content="https://bypostamaker.com/og-image.svg" />
+  <meta name="twitter:image"       content="https://bypostamaker.com/og-image.png" />
 
   <!-- Favicon -->
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <meta name="theme-color" content="#F72585" />
 
-  <!-- Fonts -->
+  <!-- ════════════════════════════════════════════════════════
+       PageSpeed: DNS pre-connect + prefetch for third parties
+       ════════════════════════════════════════════════════════ -->
+  <!-- Google Fonts CDN — pre-connect cuts 100–300 ms on first request -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <!-- Razorpay — DNS prefetch only (no TLS handshake) since it loads on-demand -->
+  <link rel="dns-prefetch" href="https://checkout.razorpay.com" />
+  <!-- Google Tag Manager CDN -->
+  <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
 
-  <!-- Razorpay — required for subscription checkout -->
-  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <!-- ════════════════════════════════════════════════════════
+       PageSpeed: Non-render-blocking Google Fonts
+       Technique: load as print stylesheet, swap to all after load.
+       noscript fallback ensures fonts load for JS-disabled crawlers.
+       ════════════════════════════════════════════════════════ -->
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;500&display=swap"
+    media="print"
+    onload="this.media='all'"
+  />
+  <noscript>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;500&display=swap"
+    />
+  </noscript>
+
+  <!-- ════════════════════════════════════════════════════════
+       Google Tag Manager — head snippet
+       TODO: Replace GTM-XXXXXXX with your real GTM Container ID
+             (GTM → Admin → Container Settings)
+       ════════════════════════════════════════════════════════ -->
+  <script>
+    (function(w,d,s,l,i){
+      w[l]=w[l]||[];
+      w[l].push({'gtm.start': new Date().getTime(), event:'gtm.js'});
+      var f=d.getElementsByTagName(s)[0],
+          j=d.createElement(s),
+          dl=l!='dataLayer'?'&l='+l:'';
+      j.async=true;
+      j.src='https://www.googletagmanager.com/gtm.js?id='+i+dl;
+      f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-XXXXXXX');
+  </script>
+  <!-- End GTM head snippet -->
+
+  <!-- ════════════════════════════════════════════════════════
+       GA4 — direct loader (independent of GTM; used for
+       server-side gtag() calls from analytics.ts)
+       TODO: Replace G-XXXXXXXXXX with your real GA4 Measurement ID
+             (Analytics → Admin → Data Streams → Web Stream)
+       ════════════════════════════════════════════════════════ -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-XXXXXXXXXX', {
+      send_page_view: false  // Page views handled manually in analytics.ts
+    });
+  </script>
+  <!-- End GA4 -->
+
+  <!-- ════════════════════════════════════════════════════════
+       PageSpeed: Razorpay — deferred so it never blocks parsing.
+       Required for subscription checkout; loads in background.
+       ════════════════════════════════════════════════════════ -->
+  <script defer src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
   <!-- Structured data (Organization, BreadcrumbList, SoftwareApplication)
        is injected server-side per route by the Worker's HeadInjector —
@@ -44,6 +107,20 @@
        it will duplicate/conflict with that injection. -->
 </head>
 <body>
+  <!-- ════════════════════════════════════════════════════════
+       Google Tag Manager — body noscript fallback
+       TODO: Replace GTM-XXXXXXX with your real GTM Container ID
+       ════════════════════════════════════════════════════════ -->
+  <noscript>
+    <iframe
+      src="https://www.googletagmanager.com/ns.html?id=GTM-XXXXXXX"
+      height="0"
+      width="0"
+      style="display:none;visibility:hidden"
+    ></iframe>
+  </noscript>
+  <!-- End GTM body noscript -->
+
   <div id="root"></div>
   <script type="module" src="/src/main.tsx"></script>
 </body>

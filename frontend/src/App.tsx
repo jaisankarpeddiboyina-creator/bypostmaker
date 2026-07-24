@@ -1,9 +1,10 @@
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { useEffect, useState, lazy, Suspense } from 'react'
 import * as Sentry from '@sentry/react'
 import { useAppStore } from './store/app'
 import { api } from './lib/api'
 import { identifyUser } from './lib/monitoring'
+import { trackPageView, trackSignUp } from './lib/analytics'
 import { Sidebar } from './components/Sidebar'
 import { Topbar } from './components/Topbar'
 import { Toasts } from './components/Toasts'
@@ -103,6 +104,12 @@ function AppLoading() {
 
 export default function App() {
   const { setUser, setUsage, setCurrency, addToast } = useAppStore()
+  const location = useLocation()
+
+  // Track page views on navigation/pathname changes
+  useEffect(() => {
+    trackPageView(location.pathname + location.search)
+  }, [location])
 
   useEffect(() => {
     // Parse query parameters for successful verification or error states
@@ -139,6 +146,10 @@ export default function App() {
         }
         // Identify user in PostHog + Sentry
         identifyUser(user.id, user.email, user.plan)
+        // Detect google signups: check if created_at is within the last 60 seconds
+        if (user && (Date.now() / 1000) - user.created_at < 60) {
+          trackSignUp('google', user.id)
+        }
         // Beta users get business access
         if (user.role === 'beta' && user.plan === 'free') {
           setUser({ ...user, plan: 'business' })

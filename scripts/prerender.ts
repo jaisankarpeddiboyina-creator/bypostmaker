@@ -34,7 +34,7 @@ import path from 'node:path'
 import { getPublicRoutes } from '../config/publicRoutes'
 
 const PREVIEW_PORT = 4173
-const PREVIEW_HOST = `http://localhost:${PREVIEW_PORT}`
+const PREVIEW_HOST = `http://127.0.0.1:${PREVIEW_PORT}`
 const DIST_DIR = path.resolve(__dirname, '../frontend/dist')
 const SNAPSHOTS_DIR = path.join(DIST_DIR, '__snapshots__')
 const STARTUP_TIMEOUT_MS = 30_000
@@ -70,8 +70,8 @@ function startPreviewServer(): ChildProcess {
   // in-progress output back to itself.
   return spawn(
     'npx',
-    ['vite', 'preview', '--port', String(PREVIEW_PORT), '--strictPort'],
-    { cwd: frontendDir, stdio: 'inherit' }
+    ['-y', 'vite', 'preview', '--port', String(PREVIEW_PORT), '--strictPort', '--host', '127.0.0.1'],
+    { cwd: frontendDir, stdio: 'inherit', shell: true }
   )
 }
 
