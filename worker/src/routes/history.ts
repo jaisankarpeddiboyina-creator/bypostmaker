@@ -25,9 +25,11 @@ export async function handleHistory(
     const campaignIds = campaigns.map((c: any) => c.id)
     const placeholders = campaignIds.map(() => '?').join(',')
 
+    // D1 defaults to 100 max rows if no LIMIT is specified.
+    // Adding LIMIT 1000 ensures all posts across campaigns are returned without truncation.
     const { results: allPosts } = await env.DB.prepare(
       `SELECT campaign_id, platform_id, content, edited FROM generated_posts 
-       WHERE campaign_id IN (${placeholders})`
+       WHERE campaign_id IN (${placeholders}) LIMIT 1000`
     ).bind(...campaignIds).all()
 
     const postsByCampaign = (allPosts ?? []).reduce((acc: any, post: any) => {

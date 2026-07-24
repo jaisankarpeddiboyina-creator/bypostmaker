@@ -7,4 +7,5 @@ export interface CardProps {
   imageFiles: File[]
   videoFile: File | null
   onOpenRefinement: () => void
+  imageUrls?: string[]
 }
