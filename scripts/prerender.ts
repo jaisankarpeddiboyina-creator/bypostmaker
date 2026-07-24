@@ -109,7 +109,7 @@ async function main() {
   for (const route of routes) {
     try {
       const response = await page.goto(`${PREVIEW_HOST}${route.path}`, {
-        waitUntil: 'networkidle',
+        waitUntil: 'domcontentloaded',
         timeout: PAGE_TIMEOUT_MS,
       })
 
