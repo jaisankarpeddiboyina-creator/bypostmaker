@@ -117,7 +117,7 @@ export const vsPages: VsPageEntry[] = [
   {
     slug: 'postmaker-io',
     competitorName: 'Postmaker.io',
-    title: 'PostMaker vs Postmaker.io — Two Different Products, Same Category',
+    title: 'PostMaker vs Postmaker.io: Which Social Media Post Generator is Better?',
     description: 'PostMaker (bypostamaker.com) and Postmaker.io are separate, unrelated products. Here\'s how they differ so you land on the right one.',
     intro: 'PostMaker (at bypostamaker.com) and Postmaker.io share a similar name and category — social content creation — but are separate, independently operated products. If you searched for one and found the other, here\'s a clear comparison to help you pick the right fit.',
     features: [

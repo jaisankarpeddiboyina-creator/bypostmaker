@@ -92,7 +92,7 @@ export default function LandingPage() {
           </div>
 
           <h1 className="hero-title">
-            Write once.<br />
+            PostMaker: Write once.<br />
             Generate <span className="hero-accent">everywhere.</span>
           </h1>
 

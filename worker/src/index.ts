@@ -108,10 +108,64 @@ class HeadInjector {
         }
       }
       this.schemas.push(JSON.stringify(appSchema))
+    }
 
-      // 4. FAQPage schema — mainEntity is built from the same config/faq.ts
-      // array the visible homepage accordion renders from, so this can
-      // never drift out of sync with what's actually shown on the page.
+    // 4. FAQPage schema for comparison (vs) pages
+    if (path.startsWith('/vs/')) {
+      const slug = path.substring(4)
+      const entry = vsPages.find(p => p.slug === slug)
+      if (entry) {
+        const faqSchema = {
+          '@context': 'https://schema.org',
+          '@type': 'FAQPage',
+          'mainEntity': [
+            {
+              '@type': 'Question',
+              'name': `What is the difference between PostMaker and ${entry.competitorName}?`,
+              'acceptedAnswer': {
+                '@type': 'Answer',
+                'text': `${entry.intro} ${entry.verdict}`
+              }
+            },
+            {
+              '@type': 'Question',
+              'name': `Which is better: PostMaker or ${entry.competitorName}?`,
+              'acceptedAnswer': {
+                '@type': 'Answer',
+                'text': entry.verdict
+              }
+            }
+          ]
+        }
+        this.schemas.push(JSON.stringify(faqSchema))
+      }
+    }
+
+    // 5. FAQPage schema for audience (for) pages
+    if (path.startsWith('/for/')) {
+      const slug = path.substring(5)
+      const entry = forPages.find(p => p.slug === slug)
+      if (entry) {
+        const faqSchema = {
+          '@context': 'https://schema.org',
+          '@type': 'FAQPage',
+          'mainEntity': entry.benefits.slice(0, 3).map(b => ({
+            '@type': 'Question',
+            'name': b.title,
+            'acceptedAnswer': {
+              '@type': 'Answer',
+              'text': b.description
+            }
+          }))
+        }
+        this.schemas.push(JSON.stringify(faqSchema))
+      }
+    }
+
+    // 4. FAQPage schema — mainEntity is built from the same config/faq.ts
+    // array the visible homepage accordion renders from, so this can
+    // never drift out of sync with what's actually shown on the page.
+    if (path === '/') {
       const faqSchema = {
         '@context': 'https://schema.org',
         '@type': 'FAQPage',
@@ -292,7 +346,7 @@ async function handleStaticPageSEO(request: Request, env: Env): Promise<Response
   const canonicalUrl = `${domain}${path}`
 
   // 1. Resolve metadata for the route (defaults + registry override + existing fallbacks)
-  let title = 'PostMaker — One prompt. Every platform. Download your kit.'
+  let title = 'PostMaker — AI Social Media Content Generator (One Prompt, Every Platform)'
   let description = 'Write one prompt. PostMaker generates platform-perfect posts for all 30+ social platforms and packages them into a ready-to-post content kit.'
   let ogImage = `${domain}/og-image.png`
   let is404 = false
