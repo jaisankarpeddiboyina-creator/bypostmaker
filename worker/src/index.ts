@@ -13,7 +13,7 @@ import { handleHistory } from './routes/history'
 import { handleHealth } from './routes/health'
 import { handleAdmin } from './routes/admin'
 import { handlePromos } from './routes/promos'
-import { handlePresignRoute } from './routes/upload'
+import { handlePresignRoute, handlePresignBatchRoute, handleCleanupRoute } from './routes/upload'
 import { handleImageRoute } from './routes/image'
 import { handleBrandKit } from './routes/brand-kit'
 import { runCronJobs, runDataRetention } from './services/cron'
@@ -22,6 +22,7 @@ import { runCronJobs, runDataRetention } from './services/cron'
 import { blogPosts } from '../../config/blog'
 import { vsPages } from '../../config/vsPages'
 import { forPages } from '../../config/forPages'
+import { faqEntries } from '../../config/faq'
 import { findMatchingRoute, ROUTE_REGISTRY } from '../../config/routeRegistry'
 import { snapshotAssetPathForRoute, SNAPSHOT_MANIFEST_ASSET_PATH } from '../../config/publicRoutes'
 export { GroqRateLimiter } from './services/limiter'
@@ -101,6 +102,23 @@ class HeadInjector {
         'url': domain
       }
       this.schemas.push(JSON.stringify(appSchema))
+
+      // 4. FAQPage schema — mainEntity is built from the same config/faq.ts
+      // array the visible homepage accordion renders from, so this can
+      // never drift out of sync with what's actually shown on the page.
+      const faqSchema = {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        'mainEntity': faqEntries.map(entry => ({
+          '@type': 'Question',
+          'name': entry.question,
+          'acceptedAnswer': {
+            '@type': 'Answer',
+            'text': entry.answer
+          }
+        }))
+      }
+      this.schemas.push(JSON.stringify(faqSchema))
     }
   }
 
@@ -568,11 +586,27 @@ export default {
         return withCors(await handlePresignRoute(request, env, userId), env)
       }
 
+      if (path === '/api/upload/presign-batch' && request.method === 'POST') {
+        const presignRl = await withPresignRateLimit(request, env, userId)
+        if (!presignRl.ok) {
+          return withCors(new Response(JSON.stringify({ error: 'Too many upload requests. Wait a moment.' }), {
+            status: 429,
+            headers: { 'Content-Type': 'application/json', 'Retry-After': String(presignRl.retryAfter ?? 60) },
+          }), env)
+        }
+        return withCors(await handlePresignBatchRoute(request, env, userId), env)
+      }
+
+      if (path === '/api/upload/cleanup' && request.method === 'POST') {
+        return withCors(await handleCleanupRoute(request, env, userId), env)
+      }
+
+
       if (path === '/api/generate' && request.method === 'POST')
         return withCors(await handleGenerate(request, env, userId, userPlan, ctx), env)
 
       if (path === '/api/generate/retry' && request.method === 'POST')
-        return withCors(await handleRetry(request, env, userId, userPlan), env)
+        return withCors(await handleRetry(request, env, userId, userPlan, ctx), env)
 
       if (path.startsWith('/api/refine'))
         return withCors(await handleRefinement(request, env, userId, userPlan), env)

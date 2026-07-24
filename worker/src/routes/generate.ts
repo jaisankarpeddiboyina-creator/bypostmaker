@@ -33,18 +33,18 @@ export async function handleGenerate(
 ): Promise<Response> {
   let prompt: string
   let platformIds: string[]
-  let imageKey: string | null = null
+  let imageKeys: string[] = []
   let hasVideo = false
   let videoName: string | null = null
   let mockFailStage1 = false
   let mockFailStage2Group: string | null = null
 
   try {
-
     const body = await request.json() as {
       prompt?: string
       platforms?: string[]
       imageKey?: string | null
+      imageKeys?: string[]
       hasVideo?: boolean
       videoName?: string | null
       mockFailStage1?: boolean
@@ -52,7 +52,11 @@ export async function handleGenerate(
     }
     prompt = (body.prompt ?? '').trim()
     platformIds = body.platforms ?? []
-    imageKey = body.imageKey ?? null
+    if (Array.isArray(body.imageKeys) && body.imageKeys.length > 0) {
+      imageKeys = body.imageKeys.filter(k => typeof k === 'string' && k.length > 0)
+    } else if (body.imageKey) {
+      imageKeys = [body.imageKey]
+    }
     hasVideo = body.hasVideo ?? false
     videoName = body.videoName ?? null
     if (env.ENVIRONMENT !== 'production') {
@@ -66,6 +70,8 @@ export async function handleGenerate(
   if (!prompt || prompt.length < 3) return jsonError('Prompt is too short', 400)
   if (prompt.length > 2000) return jsonError('Prompt too long. Max 2000 characters.', 400)
   if (!Array.isArray(platformIds) || platformIds.length === 0) return jsonError('Select at least one platform', 400)
+  if (imageKeys.length > 4) return jsonError('Maximum 4 images allowed per campaign', 400)
+
   if (!env.GROQ_API_KEY || !env.GEMINI_API_KEY) {
     return jsonError('Missing AI keys. Add GROQ_API_KEY and GEMINI_API_KEY to .dev.vars, then restart npm run dev.', 500)
   }
@@ -82,20 +88,15 @@ export async function handleGenerate(
     )
   }
 
-  if (imageKey) {
-    // Security: verify the key belongs to the authenticated user.
-    // Keys are structured as uploads/{userId}/{id}.{ext} by the presign route.
-    // Existence, size, and MIME checks are deferred to the SSE block below so
-    // that a single BUCKET.get() handles all validation — no separate head() call.
-    if (!imageKey.startsWith(`uploads/${userId}/`)) {
+  for (const key of imageKeys) {
+    if (!key.startsWith(`uploads/${userId}/`)) {
       return jsonError('Forbidden: image key does not belong to this user', 403)
     }
   }
 
   const campaignId = generateId()
+  const primaryImageKey = imageKeys.length > 0 ? imageKeys[0] : null
 
-  // `campaigns.original_prompt` is required by schema. For now we store the same value
-  // as `prompt` (refinements can overwrite `prompt` later, while preserving original).
   await env.DB.prepare(
     `INSERT INTO campaigns (id, user_id, prompt, original_prompt, platforms, has_image, image_key, has_video, video_filename, status)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'generating')`
@@ -105,14 +106,21 @@ export async function handleGenerate(
     prompt,
     prompt,
     JSON.stringify(accessibleIds),
-    imageKey ? 1 : 0,
-    imageKey,
+    imageKeys.length > 0 ? 1 : 0,
+    primaryImageKey,
     hasVideo ? 1 : 0,
     videoName
   ).run()
 
-  const language = detectLanguage(prompt)
+  // Write multi-image records to campaign_images child table
+  for (let i = 0; i < imageKeys.length; i++) {
+    await env.DB.prepare(
+      `INSERT INTO campaign_images (id, campaign_id, user_id, image_key, sort_order)
+       VALUES (?, ?, ?, ?, ?)`
+    ).bind(generateId(), campaignId, userId, imageKeys[i], i).run()
+  }
 
+  const language = detectLanguage(prompt)
 
   const { readable, writable } = new TransformStream()
   const writer = writable.getWriter()
@@ -127,74 +135,75 @@ export async function handleGenerate(
     try {
       await send('start', { campaignId, platformCount: accessibleIds.length })
 
-      // Mark all selected platforms as generating
       const initialPosts: Record<string, string> = {}
       for (const id of accessibleIds) initialPosts[id] = 'generating'
       await send('init', { posts: initialPosts })
 
-      // Fetch image from R2 if present.
-      // Single BUCKET.get() handles existence, size, and MIME checks — no separate
-      // head() pre-check. This removes the TOCTOU window between two R2 calls and
-      // saves one round-trip on every image generation request.
-      let imagePayload: { buffer: ArrayBuffer; contentType: string } | undefined = undefined
-      if (imageKey) {
-        const object = await env.BUCKET.get(imageKey)
-        if (!object) {
-          await send('fatal', { message: 'Uploaded image not found in storage. Please try again.' })
-          throw new FatalAlreadySentError()
-        }
-
-        // Size check (mirrors the presign-time validation in upload.ts)
-        if (object.size > MAX_IMAGE_SIZE_BYTES) {
-          await env.BUCKET.delete(imageKey).catch(() => {})
-          await send('fatal', { message: 'Image file size exceeds the 15MB limit.' })
-          throw new FatalAlreadySentError()
-        }
-
-        // MIME re-validation — defense-in-depth against clients that bypass
-        // the presign route or set wrong Content-Type on their PUT.
-        const contentType = object.httpMetadata?.contentType ?? ''
+      let imagePayloads: Array<{ buffer: ArrayBuffer; contentType: string }> | undefined = undefined
+      if (imageKeys.length > 0) {
         const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
-        if (!allowedTypes.includes(contentType)) {
-          await send('fatal', { message: 'Unsupported image type. Please upload a JPEG, PNG, WEBP, or GIF.' })
+        let totalSize = 0
+
+        // Phase 1: Fetch all R2 object metadata in parallel (no sequential await-in-loop)
+        const objects = await Promise.all(imageKeys.map(key => env.BUCKET.get(key)))
+
+        // Phase 2: Validate sequentially — preserves per-image fatal event semantics
+        // (first failing image sends the fatal event and throws, same as before)
+        for (let i = 0; i < objects.length; i++) {
+          const object = objects[i]
+          if (!object) {
+            await send('fatal', { message: 'Uploaded image not found in storage. Please try again.' })
+            throw new FatalAlreadySentError()
+          }
+          if (object.size > MAX_IMAGE_SIZE_BYTES) {
+            await send('fatal', { message: 'Individual image file size exceeds the 15MB limit.' })
+            throw new FatalAlreadySentError()
+          }
+          totalSize += object.size
+          const contentType = object.httpMetadata?.contentType ?? ''
+          if (!allowedTypes.includes(contentType)) {
+            await send('fatal', { message: 'Unsupported image type. Please upload JPEG, PNG, WEBP, or GIF.' })
+            throw new FatalAlreadySentError()
+          }
+        }
+
+        if (totalSize > 30 * 1024 * 1024) {
+          await send('fatal', { message: 'Total combined image size exceeds the 30MB limit.' })
           throw new FatalAlreadySentError()
         }
 
-        imagePayload = {
-          buffer: await object.arrayBuffer(),
-          contentType,
-        }
+        // Phase 3: Read all buffers in parallel
+        imagePayloads = await Promise.all(
+          objects.map(async (obj) => ({
+            buffer: await obj!.arrayBuffer(),
+            contentType: obj!.httpMetadata?.contentType ?? '',
+          }))
+        )
       }
 
-       // ── Stage 1: Vision Analysis (Gemini, exactly once) ────────────────────
-      // analyzeImage() is called here — before the Promise.all — ensuring the
-      // image is sent to Gemini exactly ONE time regardless of how many platforms
-      // or platform groups are selected. The Promise.all below is text-only.
+      // ── Stage 1: Vision Analysis (Gemini, single call) ────────────────────
       let imageDescription: string | null = null
-      if (imagePayload) {
-        await send('vision', { message: 'Analyzing image...' })
+      if (imagePayloads && imagePayloads.length > 0) {
+        await send('vision', { message: `Analyzing ${imagePayloads.length} ${imagePayloads.length === 1 ? 'image' : 'images'}...` })
         let result: { description: string | null; errorType: 'timeout' | 'rate_limit' | 'error' | null }
         if (env.ENVIRONMENT !== 'production' && mockFailStage1) {
           result = { description: null, errorType: 'error' }
         } else {
-          result = await analyzeImage(env, imagePayload)
+          result = await analyzeImage(env, imagePayloads)
         }
         const { description, errorType } = result
 
-        // Release the image buffer immediately — Stage 2 is text-only.
-        // Nulling the reference makes the ArrayBuffer (up to 15MB) GC-eligible
-        // before the parallel Groq calls start.
-        imagePayload = undefined
+        // Immediately release image buffers for GC before parallel Groq calls start
+        imagePayloads = undefined
 
         if (description === null) {
-          // Stage 1 failed — choose the right user-facing message by error type
           let msg: string
           if (errorType === 'rate_limit') {
-            msg = 'Image analysis is temporarily unavailable (Gemini rate limit reached). Wait 30–60 seconds and try again, or remove the image for text-only captions.'
+            msg = 'Image analysis is temporarily unavailable (Gemini rate limit reached). Wait 30–60 seconds and try again, or remove images for text-only captions.'
           } else if (errorType === 'timeout') {
-            msg = 'Could not analyze your image in time — Gemini may be under load. Try again in a moment, or remove the image to generate text-only captions.'
+            msg = 'Could not analyze your images in time — Gemini may be under load. Try again in a moment, or remove images to generate text-only captions.'
           } else {
-            msg = 'Could not analyze the image. Please try again, or remove the image to generate text-only captions.'
+            msg = 'Could not analyze the images. Please try again, or remove images to generate text-only captions.'
           }
           await send('fatal', { message: msg })
           throw new FatalAlreadySentError()
@@ -202,8 +211,6 @@ export async function handleGenerate(
 
         imageDescription = description
 
-        // Persist the description on the campaign so retries can reuse it
-        // without making another Gemini call.
         await env.DB.prepare(
           `UPDATE campaigns SET image_description = ? WHERE id = ?`
         ).bind(imageDescription, campaignId).run()
@@ -322,11 +329,14 @@ export async function handleGenerate(
         `UPDATE campaigns SET status = 'failed', updated_at = unixepoch() WHERE id = ?`
       ).bind(campaignId).run()
     } finally {
-      if (imageKey && !success) {
-        await env.BUCKET.delete(imageKey).catch(err => {
-          console.error('Failed to delete R2 object:', err)
-        })
+      if (imageKeys.length > 0 && !success) {
+        for (const key of imageKeys) {
+          await env.BUCKET.delete(key).catch(err => {
+            console.error('Failed to delete R2 object:', key, err)
+          })
+        }
       }
+
       try {
         await writer.close()
       } catch (err) {

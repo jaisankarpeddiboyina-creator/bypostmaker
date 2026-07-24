@@ -214,7 +214,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         .app-sidebar {
           width: var(--sidebar-width);
           height: 100vh;
-          background: var(--color-nav-bg);
+          background: rgba(255, 255, 255, 0.92);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
           border-right: 1px solid var(--color-nav-border);
           box-shadow: var(--shadow-sidebar);
           display: flex;

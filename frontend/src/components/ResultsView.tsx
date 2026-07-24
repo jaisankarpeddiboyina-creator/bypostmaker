@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Sparkles, Download, ArrowLeft, Loader2 } from 'lucide-react'
 import { useAppStore } from '../store/app'
 import { PostCard } from './PostCard'
@@ -28,7 +28,6 @@ export function ResultsView() {
   const handleDownloadAll = async () => {
     if (!campaign?.id) return
 
-    // Calculate total operations for warning
     let totalResizes = 0
     for (const post of postsList) {
       const platform = PLATFORM_MAP[post.platformId]
@@ -72,6 +71,24 @@ export function ResultsView() {
       setDownloadProgress(null)
     }
   }
+
+  const [filterGroup, setFilterGroup] = useState<string>('all')
+
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: selectedPlatforms.length }
+    selectedPlatforms.forEach((id: string) => {
+      const p = PLATFORM_MAP[id]
+      if (p) {
+        counts[p.group] = (counts[p.group] || 0) + 1
+      }
+    })
+    return counts
+  }, [selectedPlatforms])
+
+  const filteredPlatforms = useMemo(() => {
+    if (filterGroup === 'all') return selectedPlatforms
+    return selectedPlatforms.filter((id: string) => PLATFORM_MAP[id]?.group === filterGroup)
+  }, [selectedPlatforms, filterGroup])
 
   return (
     <div className="results-view-layout">
@@ -130,7 +147,36 @@ export function ResultsView() {
         </div>
       </div>
 
-      {/* Main cards area */}
+      {/* Category Filter Bar */}
+      {campaign && selectedPlatforms.length > 0 && (
+        <div className="platform-filter-wrapper">
+          <div className="platform-filter-bar">
+            {[
+              { id: 'all', label: 'All Platforms' },
+              { id: 'shortform', label: 'Social & Shortform' },
+              { id: 'professional', label: 'Professional' },
+              { id: 'video', label: 'Video & Media' },
+              { id: 'community', label: 'Community' },
+              { id: 'longform', label: 'Longform' },
+            ].map(cat => {
+              const count = categoryCounts[cat.id] || 0
+              if (cat.id !== 'all' && count === 0) return null
+              return (
+                <button
+                  key={cat.id}
+                  className={`platform-filter-tab ${filterGroup === cat.id ? 'active' : ''}`}
+                  onClick={() => setFilterGroup(cat.id)}
+                >
+                  <span>{cat.label}</span>
+                  <span className="tab-count-badge">{count}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Main centered cards area */}
       <div className="results-body">
         <div className="results-cards-area">
           {!campaign && (
@@ -151,7 +197,7 @@ export function ResultsView() {
 
           {campaign && (
             <div className="results-cards-grid">
-              {selectedPlatforms.map(id => {
+              {filteredPlatforms.map(id => {
                 const post = campaign.posts[id]
                 if (!post) return null
                 return (
@@ -170,7 +216,7 @@ export function ResultsView() {
           )}
         </div>
 
-        {/* Refinement Chat Side Drawer */}
+        {/* Device Native Refinement Slide-Over Drawer */}
         {activePlatformId && campaign?.id && (
           <RefinementChat
             platformId={activePlatformId}
@@ -251,18 +297,67 @@ export function ResultsView() {
           border: 1px solid rgba(236, 72, 153, 0.2);
         }
 
+        .platform-filter-wrapper {
+          padding: 10px 24px 0;
+          background: var(--color-surface);
+          border-bottom: 1px solid var(--color-border);
+          flex-shrink: 0;
+        }
+
+        .platform-filter-bar {
+          display: flex;
+          gap: 8px;
+          overflow-x: auto;
+          padding-bottom: 8px;
+        }
+
+        .platform-filter-tab {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 6px 14px;
+          border-radius: var(--radius-pill);
+          font-size: 12px;
+          font-weight: 600;
+          color: var(--color-text-secondary);
+          background: transparent;
+          border: 1px solid transparent;
+          cursor: pointer;
+          transition: all var(--transition);
+          white-space: nowrap;
+        }
+
+        .platform-filter-tab:hover {
+          color: var(--color-text-primary);
+          background: var(--color-border);
+        }
+
+        .platform-filter-tab.active {
+          color: #ffffff;
+          background: var(--color-primary-start);
+          border-color: var(--color-primary-start);
+        }
+
+        .tab-count-badge {
+          font-size: 10px;
+          padding: 1px 6px;
+          border-radius: 99px;
+          background: rgba(0,0,0,0.1);
+        }
+
         .results-body {
           display: flex;
           flex: 1;
           min-height: 0;
           overflow: hidden;
+          position: relative;
         }
 
         .results-cards-area {
           flex: 1;
           min-width: 0;
           overflow-y: auto;
-          padding: 24px;
+          padding: 32px 24px;
         }
 
         .results-empty {
@@ -301,10 +396,13 @@ export function ResultsView() {
 
         .results-cards-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-          gap: 18px;
+          grid-template-columns: repeat(auto-fit, minmax(360px, 470px));
+          justify-content: center;
+          gap: 32px;
           align-items: flex-start;
           width: 100%;
+          max-width: 1500px;
+          margin: 0 auto;
         }
 
         @media (max-width: 768px) {
