@@ -1,85 +1,81 @@
 /* ============================================================
    PostMaker — Global Styles & Design Tokens
-   Design: Light, vibrant, pink-to-purple gradient system.
+   Design: World-Class Luminous Studio Aesthetic.
    Font:   Plus Jakarta Sans (rounded geometric sans)
-   Step 2: Token replacement — dark → light theme.
    ============================================================ */
 
 /* ── Design Tokens ─────────────────────────────────────────── */
 :root {
   /* ── Brand Gradient ──────────────────────────────────────── */
-  --color-primary-start:   #F72585;   /* hot magenta-pink  [IMG-3: Generate Posts button] */
-  --color-primary-end:     #9333EA;   /* vivid purple      [IMG-3: Generate Posts button right edge] */
+  --color-primary-start:   #F72585;   /* hot magenta-pink */
+  --color-primary-end:     #9333EA;   /* vivid purple */
   --gradient-primary:      linear-gradient(135deg, var(--color-primary-start), var(--color-primary-end));
   --gradient-primary-h:    linear-gradient(90deg,  var(--color-primary-start), var(--color-primary-end));
+  --gradient-primary-glow: linear-gradient(135deg, rgba(247, 37, 133, 0.15), rgba(147, 51, 234, 0.15));
 
   /* ── Page & Surface ──────────────────────────────────────── */
-  --color-bg:              #F8F5FD;   /* lavender page bg  [IMG-1/2/3/4/5: all page backgrounds] */
-  --color-surface:         #FFFFFF;   /* sidebar, cards    [IMG-1/2/3/4/5: all white surfaces] */
-  --color-border:          #F0F0F2;   /* card outlines, dividers [IMG-1: card borders; IMG-4: table rows] */
-  --color-border-input:    #E5E7EB;   /* input idle border [IMG-5: Full Name, Email, Bio fields] */
+  --color-bg:              #F8F5FD;   /* luminous lavender page bg */
+  --color-surface:         #FFFFFF;   /* pure white card surface */
+  --color-surface-glass:   rgba(255, 255, 255, 0.88);
+  --color-border:          rgba(0, 0, 0, 0.06);   /* crisp translucent divider */
+  --color-border-hover:    rgba(247, 37, 133, 0.25);
+  --color-border-input:    #E5E7EB;   /* input idle border */
 
   /* ── Text ────────────────────────────────────────────────── */
-  --color-text-primary:    #1A1A1A;   /* headings          [IMG-1: "Good morning"; IMG-5: "Settings"] */
-  --color-text-secondary:  #6B7280;   /* subtext, dates    [IMG-1: "Create once..."; IMG-4: timestamps] */
-  --color-text-muted:      #9CA3AF;   /* placeholder, char count [IMG-3: textarea placeholder; IMG-5: URLs] */
-  --color-text-placeholder:#D1D5DB;   /* deeply muted / disabled text */
-  --color-text-inverse:    #FFFFFF;   /* text on gradient/dark surfaces [IMG-1/2/3: CTA buttons] */
-  --color-text-accent:     var(--color-primary-start);   /* link, action text [IMG-1: "View all →"; IMG-5: "Show more"] */
+  --color-text-primary:    #0F172A;   /* slate 900 high contrast */
+  --color-text-secondary:  #475569;   /* slate 600 subtext */
+  --color-text-muted:      #94A3B8;   /* slate 400 placeholder */
+  --color-text-placeholder:#CBD5E1;   /* muted disabled */
+  --color-text-inverse:    #FFFFFF;   /* text on dark/gradient */
+  --color-text-accent:     var(--color-primary-start);
 
   /* ── Nav (Sidebar) ───────────────────────────────────────── */
-  --color-nav-bg:          #FFFFFF;   /* [IMG-1/2/3/4/5: sidebar is pure white] */
-  --color-nav-border:      #F0F0F2;   /* [IMG-1/5: faint right-side sidebar separator] */
-  --color-nav-item-text:   #6B7280;   /* [IMG-1: inactive items e.g. Create New, My Generations] */
-  --color-nav-item-icon:   #9CA3AF;   /* [IMG-1/4/5: inactive icons are medium-gray] */
-  --color-nav-active-bg:   rgba(236, 72, 153, 0.08);  /* [IMG-1: Dashboard active pill — soft translucent pink] */
-  --color-nav-active-text: #EC4899;   /* [IMG-1: "Dashboard" active text — solid pink] */
-  --color-nav-active-icon: #EC4899;   /* [IMG-1/3/5: active nav icon matches pink text] */
+  --color-nav-bg:          rgba(255, 255, 255, 0.92);
+  --color-nav-border:      rgba(0, 0, 0, 0.05);
+  --color-nav-item-text:   #475569;
+  --color-nav-item-icon:   #94A3B8;
+  --color-nav-active-bg:   rgba(247, 37, 133, 0.08);
+  --color-nav-active-text: #F72585;
+  --color-nav-active-icon: #F72585;
 
   /* ── Stat Card Icon Tints ────────────────────────────────── */
-  --color-tint-pink:       rgba(236, 72, 153,  0.12); /* [IMG-1: Total Generations icon bg] */
-  --color-tint-purple:     rgba(147, 51,  234,  0.12); /* [IMG-1: Platforms Used icon bg] */
-  --color-tint-orange:     rgba(249, 115, 22,   0.12); /* [IMG-1: Media Uploaded icon bg] */
-  --color-tint-amber:      rgba(234, 179, 8,    0.12); /* [IMG-1: Credits Left icon bg] */
-  --color-tint-green:      rgba(22,  163, 74,   0.10); /* [IMG-4: Completed stat icon tint] */
-  --color-tint-blue:       rgba(59,  130, 246,  0.10); /* [IMG-4: Processing stat icon tint] */
-  --color-tint-red:        rgba(239, 68,  68,   0.10); /* [IMG-4: Failed stat icon tint] */
+  --color-tint-pink:       rgba(247, 37, 133, 0.10);
+  --color-tint-purple:     rgba(147, 51, 234, 0.10);
+  --color-tint-orange:     rgba(249, 115, 22, 0.10);
+  --color-tint-amber:      rgba(234, 179, 8, 0.10);
+  --color-tint-green:      rgba(22, 163, 74, 0.10);
+  --color-tint-blue:       rgba(59, 130, 246, 0.10);
+  --color-tint-red:        rgba(239, 68, 68, 0.10);
 
-  /* ── Icon Colors (per stat) ──────────────────────────────── */
-  --color-icon-pink:       #EC4899;   /* [IMG-1: rocket icon] */
-  --color-icon-purple:     #9333EA;   /* [IMG-1: layers icon] */
-  --color-icon-orange:     #F97316;   /* [IMG-1: image icon] */
-  --color-icon-amber:      #EAB308;   /* [IMG-1: lightning icon] */
+  /* ── Icon Colors ─────────────────────────────────────────── */
+  --color-icon-pink:       #F72585;
+  --color-icon-purple:     #9333EA;
+  --color-icon-orange:     #F97316;
+  --color-icon-amber:      #EAB308;
 
   /* ── Status Colors ───────────────────────────────────────── */
-  --color-success:         #16A34A;   /* [IMG-4: Completed badge; IMG-2: +Ready label] */
-  --color-success-bg:      rgba(22,  163, 74,  0.10);
-  --color-success-border:  rgba(22,  163, 74,  0.20);
-  --color-processing:      #3B82F6;   /* [IMG-4: Processing badge] */
-  --color-processing-bg:   rgba(59,  130, 246, 0.10);
+  --color-success:         #16A34A;
+  --color-success-bg:      rgba(22, 163, 74, 0.10);
+  --color-success-border:  rgba(22, 163, 74, 0.20);
+  --color-processing:      #3B82F6;
+  --color-processing-bg:   rgba(59, 130, 246, 0.10);
   --color-processing-border: rgba(59, 130, 246, 0.20);
-  --color-error:           #EF4444;   /* [IMG-4: Failed badge; IMG-5: Delete Account] */
-  --color-error-bg:        rgba(239, 68,  68,  0.10);
-  --color-error-border:    rgba(239, 68,  68,  0.20);
-  --color-warning:         #EAB308;   /* [IMG-1: Credits Left lightning, amber] */
-  --color-warning-bg:      rgba(234, 179, 8,   0.10);
-  --color-warning-border:  rgba(234, 179, 8,   0.20);
-  --color-draft:           #6B7280;   /* [IMG-4: Draft badge] */
-  --color-draft-bg:        rgba(107, 114, 128, 0.10);
-
-  /* ── Toggle (resolved: flat pink, not gradient) ──────────── */
-  --color-toggle-active:   var(--color-primary-start);  /* [confirmed: flat #F72585] */
-  --color-toggle-inactive: #D1D5DB;
+  --color-error:           #EF4444;
+  --color-error-bg:        rgba(239, 68, 68, 0.10);
+  --color-error-border:    rgba(239, 68, 68, 0.20);
+  --color-warning:         #EAB308;
+  --color-warning-bg:      rgba(234, 179, 8, 0.10);
+  --color-warning-border:  rgba(234, 179, 8, 0.20);
+  --color-draft:           #64748B;
+  --color-draft-bg:        rgba(100, 116, 139, 0.10);
 
   /* ── Upgrade / Promo Banners ─────────────────────────────── */
-  --color-upgrade-start:   #FFF1F8;   /* [IMG-1/4/5: sidebar upgrade card, soft pink] */
-  --color-upgrade-end:     #F5E8FF;   /* [IMG-1/4/5: sidebar upgrade card, soft lavender] */
-  --color-promo-start:     #FF2D78;   /* [IMG-1: full-width promo banner left] */
-  --color-promo-end:       #9333EA;   /* [IMG-1: full-width promo banner right] */
+  --color-upgrade-start:   #FFF1F8;
+  --color-upgrade-end:     #F5E8FF;
 
   /* ── Typography ──────────────────────────────────────────── */
-  --font-body:             'Plus Jakarta Sans', sans-serif;
-  --font-display:          'Plus Jakarta Sans', sans-serif;
+  --font-body:             'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display:          'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono:             'JetBrains Mono', monospace;
 
   /* ── Spacing Scale ───────────────────────────────────────── */
@@ -95,58 +91,34 @@
   --space-16:   64px;
 
   /* ── Border Radii ────────────────────────────────────────── */
-  --radius-sm:     6px;    /* small chrome, checkboxes         [IMG-5] */
-  --radius:        8px;    /* platform chips, inputs, dropdowns [IMG-3/4/5] */
-  --radius-md:     10px;   /* sidebar nav items                [IMG-1/2/3/4/5] */
-  --radius-input:  8px;    /* form fields, textareas           [IMG-5] */
-  --radius-card:   16px;   /* stat cards, content cards        [IMG-1/3/5] */
-  --radius-pill:   999px;  /* primary buttons, badges, search  [IMG-1/2/3] */
+  --radius-sm:     6px;
+  --radius:        10px;
+  --radius-md:     12px;
+  --radius-input:  10px;
+  --radius-card:   18px;
+  --radius-pill:   999px;
 
-  /* ── Shadows ─────────────────────────────────────────────── */
-  --shadow-card:       0 1px 3px rgba(0, 0, 0, 0.06), 0 0 0 1px var(--color-border);
-  --shadow-card-hover: 0 4px 16px rgba(0, 0, 0, 0.08), 0 0 0 1px var(--color-border-input);
-  --shadow-btn:        0 4px 12px rgba(247, 37, 133, 0.30);  /* pink glow [IMG-1/3: CTA buttons] */
-  --shadow-modal:      0 20px 60px rgba(0, 0, 0, 0.15);
-  --shadow-sidebar:    2px 0 8px rgba(0, 0, 0, 0.04);  /* [IMG-1/5: sidebar right-edge shadow] */
+  /* ── Shadows & Rim Lighting ──────────────────────────────── */
+  --shadow-card:       0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  --shadow-card-hover: 0 16px 36px -4px rgba(247, 37, 133, 0.12), 0 0 0 1px rgba(247, 37, 133, 0.22);
+  --shadow-btn:        0 4px 16px rgba(247, 37, 133, 0.35);
+  --shadow-modal:      0 24px 64px -12px rgba(15, 23, 42, 0.18);
+  --shadow-sidebar:    4px 0 24px rgba(0, 0, 0, 0.03);
 
   /* ── Transitions ─────────────────────────────────────────── */
-  --transition:      150ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition:      180ms cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-slow: 300ms cubic-bezier(0.16, 1, 0.3, 1);
 
   /* ── Layout ──────────────────────────────────────────────── */
-  --sidebar-width:  220px;   /* [IMG-1/2/3/4/5: proportional measurement] */
-  --topbar-height:  64px;    /* [IMG-1/4/5: topbar area] */
-  --content-px:     32px;    /* [IMG-1/4/5: main content horizontal padding] */
-
-  /* ── Component Dimensions ────────────────────────────────── */
-  --stat-icon-size:      48px;   /* [IMG-1: tinted icon squares] */
-  --stat-icon-radius:    12px;   /* [IMG-1: icon square corners] */
-  --nav-item-px:         16px;   /* [IMG-1/5: sidebar item h-padding] */
-  --nav-item-py:         10px;   /* [IMG-1/5: sidebar item v-padding] */
-  --card-px:             24px;   /* [IMG-1/3: card internal h-padding] */
-  --card-py:             20px;   /* [IMG-1/3: card internal v-padding] */
-  --btn-height:          40px;   /* [IMG-1/2/3: all primary CTA buttons] */
-  --btn-height-sm:       32px;   /* [IMG-2/5: secondary/ghost buttons] */
-  --input-height:        44px;   /* [IMG-5: Full Name, Email Address fields] */
-  --badge-px:            12px;   /* [IMG-4: status badge h-padding] */
-  --badge-py:            4px;    /* [IMG-4: status badge v-padding] */
-  --platform-chip-size:  32px;   /* [IMG-4: platform icons in generation rows] */
-  --step-badge-size:     28px;   /* [IMG-3: numbered step badges ①②③] */
-  --avatar-size:         36px;   /* [IMG-1/4/5: sidebar user avatar] */
-  --toggle-width:        44px;   /* [IMG-5: App Settings toggles] */
-  --toggle-height:       24px;   /* [IMG-5: App Settings toggles] */
+  --sidebar-width:  230px;
+  --topbar-height:  64px;
+  --content-px:     32px;
 
   /* ── Backward-Compat Aliases ─────────────────────────────── */
-  /* These map old dark-theme variable names to their light-theme
-     equivalents. They are referenced by component/page files that
-     have not yet been restyled (Steps 3–5). Remove each alias as
-     the corresponding component is restyled. Do not add new
-     component code that uses these names — use the canonical
-     --color-* names above instead.                             */
   --bg:           var(--color-bg);
   --surface:      var(--color-surface);
   --card:         var(--color-surface);
-  --card-hover:   #F9FAFB;
+  --card-hover:   #F8FAFC;
   --border:       var(--color-border);
   --border-light: var(--color-border-input);
   --accent:       var(--color-primary-start);
@@ -163,10 +135,8 @@
   --success-bg:   var(--color-success-bg);
   --warning:      var(--color-warning);
   --warning-bg:   var(--color-warning-bg);
-  --radius-lg:    var(--radius-card);   /* was 14px dark; maps to 16px new card radius */
+  --radius-lg:    var(--radius-card);
   --radius-xl:    var(--radius-pill);
-  --rail-height:  var(--topbar-height);
-  --input-width:  360px;
   --shadow-accent:var(--shadow-btn);
 }
 
@@ -178,7 +148,11 @@ html { height: 100%; font-size: 16px; }
 body {
   min-height: 100%;
   font-family: var(--font-body);
-  background: var(--color-bg);
+  background-color: var(--color-bg);
+  background-image: 
+    radial-gradient(ellipse 65% 45% at 20% -10%, rgba(247, 37, 133, 0.06), transparent 60%),
+    radial-gradient(ellipse 50% 50% at 85% 100%, rgba(147, 51, 234, 0.05), transparent 60%);
+  background-attachment: fixed;
   color: var(--color-text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -192,15 +166,15 @@ body {
 h1, h2, h3 {
   font-family: var(--font-display);
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
   line-height: 1.15;
   color: var(--color-text-primary);
 }
 
 p { line-height: 1.6; }
 
-a { color: var(--color-text-accent); text-decoration: none; }
-a:hover { text-decoration: underline; }
+a { color: var(--color-text-accent); text-decoration: none; transition: color var(--transition); }
+a:hover { color: var(--color-primary-end); text-decoration: none; }
 
 code, .mono {
   font-family: var(--font-mono);
@@ -208,13 +182,13 @@ code, .mono {
 }
 
 /* ── Scrollbar ─────────────────────────────────────────────── */
-::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--color-border-input); border-radius: 2px; }
-::-webkit-scrollbar-thumb:hover { background: var(--color-text-muted); }
+::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.12); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-primary-start); }
 
 /* ── Selection ─────────────────────────────────────────────── */
-::selection { background: rgba(247, 37, 133, 0.15); color: var(--color-text-primary); }
+::selection { background: rgba(247, 37, 133, 0.18); color: var(--color-text-primary); }
 
 /* ── Focus ─────────────────────────────────────────────────── */
 :focus-visible {
@@ -248,6 +222,15 @@ code, .mono {
   white-space: nowrap;
 }
 
+.animate-fade-in {
+  animation: fadeIn 250ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 /* ── Button base ───────────────────────────────────────────── */
 .btn {
   display: inline-flex;
@@ -264,6 +247,12 @@ code, .mono {
   transition: all var(--transition);
   white-space: nowrap;
   user-select: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn:active {
+  transform: scale(0.98);
 }
 
 .btn:disabled { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
@@ -273,14 +262,23 @@ code, .mono {
   color: var(--color-text-inverse);
   box-shadow: var(--shadow-btn);
 }
-.btn-primary:hover { filter: brightness(1.06); }
+.btn-primary:hover {
+  filter: brightness(1.08);
+  box-shadow: 0 6px 20px rgba(247, 37, 133, 0.45);
+  transform: translateY(-1px);
+}
 
 .btn-ghost {
-  background: transparent;
+  background: var(--color-surface);
   color: var(--color-text-primary);
-  border: 1.5px solid var(--color-border-input);
+  border: 1px solid var(--color-border-input);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
-.btn-ghost:hover { background: rgba(0, 0, 0, 0.03); border-color: var(--color-text-muted); }
+.btn-ghost:hover {
+  background: var(--color-bg);
+  border-color: var(--color-primary-start);
+  color: var(--color-primary-start);
+}
 
 .btn-sm {
   height: var(--btn-height-sm);
@@ -295,192 +293,31 @@ code, .mono {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: transparent;
-  color: var(--color-text-muted);
-  border: none;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: all var(--transition);
-}
-.btn-icon:hover { background: var(--color-border); color: var(--color-text-primary); }
-
-/* ── Toast ─────────────────────────────────────────────────── */
-.toast-container {
-  position: fixed;
-  bottom: var(--space-6);
-  right: var(--space-6);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  z-index: 9999;
-  pointer-events: none;
-}
-
-.toast {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
   background: var(--color-surface);
+  color: var(--color-text-secondary);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-card);
-  font-size: 14px;
-  color: var(--color-text-primary);
-  box-shadow: var(--shadow-card);
-  pointer-events: all;
-  animation: slideIn 200ms ease forwards;
-  max-width: 360px;
+  border-radius: 50%;
+}
+.btn-icon:hover {
+  border-color: var(--color-primary-start);
+  color: var(--color-primary-start);
+  background: var(--color-nav-active-bg);
 }
 
-.toast.success { border-color: var(--color-success); }
-.toast.error   { border-color: var(--color-error); }
-
-@keyframes slideIn {
-  from { transform: translateX(20px); opacity: 0; }
-  to   { transform: translateX(0);    opacity: 1; }
-}
-
-/* ── Modal overlay ─────────────────────────────────────────── */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.40);
-  backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: var(--space-4);
-}
-
-.modal {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-card);
-  padding: var(--space-8);
-  max-width: 440px;
-  width: 100%;
-  box-shadow: var(--shadow-modal);
-  animation: modalIn 200ms ease forwards;
-}
-
-@keyframes modalIn {
-  from { transform: scale(0.96) translateY(8px); opacity: 0; }
-  to   { transform: scale(1)    translateY(0);   opacity: 1; }
-}
-
-/* ── Badge ─────────────────────────────────────────────────── */
+/* ── Badges ────────────────────────────────────────────────── */
 .badge {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: var(--badge-py) var(--badge-px);
+  gap: 5px;
+  padding: 3px 10px;
   border-radius: var(--radius-pill);
   font-size: 12px;
-  font-weight: 500;
-}
-
-.badge-free      { background: var(--color-draft-bg);   color: var(--color-draft);    border: 1px solid rgba(107,114,128,0.20); }
-.badge-starter   { background: var(--color-success-bg); color: var(--color-success);  border: 1px solid var(--color-success-border); }
-.badge-pro       { background: var(--color-nav-active-bg); color: var(--color-nav-active-text); border: 1px solid rgba(236,72,153,0.20); }
-.badge-business  { background: var(--color-warning-bg); color: var(--color-warning);  border: 1px solid var(--color-warning-border); }
-
-/* ── Status badges ─────────────────────────────────────────── */
-.badge-completed  { background: var(--color-success-bg);    color: var(--color-success);    border: 1px solid var(--color-success-border); }
-.badge-processing { background: var(--color-processing-bg); color: var(--color-processing); border: 1px solid var(--color-processing-border); }
-.badge-failed     { background: var(--color-error-bg);      color: var(--color-error);      border: 1px solid var(--color-error-border); }
-.badge-draft      { background: var(--color-draft-bg);      color: var(--color-draft);      border: 1px solid rgba(107,114,128,0.20); }
-
-/* ── Glassmorphism & High-End Card Utilities ──────────────── */
-.glass-panel {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  box-shadow: 0 8px 32px rgba(147, 51, 234, 0.05), 0 1px 3px rgba(0, 0, 0, 0.04);
-}
-
-.glow-card {
-  position: relative;
-  transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
-}
-
-.glow-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 28px rgba(147, 51, 234, 0.08), 0 0 0 1px rgba(247, 37, 133, 0.18);
-}
-
-/* ── Hashtag Highlight Tag ────────────────────────────────── */
-.hashtag-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  padding: 1px 6px;
-  background: rgba(147, 51, 234, 0.08);
-  color: var(--color-primary-end);
-  border-radius: var(--radius-sm);
-  font-family: var(--font-mono);
-  font-size: 0.9em;
-  font-weight: 500;
-}
-
-/* ── Platform Filter Toolbar ──────────────────────────────── */
-.platform-filter-bar {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  overflow-x: auto;
-  padding: var(--space-2) 0;
-  scrollbar-width: none;
-}
-.platform-filter-bar::-webkit-scrollbar { display: none; }
-
-.platform-filter-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-4);
-  height: 36px;
-  border-radius: var(--radius-pill);
-  font-size: 13px;
   font-weight: 600;
-  color: var(--color-text-secondary);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all var(--transition);
+  letter-spacing: 0.01em;
 }
 
-.platform-filter-tab:hover {
-  background: rgba(236, 72, 153, 0.04);
-  color: var(--color-text-primary);
-  border-color: var(--color-border-input);
+.badge-completed {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+  border: 1px solid var(--color-success-border);
 }
-
-.platform-filter-tab.active {
-  background: var(--gradient-primary);
-  color: var(--color-text-inverse);
-  border-color: transparent;
-  box-shadow: var(--shadow-btn);
-}
-
-/* ── Animations ───────────────────────────────────────────── */
-@keyframes fadeInScale {
-  from { opacity: 0; transform: scale(0.97) translateY(4px); }
-  to   { opacity: 1; transform: scale(1) translateY(0); }
-}
-
-.animate-fade-in {
-  animation: fadeInScale 220ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-@keyframes pulseGlow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(247, 37, 133, 0.4); }
-  50%      { box-shadow: 0 0 0 8px rgba(247, 37, 133, 0); }
-}
-
-.pulse-glow {
-  animation: pulseGlow 2s infinite;
-}
-

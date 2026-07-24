@@ -4,7 +4,6 @@ import {
   LayoutDashboard,
   Sparkles,
   Palette,
-
   History,
   CreditCard,
   Settings,
@@ -22,7 +21,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
-  const { user, usage, setUser, setShowUpgradeModal } = useAppStore()
+  const { user, setUser, setShowUpgradeModal } = useAppStore()
   const location = useLocation()
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -48,18 +47,15 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     { label: 'Dashboard', path: '/app', icon: LayoutDashboard },
     { label: 'Create Post', path: '/app/create', icon: Sparkles },
     { label: 'Brand Kit', path: '/app/brand-kit', icon: Palette },
-
     { label: 'My Generations', path: '/app/history', icon: History },
     { label: 'Billing', path: '/app/billing', icon: CreditCard },
     { label: 'Settings', path: '/app/settings', icon: Settings },
   ]
 
-
   const currentPath = location.pathname
 
   const isItemActive = (path: string) => {
     if (path === '/app') {
-      // Dashboard is active if pathname is exactly /app or redirects to it
       return currentPath === '/app'
     }
     return currentPath.startsWith(path)
@@ -73,10 +69,15 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       {isOpen && <div className="sidebar-overlay" onClick={onClose} />}
 
       <aside className={`app-sidebar ${isOpen ? 'open' : ''}`}>
-        {/* Top Header */}
+        {/* Top Header with Brand Emblem */}
         <div className="sidebar-header">
-          <button className="sidebar-logo" onClick={() => { navigate('/app'); onClose(); }}>
-            Post<span>Maker</span>
+          <button className="sidebar-logo-group" onClick={() => { navigate('/app'); onClose(); }}>
+            <div className="logo-icon-emblem">
+              <Sparkles size={16} />
+            </div>
+            <span className="sidebar-logo-text">
+              Post<span>Maker</span>
+            </span>
           </button>
           <button className="sidebar-close-btn" onClick={onClose}>
             <X size={18} />
@@ -205,7 +206,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         .sidebar-overlay {
           position: fixed;
           inset: 0;
-          background: rgba(0, 0, 0, 0.40);
+          background: rgba(15, 23, 42, 0.35);
           backdrop-filter: blur(4px);
           z-index: 990;
           display: none;
@@ -214,9 +215,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         .app-sidebar {
           width: var(--sidebar-width);
           height: 100vh;
-          background: rgba(255, 255, 255, 0.92);
-          backdrop-filter: blur(16px);
-          -webkit-backdrop-filter: blur(16px);
+          background: var(--color-nav-bg);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
           border-right: 1px solid var(--color-nav-border);
           box-shadow: var(--shadow-sidebar);
           display: flex;
@@ -234,20 +235,38 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           margin-bottom: var(--space-6);
         }
 
-        .sidebar-logo {
-          font-family: var(--font-display);
-          font-size: 20px;
-          font-weight: 800;
-          color: var(--color-text-primary);
+        .sidebar-logo-group {
+          display: flex;
+          align-items: center;
+          gap: var(--space-3);
           background: none;
           border: none;
           cursor: pointer;
-          letter-spacing: -0.04em;
           padding: 0;
           text-align: left;
         }
 
-        .sidebar-logo span {
+        .logo-icon-emblem {
+          width: 32px;
+          height: 32px;
+          border-radius: 10px;
+          background: var(--gradient-primary);
+          color: #FFFFFF;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 4px 12px rgba(247, 37, 133, 0.35);
+        }
+
+        .sidebar-logo-text {
+          font-family: var(--font-display);
+          font-size: 20px;
+          font-weight: 800;
+          color: var(--color-text-primary);
+          letter-spacing: -0.03em;
+        }
+
+        .sidebar-logo-text span {
           color: var(--color-primary-start);
         }
 
@@ -278,7 +297,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           list-style: none;
           display: flex;
           flex-direction: column;
-          gap: var(--space-1);
+          gap: 6px;
           height: 100%;
         }
 
@@ -287,17 +306,18 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           display: flex;
           align-items: center;
           gap: var(--space-3);
-          padding: var(--nav-item-py) var(--nav-item-px);
+          padding: 10px 14px;
           background: transparent;
           border: none;
           border-radius: var(--radius-md);
           color: var(--color-nav-item-text);
           font-family: var(--font-body);
-          font-size: 14px;
+          font-size: 13.5px;
           font-weight: 600;
           cursor: pointer;
           text-align: left;
           transition: all var(--transition);
+          position: relative;
         }
 
         .sidebar-nav-item svg {
@@ -306,17 +326,29 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         }
 
         .sidebar-nav-item:hover {
-          background: var(--color-border);
+          background: rgba(0, 0, 0, 0.04);
           color: var(--color-text-primary);
         }
 
         .sidebar-nav-item:hover svg {
-          color: var(--color-text-secondary);
+          color: var(--color-primary-start);
         }
 
         .sidebar-nav-item.active {
           background: var(--color-nav-active-bg);
           color: var(--color-nav-active-text);
+          font-weight: 700;
+        }
+
+        .sidebar-nav-item.active::before {
+          content: '';
+          position: absolute;
+          left: -4px;
+          top: 8px;
+          bottom: 8px;
+          width: 4px;
+          border-radius: 4px;
+          background: var(--gradient-primary);
         }
 
         .sidebar-nav-item.active svg {
@@ -344,20 +376,21 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
         /* Upgrade Card */
         .sidebar-upgrade-card {
-          background: linear-gradient(135deg, var(--color-upgrade-start), var(--color-upgrade-end));
-          border: 1px solid rgba(236, 72, 153, 0.1);
+          background: linear-gradient(135deg, #FFF1F8, #F5E8FF);
+          border: 1px solid rgba(247, 37, 133, 0.18);
           border-radius: var(--radius-card);
           padding: var(--space-4);
           margin-bottom: var(--space-4);
           display: flex;
           flex-direction: column;
           gap: var(--space-2);
+          box-shadow: 0 4px 14px rgba(247, 37, 133, 0.08);
         }
 
         .upgrade-title {
           font-size: 13px;
           font-weight: 700;
-          color: var(--color-nav-active-text);
+          color: var(--color-primary-start);
         }
 
         .upgrade-features {
@@ -371,7 +404,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
         .upgrade-btn-action {
           width: 100%;
-          height: 32px;
+          height: 34px;
           font-size: 12px;
           justify-content: center;
           padding: 0 var(--space-3);
@@ -389,36 +422,36 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           display: flex;
           align-items: center;
           gap: var(--space-2);
-          padding: var(--space-2);
-          background: transparent;
-          border: 1px solid transparent;
+          padding: 8px 10px;
+          background: var(--color-surface);
+          border: 1px solid var(--color-border);
           border-radius: var(--radius-md);
           cursor: pointer;
           text-align: left;
           transition: all var(--transition);
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
         }
 
         .sidebar-profile-card:hover {
-          background: var(--color-border);
-          border-color: var(--color-border);
+          border-color: var(--color-primary-start);
+          box-shadow: 0 4px 12px rgba(247, 37, 133, 0.10);
         }
 
         .profile-avatar {
-          width: var(--avatar-size);
-          height: var(--avatar-size);
+          width: 34px;
+          height: 34px;
           border-radius: 50%;
           object-fit: cover;
-          border: 1px solid var(--color-border);
+          border: 1.5px solid var(--color-primary-start);
         }
 
         .profile-avatar-fallback {
-          width: var(--avatar-size);
-          height: var(--avatar-size);
+          width: 34px;
+          height: 34px;
           border-radius: 50%;
-          background: var(--color-nav-active-bg);
-          border: 1px solid rgba(236, 72, 153, 0.2);
-          color: var(--color-nav-active-text);
-          font-size: 14px;
+          background: var(--gradient-primary);
+          color: #FFFFFF;
+          font-size: 13px;
           font-weight: 700;
           display: flex;
           align-items: center;
@@ -434,13 +467,14 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
         .profile-name {
           font-size: 13px;
-          font-weight: 600;
+          font-weight: 700;
           color: var(--color-text-primary);
         }
 
         .profile-plan {
           font-size: 11px;
-          color: var(--color-text-secondary);
+          color: var(--color-primary-start);
+          font-weight: 600;
         }
 
         .profile-chevron {
@@ -466,11 +500,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           z-index: 1010;
           display: flex;
           flex-direction: column;
-          animation: dropdownFadeIn 150ms ease forwards;
+          animation: dropdownFadeIn 180ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
         @keyframes dropdownFadeIn {
-          from { transform: translateY(4px); opacity: 0; }
+          from { transform: translateY(6px); opacity: 0; }
           to { transform: translateY(0); opacity: 1; }
         }
 
@@ -513,12 +547,12 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         }
 
         .dropdown-item:hover {
-          background: var(--color-border);
+          background: var(--color-bg);
           color: var(--color-text-primary);
         }
 
         .dropdown-item:hover svg {
-          color: var(--color-text-secondary);
+          color: var(--color-primary-start);
         }
 
         .dropdown-item.danger:hover {
