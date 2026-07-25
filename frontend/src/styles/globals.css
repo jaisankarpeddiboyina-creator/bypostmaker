@@ -484,3 +484,11 @@ code, .mono {
   animation: pulseGlow 2s infinite;
 }
 
+/* ── GPU-Accelerated Card Virtualization ─────────────────── */
+.uc-card-shell,
+.post-card {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 440px;
+}
+
+
