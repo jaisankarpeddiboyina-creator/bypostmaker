@@ -58,7 +58,7 @@ export default function LandingPage() {
   const handleCTA = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
     if (user) { navigate('/app'); return }
-    navigate('/signup')
+    navigate('/app')
   }
 
   const plans = PLANS
@@ -78,7 +78,7 @@ export default function LandingPage() {
           <div className="landing-nav-cta">
             {user
               ? <button className="btn btn-primary" onClick={() => navigate('/app')}>Open app →</button>
-              : <button className="btn btn-primary" onClick={() => navigate('/signup')}>Start free →</button>
+              : <button className="btn btn-primary" onClick={() => navigate('/app')}>Start free →</button>
             }
           </div>
         </div>
