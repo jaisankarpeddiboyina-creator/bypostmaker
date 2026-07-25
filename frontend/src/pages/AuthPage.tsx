@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Sparkles, Loader2, ArrowLeft, Mail, Lock, User as UserIcon, AlertCircle } from 'lucide-react'
 import { useAppStore } from '../store/app'
 import { api } from '../lib/api'
+import { trackSignUp, trackLogin } from '../lib/analytics'
 
 interface AuthPageProps {
   mode: 'login' | 'signup' | 'forgot'
@@ -87,6 +88,7 @@ export default function AuthPage({ mode }: AuthPageProps) {
     try {
       if (mode === 'signup') {
         await api.auth.emailSignup(name, email, password)
+        trackSignUp('email')
         addToast('Verification email sent! Redirecting...', 'success')
         // Force full page reload redirect to refresh session and trigger AuthGuard check
         setTimeout(() => {
@@ -94,6 +96,7 @@ export default function AuthPage({ mode }: AuthPageProps) {
         }, 1500)
       } else if (mode === 'login') {
         await api.auth.emailLogin(email, password)
+        trackLogin('email')
         addToast('Welcome back! Redirecting...', 'success')
         setTimeout(() => {
           window.location.href = '/app'

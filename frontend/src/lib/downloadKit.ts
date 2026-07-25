@@ -1,6 +1,7 @@
 import JSZip from 'jszip';
 import { PLATFORM_MAP } from '@@config/platforms';
 import { MAX_IMAGE_SIZE_BYTES } from '../../../config/limits';
+import { trackKitDownload } from './analytics';
 
 const ZIP_VIDEO_THRESHOLD = 80 * 1024 * 1024; // 80MB
 
@@ -261,6 +262,9 @@ export async function generateClientZip(
   // Build and add the README.txt
   const readmeContent = buildReadme(selectedPlatformIds, prompt, warnings);
   zip.file('README.txt', readmeContent);
+
+  // Track the content kit download as a conversion event
+  trackKitDownload(selectedPlatformIds.length);
 
   onProgress('Packaging ZIP file...');
   return await zip.generateAsync({ type: 'blob' });
