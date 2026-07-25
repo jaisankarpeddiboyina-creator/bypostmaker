@@ -216,10 +216,10 @@ export default function App() {
           <Route path="/reset-password" element={<ResetPasswordPage />} />
 
           <Route path="/app" element={
-            <AuthGuard><Navigate to="/app/create" replace /></AuthGuard>
+            <Navigate to="/app/create" replace />
           } />
           <Route path="/app/create" element={
-            <AuthGuard><AppShell><AppPage /></AppShell></AuthGuard>
+            <AppShell><AppPage /></AppShell>
           } />
           <Route path="/app/history" element={
             <AuthGuard><AppShell><HistoryPage /></AppShell></AuthGuard>

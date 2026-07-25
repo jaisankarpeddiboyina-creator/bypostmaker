@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import { useAppStore } from '../store/app'
 import { CreateStepPanel } from '../components/CreateStepPanel'
 import { ResultsView } from '../components/ResultsView'
+import { AuthModal } from '../components/AuthModal'
 import { api } from '../lib/api'
 
 export default function AppPage() {
@@ -16,6 +17,7 @@ export default function AppPage() {
     updatePost,
     addToast,
     setShowUpgradeModal, setUpgradeReason,
+    setShowAuthModal,
     viewMode, setViewMode,
   } = useAppStore()
 
@@ -42,6 +44,11 @@ export default function AppPage() {
   }, [])
 
   const handleGenerate = useCallback(async () => {
+    if (!user) {
+      setShowAuthModal(true)
+      return
+    }
+
     if (!prompt.trim()) { addToast('Enter a prompt first', 'error'); return }
     if (selectedPlatforms.length === 0) { addToast('Select at least one platform', 'error'); return }
 
@@ -252,6 +259,8 @@ export default function AppPage() {
           <ResultsView />
         )}
       </div>
+
+      <AuthModal />
 
       <style>{`
         .app-layout {

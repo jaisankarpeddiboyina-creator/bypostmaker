@@ -86,6 +86,9 @@ interface AppStore {
   upgradeReason: string
   setUpgradeReason: (r: string) => void
 
+  showAuthModal: boolean
+  setShowAuthModal: (v: boolean) => void
+
   currency: 'usd' | 'inr'
   setCurrency: (c: 'usd' | 'inr') => void
 
@@ -172,6 +175,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
   setShowUpgradeModal: (v) => set({ showUpgradeModal: v }),
   upgradeReason: '',
   setUpgradeReason: (r) => set({ upgradeReason: r }),
+
+  showAuthModal: false,
+  setShowAuthModal: (v) => set({ showAuthModal: v }),
 
   currency: 'usd',
   setCurrency: (c) => set({ currency: c }),

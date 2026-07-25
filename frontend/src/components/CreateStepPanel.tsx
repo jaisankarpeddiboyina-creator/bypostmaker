@@ -34,6 +34,7 @@ const TONE_MODES = [
 
 export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: CreateStepPanelProps) {
   const {
+    user,
     prompt, setPrompt,
     selectedPlatforms, togglePlatform, setSelectedPlatforms,
     imageFiles, setImageFiles, addImageFiles, removeImageFile,
@@ -198,6 +199,14 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
         onChange={handleVideoSelect}
         disabled={isGenerating}
       />
+
+      {/* Studio Preview Mode Banner */}
+      {!user && (
+        <div className="studio-preview-banner">
+          <Sparkles size={14} className="text-accent" />
+          <span>Interactive Studio Playground — Explore prompt features & platforms freely. Click Generate when ready to sign in.</span>
+        </div>
+      )}
 
       {/* Generation Lock Banner */}
       {isGenerating && (
@@ -563,6 +572,20 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
           font-size: 13.5px;
           font-weight: 600;
           color: var(--color-primary-start);
+        }
+
+        .studio-preview-banner {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 10px 16px;
+          background: rgba(0, 229, 163, 0.08);
+          border: 1px solid rgba(0, 229, 163, 0.25);
+          border-radius: var(--radius-card);
+          color: var(--color-text-primary);
+          font-size: 12.5px;
+          font-weight: 600;
+          margin-bottom: 4px;
         }
 
         /* Liquid Water Drop Glass Cards */
