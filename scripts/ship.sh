@@ -46,10 +46,13 @@ BASE=$(git merge-base HEAD "origin/${BRANCH}")
 if [[ "$LOCAL" == "$REMOTE" ]]; then
   ok "Already up to date."
 elif [[ "$LOCAL" == "$BASE" ]]; then
-  # True fast-forward
+  # True fast-forward pull
   git merge --ff-only "origin/${BRANCH}" \
     || die "git pull fast-forward failed. Investigate manually."
   ok "Fast-forwarded to $(git rev-parse --short HEAD)."
+elif [[ "$REMOTE" == "$BASE" ]]; then
+  # Local is ahead of remote — ready to push
+  ok "Local branch is ahead of origin/${BRANCH} by $(git rev-list --count origin/${BRANCH}..HEAD) commit(s)."
 else
   die "Branch '${BRANCH}' has diverged from origin/${BRANCH}. This is not a fast-forward — do NOT auto-merge here. Resolve manually."
 fi
