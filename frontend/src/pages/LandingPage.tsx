@@ -1229,11 +1229,14 @@ export default function LandingPage() {
         @media (max-width: 768px) {
           .landing-nav-links { display: none; }
           .mobile-menu-toggle { display: flex; }
-          .steps { flex-direction: column; }
+          .steps { flex-direction: column; gap: 16px; }
           .step-arrow { display: none; }
-          .features-grid, .why-grid, .pricing-grid { grid-template-columns: 1fr; }
+          .features-grid, .why-grid, .pricing-grid { grid-template-columns: 1fr; gap: 16px; }
+          .hero-cta-row { flex-direction: column; align-items: stretch; gap: 12px; }
+          .hero-btn-primary { justify-content: center; width: 100%; }
         }
       `}</style>
     </div>
   )
 }
+
