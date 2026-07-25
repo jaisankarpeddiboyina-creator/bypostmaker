@@ -1029,6 +1029,7 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
           align-items: center;
           justify-content: space-between;
           padding: 10px 14px;
+          min-height: 44px;
           border-radius: var(--radius-md);
           border: 1px solid rgba(255, 255, 255, 0.12);
           background: rgba(255, 255, 255, 0.04);
@@ -1094,6 +1095,55 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
         }
 
         .pill-lock-icon { color: var(--color-text-muted); }
+
+        @media (max-width: 640px) {
+          .create-studio-container {
+            padding-left: 12px;
+            padding-right: 12px;
+            gap: 16px;
+          }
+          .studio-canvas-card, .studio-platforms-card {
+            padding: 16px;
+          }
+          .dropzone-strip {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+          }
+          .dropzone-strip-actions {
+            width: 100%;
+            justify-content: flex-start;
+            flex-wrap: wrap;
+          }
+          .canvas-footer-bar {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 12px;
+          }
+          .canvas-footer-left {
+            justify-content: space-between;
+          }
+          .canvas-shortcut-hint {
+            display: none;
+          }
+          .generate-main-btn {
+            width: 100%;
+            height: 48px;
+            justify-content: center;
+          }
+          .platforms-card-header {
+            flex-direction: column;
+            align-items: flex-start;
+          }
+          .platforms-header-actions {
+            width: 100%;
+            justify-content: flex-start;
+          }
+          .studio-platform-grid {
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 8px;
+          }
+        }
       `}</style>
     </div>
   )

@@ -396,9 +396,9 @@ export function ResultsView() {
 
         .results-cards-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+          grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
           justify-content: center;
-          gap: 24px;
+          gap: 20px;
           align-items: flex-start;
           width: 100%;
           max-width: 1500px;
@@ -409,9 +409,30 @@ export function ResultsView() {
           .results-header {
             flex-direction: column;
             align-items: flex-start;
+            gap: 12px;
+            padding: 12px 16px;
+          }
+          .results-header-left {
+            width: 100%;
+          }
+          .results-header-right {
+            width: 100%;
+            justify-content: space-between;
+            flex-wrap: wrap;
+          }
+          .download-kit-btn {
+            height: 40px;
+            font-size: 13px;
+          }
+          .platform-filter-wrapper {
+            padding: 8px 16px 0;
+          }
+          .results-cards-area {
+            padding: 16px 12px;
           }
           .results-cards-grid {
             grid-template-columns: 1fr;
+            gap: 16px;
           }
         }
       `}</style>

@@ -853,7 +853,7 @@ export default function HistoryPage() {
 
         .native-postcard-full-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(380px, 470px));
+          grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 470px));
           justify-content: center;
           gap: var(--space-8);
           align-items: flex-start;
