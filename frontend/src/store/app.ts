@@ -89,6 +89,9 @@ interface AppStore {
   currency: 'usd' | 'inr'
   setCurrency: (c: 'usd' | 'inr') => void
 
+  useBrandKit: boolean
+  setUseBrandKit: (v: boolean) => void
+
   viewMode: 'create' | 'results'
   setViewMode: (v: 'create' | 'results') => void
 }
@@ -172,6 +175,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   currency: 'usd',
   setCurrency: (c) => set({ currency: c }),
+
+  useBrandKit: true,
+  setUseBrandKit: (v) => set({ useBrandKit: v }),
 
   viewMode: 'create',
   setViewMode: (v) => set({ viewMode: v }),

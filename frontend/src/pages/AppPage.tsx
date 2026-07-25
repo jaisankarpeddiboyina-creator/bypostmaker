@@ -144,6 +144,7 @@ export default function AppPage() {
       })
     }, 45000)
 
+    const { useBrandKit } = useAppStore.getState()
     abortRef.current = api.generate.stream(
       prompt.trim(), selectedPlatforms, uploadedImageKeys, videoFile,
       (event, data: unknown) => {
@@ -226,7 +227,8 @@ export default function AppPage() {
             })
             break
         }
-      }
+      },
+      useBrandKit
     )
   }, [prompt, selectedPlatforms, imageFiles, videoFile, usage, clearTimers, addToast, setCampaign, updatePost, setUpgradeReason, setShowUpgradeModal, setIsGenerating, setViewMode])
 

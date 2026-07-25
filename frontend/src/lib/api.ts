@@ -92,7 +92,8 @@ export const api = {
       platformIds: string[],
       imageKeys: string[] | string | null,
       videoFile: File | null,
-      onEvent: (event: string, data: unknown) => void
+      onEvent: (event: string, data: unknown) => void,
+      useBrandKit: boolean = false
     ): AbortController => {
       const ctrl = new AbortController()
 
@@ -113,6 +114,7 @@ export const api = {
               imageKey: keysArray[0] ?? null,
               hasVideo: !!videoFile,
               videoName: videoFile?.name || null,
+              useBrandKit,
             }),
             signal: ctrl.signal,
           })

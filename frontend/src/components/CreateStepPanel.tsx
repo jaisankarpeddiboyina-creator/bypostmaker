@@ -5,6 +5,7 @@ import {
 import { PLATFORMS, isPlatformAccessible } from '@@config/platforms'
 import type { PlatformTier } from '@@config/platforms'
 import { useAppStore } from '../store/app'
+import { api } from '../lib/api'
 import { PlatformIcon } from './PlatformIcon'
 import { MAX_IMAGE_SIZE_BYTES } from '../../../config/limits'
 
@@ -37,16 +38,28 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
     selectedPlatforms, togglePlatform, setSelectedPlatforms,
     imageFiles, setImageFiles, addImageFiles, removeImageFile,
     videoFile, setVideoFile,
-    isGenerating, addToast
+    isGenerating, addToast,
+    useBrandKit, setUseBrandKit
   } = useAppStore()
 
   const [categoryFilter, setCategoryFilter] = useState<string>('all')
   const [showPromptIdeas, setShowPromptIdeas] = useState(false)
   const [isDragOver, setIsDragOver] = useState(false)
   const [selectedTone, setSelectedTone] = useState<string | null>(null)
+  const [brandKitName, setBrandKitName] = useState<string | null>(null)
 
   const imageInputRef = useRef<HTMLInputElement>(null)
   const videoInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    api.brandKit.get()
+      .then(res => {
+        if (res?.brandKit?.name) {
+          setBrandKitName(res.brandKit.name)
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   // Keyboard shortcut listener: Cmd/Ctrl + Enter to trigger generation
   useEffect(() => {
@@ -254,23 +267,50 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
             maxLength={2000}
           />
 
-          {/* Integrated Tone Preset Toolbar */}
+          {/* Integrated Tone Preset Toolbar & Brand Kit Toggle */}
           <div className="prompt-tone-bar">
-            <span className="tone-bar-label">
-              <Sliders size={12} /> Voice Tone:
-            </span>
-            <div className="tone-pills-row">
-              {TONE_MODES.map(tone => (
-                <button
-                  key={tone.id}
-                  type="button"
-                  className={`tone-pill-btn ${selectedTone === tone.id ? 'active' : ''}`}
-                  onClick={() => applyToneMode(tone.id, tone.prefix)}
+            <div className="tone-pills-left">
+              <span className="tone-bar-label">
+                <Sliders size={12} /> Voice Tone:
+              </span>
+              <div className="tone-pills-row">
+                {TONE_MODES.map(tone => (
+                  <button
+                    key={tone.id}
+                    type="button"
+                    className={`tone-pill-btn ${selectedTone === tone.id ? 'active' : ''}`}
+                    onClick={() => applyToneMode(tone.id, tone.prefix)}
+                    disabled={isGenerating}
+                  >
+                    {tone.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Apple-grade Brand Kit Toggle Switch */}
+            <div className="brand-kit-toggle-group">
+              <label
+                className={`brand-kit-toggle-switch ${useBrandKit ? 'active' : ''}`}
+                title={useBrandKit ? 'AI will inject your active Brand Kit voice & guidelines' : 'Apply Brand Kit rules to AI generation'}
+              >
+                <input
+                  type="checkbox"
+                  checked={useBrandKit}
+                  onChange={e => setUseBrandKit(e.target.checked)}
                   disabled={isGenerating}
-                >
-                  {tone.label}
-                </button>
-              ))}
+                />
+                <span className="switch-track">
+                  <span className="switch-thumb" />
+                </span>
+                <span className="switch-label-text">
+                  <Sparkles size={12} className={useBrandKit ? 'icon-sparkle-active' : ''} />
+                  <span>Apply Brand Kit</span>
+                  {brandKitName && (
+                    <span className="brand-kit-badge">{brandKitName}</span>
+                  )}
+                </span>
+              </label>
             </div>
           </div>
         </div>
@@ -681,10 +721,18 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
         .prompt-tone-bar {
           display: flex;
           align-items: center;
-          gap: 10px;
+          justify-content: space-between;
+          gap: 12px;
           padding: 8px 14px;
           background: rgba(0, 0, 0, 0.40);
           border-top: 1px solid rgba(255, 255, 255, 0.06);
+          flex-wrap: wrap;
+        }
+
+        .tone-pills-left {
+          display: flex;
+          align-items: center;
+          gap: 10px;
           overflow-x: auto;
         }
 
@@ -726,6 +774,104 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
           background: rgba(56, 189, 248, 0.15);
           color: var(--color-primary-start);
           border-color: rgba(56, 189, 248, 0.30);
+        }
+
+        .brand-kit-toggle-group {
+          display: flex;
+          align-items: center;
+          margin-left: auto;
+        }
+
+        .brand-kit-toggle-switch {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 4px 10px;
+          border-radius: 99px;
+          background: rgba(255, 255, 255, 0.04);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          cursor: pointer;
+          user-select: none;
+          transition: all var(--transition);
+        }
+
+        .brand-kit-toggle-switch:hover {
+          background: rgba(255, 255, 255, 0.08);
+          border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .brand-kit-toggle-switch.active {
+          background: rgba(0, 229, 163, 0.08);
+          border-color: rgba(0, 229, 163, 0.35);
+        }
+
+        .brand-kit-toggle-switch input {
+          position: absolute;
+          opacity: 0;
+          width: 0;
+          height: 0;
+          pointer-events: none;
+        }
+
+        .switch-track {
+          width: 28px;
+          height: 16px;
+          border-radius: 99px;
+          background: rgba(255, 255, 255, 0.15);
+          position: relative;
+          transition: background 0.2s ease;
+          flex-shrink: 0;
+        }
+
+        .brand-kit-toggle-switch.active .switch-track {
+          background: var(--accent);
+        }
+
+        .switch-thumb {
+          width: 12px;
+          height: 12px;
+          border-radius: 50%;
+          background: #FFFFFF;
+          position: absolute;
+          top: 2px;
+          left: 2px;
+          transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+          box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+
+        .brand-kit-toggle-switch.active .switch-thumb {
+          transform: translateX(12px);
+          background: #000000;
+        }
+
+        .switch-label-text {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          font-size: 11.5px;
+          font-weight: 700;
+          color: var(--text-2);
+          white-space: nowrap;
+        }
+
+        .brand-kit-toggle-switch.active .switch-label-text {
+          color: var(--text-1);
+        }
+
+        .icon-sparkle-active {
+          color: var(--accent);
+        }
+
+        .brand-kit-badge {
+          font-size: 10px;
+          font-weight: 700;
+          padding: 1px 6px;
+          border-radius: 4px;
+          background: rgba(0, 229, 163, 0.15);
+          color: var(--accent);
+          border: 1px solid rgba(0, 229, 163, 0.25);
+          text-transform: uppercase;
+          letter-spacing: 0.03em;
         }
 
         /* Multi-Image Attachment Gallery */

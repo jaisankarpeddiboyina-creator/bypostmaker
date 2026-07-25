@@ -36,6 +36,7 @@ export async function handleGenerate(
   let imageKeys: string[] = []
   let hasVideo = false
   let videoName: string | null = null
+  let useBrandKit = false
   let mockFailStage1 = false
   let mockFailStage2Group: string | null = null
 
@@ -47,6 +48,7 @@ export async function handleGenerate(
       imageKeys?: string[]
       hasVideo?: boolean
       videoName?: string | null
+      useBrandKit?: boolean
       mockFailStage1?: boolean
       mockFailStage2Group?: string
     }
@@ -59,6 +61,7 @@ export async function handleGenerate(
     }
     hasVideo = body.hasVideo ?? false
     videoName = body.videoName ?? null
+    useBrandKit = body.useBrandKit ?? false
     if (env.ENVIRONMENT !== 'production') {
       mockFailStage1 = body.mockFailStage1 ?? false
       mockFailStage2Group = body.mockFailStage2Group ?? null
@@ -217,6 +220,41 @@ export async function handleGenerate(
       }
 
       // ── Stage 2: Caption Writing (Groq, per group, parallel) ───────────────
+      // Fetch Brand Kit rules from D1 if user toggled useBrandKit
+      let brandKitContext = ''
+      if (useBrandKit) {
+        try {
+          const brandRow = await env.DB.prepare(
+            `SELECT name, voice, products_services, target_audience, competitors, brand_guidelines
+             FROM brand_kits WHERE user_id = ?`
+          ).bind(userId).first<any>()
+
+          if (brandRow) {
+            let voiceObj: any = null
+            if (brandRow.voice) {
+              try {
+                voiceObj = typeof brandRow.voice === 'string' ? JSON.parse(brandRow.voice) : brandRow.voice
+              } catch {}
+            }
+            const rules: string[] = []
+            if (brandRow.name) rules.push(`- Brand Name: ${brandRow.name}`)
+            if (voiceObj?.tone) rules.push(`- Tone of Voice: ${voiceObj.tone}`)
+            if (voiceObj?.dos) rules.push(`- Tone Do's: ${voiceObj.dos}`)
+            if (voiceObj?.donts) rules.push(`- Tone Don'ts: ${voiceObj.donts}`)
+            if (brandRow.target_audience) rules.push(`- Target Audience: ${brandRow.target_audience}`)
+            if (brandRow.products_services) rules.push(`- Products / Services: ${brandRow.products_services}`)
+            if (brandRow.competitors) rules.push(`- Competitors / Positioning: ${brandRow.competitors}`)
+            if (brandRow.brand_guidelines) rules.push(`- Brand Guidelines: ${brandRow.brand_guidelines}`)
+
+            if (rules.length > 0) {
+              brandKitContext = `\n\n[BRAND KIT & IDENTITY RULES]:\n${rules.join('\n')}\n(Ensure all generated posts strictly adhere to this brand identity, voice, and guidelines).`
+            }
+          }
+        } catch (brandErr) {
+          console.error('[generate] Failed to fetch brand kit rules:', brandErr)
+        }
+      }
+
       // groupByGroup() restores full per-platform-group failure isolation.
       // Each group's catch block only affects that group's platforms.
       // The image was sent to Gemini above exactly once — these calls are text-only.
@@ -229,9 +267,9 @@ export async function handleGenerate(
           const platforms = ids.map(id => PLATFORM_MAP[id]).filter(Boolean) as typeof PLATFORM_MAP[string][]
           const systemPrompt = buildGroupSystemPrompt(platforms, language)
 
-          // Inject the Stage 1 image description into the user prompt using shared helper.
+          // Inject the Stage 1 image description & Brand Kit context into the user prompt.
           const imageContext = buildImageContext(imageDescription)
-          const userPrompt = `User's content: "${prompt}"${imageContext}\n\nGenerate posts for: ${platforms.map(p => p.name).join(', ')}. Return only JSON.`
+          const userPrompt = `User's content: "${prompt}"${imageContext}${brandKitContext}\n\nGenerate posts for: ${platforms.map(p => p.name).join(', ')}. Return only JSON.`
 
           const estimatedTokens = imageDescription
             ? GROQ_RATE_LIMITS.ESTIMATED_TOKENS_IMAGE
