@@ -176,7 +176,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   currency: 'usd',
   setCurrency: (c) => set({ currency: c }),
 
-  useBrandKit: true,
+  useBrandKit: false,
   setUseBrandKit: (v) => set({ useBrandKit: v }),
 
   viewMode: 'create',
