@@ -1,4 +1,8 @@
 User-agent: *
 Allow: /
+Disallow: /app/
+Disallow: /admin/
+Disallow: /reset-password/
+Disallow: /api/
 
 Sitemap: https://bypostamaker.com/sitemap.xml

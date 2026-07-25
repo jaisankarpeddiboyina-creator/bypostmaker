@@ -35,7 +35,7 @@ export function GenerationSummaryRail({ onGenerateClick }: GenerationSummaryRail
           {imageFiles.length > 0 ? (
             <div className="summary-media-box">
               <div className="summary-media-thumb">
-                <img src={URL.createObjectURL(imageFiles[0])} alt="Thumb" />
+                <img src={URL.createObjectURL(imageFiles[0])} alt="Thumbnail preview of uploaded image" />
               </div>
               <div className="summary-media-info">
                 <span className="summary-media-title">{imageFiles[0].name}</span>

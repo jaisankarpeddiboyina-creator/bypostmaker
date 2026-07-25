@@ -83,7 +83,10 @@ class HeadInjector {
       'name': 'PostMaker',
       'url': domain,
       'logo': `${domain}/favicon.svg`,
-      'description': 'AI-powered social media content generator for all 30+ platforms'
+      'description': 'AI-powered social media content generator for all 30+ platforms',
+      'sameAs': [
+        'https://x.com/bypostamaker'
+      ]
     }
     this.schemas.push(JSON.stringify(orgSchema))
 
@@ -99,13 +102,73 @@ class HeadInjector {
         'name': 'PostMaker',
         'applicationCategory': 'BusinessApplication',
         'description': 'AI-powered social media content generator for all 30+ platforms',
-        'url': domain
+        'url': domain,
+        'operatingSystem': 'All',
+        'offers': {
+          '@type': 'Offer',
+          'price': '0',
+          'priceCurrency': 'USD'
+        }
       }
       this.schemas.push(JSON.stringify(appSchema))
+    }
 
-      // 4. FAQPage schema — mainEntity is built from the same config/faq.ts
-      // array the visible homepage accordion renders from, so this can
-      // never drift out of sync with what's actually shown on the page.
+    // 4. FAQPage schema for comparison (vs) pages
+    if (path.startsWith('/vs/')) {
+      const slug = path.substring(4)
+      const entry = vsPages.find(p => p.slug === slug)
+      if (entry) {
+        const faqSchema = {
+          '@context': 'https://schema.org',
+          '@type': 'FAQPage',
+          'mainEntity': [
+            {
+              '@type': 'Question',
+              'name': `What is the difference between PostMaker and ${entry.competitorName}?`,
+              'acceptedAnswer': {
+                '@type': 'Answer',
+                'text': `${entry.intro} ${entry.verdict}`
+              }
+            },
+            {
+              '@type': 'Question',
+              'name': `Which is better: PostMaker or ${entry.competitorName}?`,
+              'acceptedAnswer': {
+                '@type': 'Answer',
+                'text': entry.verdict
+              }
+            }
+          ]
+        }
+        this.schemas.push(JSON.stringify(faqSchema))
+      }
+    }
+
+    // 5. FAQPage schema for audience (for) pages
+    if (path.startsWith('/for/')) {
+      const slug = path.substring(5)
+      const entry = forPages.find(p => p.slug === slug)
+      if (entry) {
+        const faqSchema = {
+          '@context': 'https://schema.org',
+          '@type': 'FAQPage',
+          'mainEntity': entry.benefits.slice(0, 3).map(b => ({
+            '@type': 'Question',
+            'name': b.title,
+            'acceptedAnswer': {
+              '@type': 'Answer',
+              'text': b.description
+            }
+          }))
+        }
+        this.schemas.push(JSON.stringify(faqSchema))
+      }
+    }
+
+    // 4. FAQPage schema — mainEntity is built from the same config/faq.ts
+    // array the visible homepage accordion renders from, so this can
+    // never drift out of sync with what's actually shown on the page.
+    if (path === '/') {
       const faqSchema = {
         '@context': 'https://schema.org',
         '@type': 'FAQPage',
@@ -136,10 +199,14 @@ class HeadInjector {
     let currentPath = ''
     segments.forEach((segment, index) => {
       currentPath += `/${segment}`
+      const cleanName = segment.replace(/[-_]/g, ' ')
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ')
       items.push({
         '@type': 'ListItem',
         'position': index + 2,
-        'name': segment.charAt(0).toUpperCase() + segment.slice(1),
+        'name': cleanName,
         'item': `${domain}${currentPath}`
       })
     })
@@ -282,9 +349,9 @@ async function handleStaticPageSEO(request: Request, env: Env): Promise<Response
   const canonicalUrl = `${domain}${path}`
 
   // 1. Resolve metadata for the route (defaults + registry override + existing fallbacks)
-  let title = 'PostMaker — One prompt. Every platform. Download your kit.'
+  let title = 'PostMaker — AI Social Media Content Generator (One Prompt, Every Platform)'
   let description = 'Write one prompt. PostMaker generates platform-perfect posts for all 30+ social platforms and packages them into a ready-to-post content kit.'
-  let ogImage = `${domain}/og-image.svg`
+  let ogImage = `${domain}/og-image.png`
   let is404 = false
 
   // Registry override: prefer ROUTE_REGISTRY when it matches the path.
@@ -301,7 +368,7 @@ async function handleStaticPageSEO(request: Request, env: Env): Promise<Response
       if (post) {
         title = `${post.title} | PostMaker Blog`
         description = post.description
-        ogImage = post.ogImage || `${domain}/og-image.svg`
+        ogImage = post.ogImage || `${domain}/og-image.png`
       } else {
         title = 'Post Not Found | PostMaker Blog'
         description = 'The blog post you are looking for does not exist or has been moved.'
@@ -313,7 +380,7 @@ async function handleStaticPageSEO(request: Request, env: Env): Promise<Response
       if (entry) {
         title = entry.title
         description = entry.description
-        ogImage = entry.ogImage || `${domain}/og-image.svg`
+        ogImage = entry.ogImage || `${domain}/og-image.png`
       } else {
         title = 'Comparison Not Found | PostMaker'
         description = 'The comparison you are looking for does not exist or has been moved.'
@@ -325,7 +392,7 @@ async function handleStaticPageSEO(request: Request, env: Env): Promise<Response
       if (entry) {
         title = entry.title
         description = entry.description
-        ogImage = entry.ogImage || `${domain}/og-image.svg`
+        ogImage = entry.ogImage || `${domain}/og-image.png`
       } else {
         title = 'Page Not Found | PostMaker'
         description = 'The page you are looking for does not exist or has been moved.'
@@ -452,6 +519,21 @@ async function handleStaticPageSEO(request: Request, env: Env): Promise<Response
     const newHeaders = new Headers(transformedResponse.headers)
     newHeaders.set('Cache-Control', is404 ? 'no-cache' : 'public, max-age=3600')
 
+    // Add security headers (HSTS, CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy)
+    newHeaders.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload')
+    newHeaders.set('X-Content-Type-Options', 'nosniff')
+    newHeaders.set('X-Frame-Options', 'SAMEORIGIN')
+    newHeaders.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+    newHeaders.set('Content-Security-Policy', 
+      "default-src 'self'; " +
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com https://www.googletagmanager.com; " +
+      "connect-src 'self' https://api.razorpay.com https://*.sentry.io https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://app.posthog.com https://www.google-analytics.com https://analytics.google.com; " +
+      "frame-src 'self' https://checkout.razorpay.com https://www.googletagmanager.com; " +
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+      "font-src 'self' https://fonts.gstatic.com data:; " +
+      "img-src 'self' data: blob: https://lh3.googleusercontent.com https://*.posthog.com https://www.google-analytics.com;"
+    )
+
     return new Response(transformedResponse.body, {
       status,
       headers: newHeaders
@@ -466,6 +548,12 @@ export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url)
     const path = url.pathname
+
+    // 301 redirect trailing slash URLs for non-API requests (SEO best practice)
+    if (!path.startsWith('/api/') && path !== '/' && path.endsWith('/')) {
+      url.pathname = path.slice(0, -1)
+      return Response.redirect(url.toString(), 301)
+    }
 
     if (request.method === 'OPTIONS') return withCors(new Response(null, { status: 204 }), env)
 
@@ -483,6 +571,7 @@ export default {
          // also incorrectly match the existing /forgot-password route.
          path === '/for' || path.startsWith('/for/') ||
          findMatchingRoute(path) ||
+         path === '/' ||
          path === '/privacy' ||
          path === '/terms' ||
          path === '/refund' ||
