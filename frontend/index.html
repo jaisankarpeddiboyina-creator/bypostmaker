@@ -37,8 +37,7 @@
   <!-- Google Fonts CDN — pre-connect cuts 100–300 ms on first request -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <!-- Google Tag Manager CDN -->
-  <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+  <!-- ════════════════════════════════════════════════════════
        PageSpeed: Razorpay — deferred so it never blocks parsing.
        Required for subscription checkout; loads in background.
        ════════════════════════════════════════════════════════ -->
@@ -50,12 +49,11 @@
        it will duplicate/conflict with that injection. -->
 
   <!-- ════════════════════════════════════════════════════════
-       Google Tag Manager — head snippet
-       TODO: Replace GTM-XXXXXXX with your real GTM Container ID
-             (GTM → Admin → Container Settings)
+       Google Tag Manager — head snippet (activates when GTM ID is set)
        ════════════════════════════════════════════════════════ -->
   <script>
     (function(w,d,s,l,i){
+      if (!i || i === 'GTM-XXXXXXX') return;
       w[l]=w[l]||[];
       w[l].push({'gtm.start': new Date().getTime(), event:'gtm.js'});
       var f=d.getElementsByTagName(s)[0],
@@ -66,24 +64,23 @@
       f.parentNode.insertBefore(j,f);
     })(window,document,'script','dataLayer','GTM-XXXXXXX');
   </script>
-  <!-- End GTM head snippet -->
 
   <!-- ════════════════════════════════════════════════════════
-       GA4 — direct loader (independent of GTM; used for
-       server-side gtag() calls from analytics.ts)
-       TODO: Replace G-XXXXXXXXXX with your real GA4 Measurement ID
-             (Analytics → Admin → Data Streams → Web Stream)
+       GA4 — direct loader (activates when GA4 ID is set)
        ════════════════════════════════════════════════════════ -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
   <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-XXXXXXXXXX', {
-      send_page_view: false  // Page views handled manually in analytics.ts
-    });
+    (function(id) {
+      if (!id || id === 'G-XXXXXXXXXX') return;
+      var s = document.createElement('script');
+      s.async = true;
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=' + id;
+      document.head.appendChild(s);
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', id, { send_page_view: false });
+    })('G-XXXXXXXXXX');
   </script>
-  <!-- End GA4 -->
 </head>
 <body>
   <!-- ════════════════════════════════════════════════════════
