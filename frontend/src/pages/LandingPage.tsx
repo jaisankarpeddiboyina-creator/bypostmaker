@@ -56,6 +56,7 @@ export default function LandingPage() {
   }
 
   const handleCTA = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
     if (user) { navigate('/app'); return }
     navigate('/signup')
   }

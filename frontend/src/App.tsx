@@ -87,7 +87,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user } = useAppStore()
   const authReady = useAuthReady()
   if (!authReady) return <AppLoading />
-  if (!user) return <Navigate to="/" replace />
+  if (!user) return <Navigate to="/signup" replace />
   if (user.email_verified === 0) return <VerifyEmailScreen />
   return <>{children}</>
 }
@@ -96,7 +96,7 @@ function AdminGuard({ children }: { children: React.ReactNode }) {
   const { user } = useAppStore()
   const authReady = useAuthReady()
   if (!authReady) return <AppLoading />
-  if (!user) return <Navigate to="/" replace />
+  if (!user) return <Navigate to="/signup" replace />
   if (user.email_verified === 0) return <VerifyEmailScreen />
   if (user.role !== 'admin') return <Navigate to="/app" replace />
   return <>{children}</>
