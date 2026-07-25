@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import { useEffect, useState, lazy, Suspense } from 'react'
 import * as Sentry from '@sentry/react'
 import { useAppStore } from './store/app'
@@ -24,9 +24,6 @@ const VsPage = lazy(() => import('./pages/VsPage'))
 const ForPage = lazy(() => import('./pages/ForPage'))
 const BrandKitPage = lazy(() => import('./pages/BrandKitPage'))
 
-
-
-
 const SentryRoutes = Sentry.withSentryReactRouterV6Routing(Routes)
 
 function UpgradeModalWrapper() {
@@ -38,15 +35,49 @@ function AppShell({ children }: { children: React.ReactNode }) {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
 
   return (
-    <div style={{ display: 'flex', width: '100vw', height: '100vh', overflow: 'hidden' }}>
+    <div className="app-shell-container">
+      <div className="app-fixed-bg-canvas" />
       <Sidebar isOpen={isMobileSidebarOpen} onClose={() => setIsMobileSidebarOpen(false)} />
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, height: '100%', overflow: 'hidden' }}>
+      <div className="app-shell-content">
         <Topbar onMenuClick={() => setIsMobileSidebarOpen(true)} />
-        <main style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+        <main className="app-shell-main">
           {children}
         </main>
       </div>
       <UpgradeModalWrapper />
+
+      <style>{`
+        .app-shell-container {
+          display: flex;
+          width: 100vw;
+          height: 100vh;
+          overflow: hidden;
+          background: transparent;
+        }
+
+        .app-shell-content {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          min-width: 0;
+          height: 100%;
+          overflow: hidden;
+          margin-left: var(--sidebar-width);
+          transition: margin-left var(--transition);
+        }
+
+        .app-shell-main {
+          flex: 1;
+          overflow: hidden;
+          position: relative;
+        }
+
+        @media (max-width: 768px) {
+          .app-shell-content {
+            margin-left: 0;
+          }
+        }
+      `}</style>
     </div>
   )
 }
@@ -156,6 +187,7 @@ export default function App() {
 
   return (
     <>
+      <div className="app-fixed-bg-canvas" />
       <Suspense fallback={<AppLoading />}>
         <SentryRoutes>
           <Route path="/" element={<LandingPage />} />
@@ -165,7 +197,7 @@ export default function App() {
           <Route path="/vs/:slug" element={<VsPage />} />
           <Route path="/for" element={<ForPage />} />
           <Route path="/for/:slug" element={<ForPage />} />
-          
+
           {/* Auth routes */}
           <Route path="/login" element={<AuthPage mode="login" />} />
           <Route path="/signup" element={<AuthPage mode="signup" />} />
@@ -191,8 +223,6 @@ export default function App() {
             <AuthGuard><AppShell><BrandKitPage /></AppShell></AuthGuard>
           } />
 
-
-
           <Route path="/admin" element={
             <AdminGuard><AppShell><AdminPage /></AppShell></AdminGuard>
           } />
@@ -213,4 +243,3 @@ export default function App() {
     </>
   )
 }
-

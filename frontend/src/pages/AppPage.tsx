@@ -1,10 +1,8 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { useAppStore } from '../store/app'
 import { CreateStepPanel } from '../components/CreateStepPanel'
-import { GenerationSummaryRail } from '../components/GenerationSummaryRail'
 import { ResultsView } from '../components/ResultsView'
 import { api } from '../lib/api'
-import { MAX_IMAGE_SIZE_BYTES } from '../../../config/limits'
 
 export default function AppPage() {
   const {
@@ -247,7 +245,6 @@ export default function AppPage() {
               onLockedClick={handleLockedPlatform}
               onGenerateClick={handleGenerate}
             />
-            <GenerationSummaryRail onGenerateClick={handleGenerate} />
           </div>
         ) : (
           <ResultsView />
@@ -276,15 +273,7 @@ export default function AppPage() {
           min-height: 0;
           overflow-y: auto;
           padding: 24px var(--content-px);
-          gap: 28px;
-        }
-
-        @media (max-width: 960px) {
-          .create-view-wrapper {
-            flex-direction: column;
-            gap: 20px;
-            padding: 16px;
-          }
+          justify-content: center;
         }
       `}</style>
     </div>

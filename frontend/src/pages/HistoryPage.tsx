@@ -577,7 +577,7 @@ export default function HistoryPage() {
         .history-hub-wrapper {
           height: 100%;
           overflow-y: auto;
-          background: var(--color-bg);
+          background: transparent;
           display: flex;
           flex-direction: column;
         }
@@ -647,10 +647,10 @@ export default function HistoryPage() {
           top: calc(100% + 6px);
           left: 0;
           right: 0;
-          background: var(--color-surface);
-          border: 1px solid var(--color-border);
+          background: #0E1422;
+          border: 1px solid rgba(255, 255, 255, 0.20);
           border-radius: var(--radius-card);
-          box-shadow: var(--shadow-modal);
+          box-shadow: 0 24px 60px rgba(0, 0, 0, 0.90);
           z-index: 100;
           overflow: hidden;
           animation: slideIn 150ms ease forwards;
@@ -671,7 +671,7 @@ export default function HistoryPage() {
           transition: background var(--transition);
         }
         .dropdown-item:last-child { border-bottom: none; }
-        .dropdown-item:hover { background: var(--color-bg); }
+        .dropdown-item:hover { background: var(--color-nav-active-bg); }
         .dropdown-item.active { background: var(--color-nav-active-bg); }
         .item-thumb-mini {
           width: 36px;

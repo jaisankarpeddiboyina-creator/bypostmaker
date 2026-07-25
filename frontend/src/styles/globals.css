@@ -1,77 +1,63 @@
 /* ============================================================
    PostMaker — Global Styles & Design Tokens
-   Design: World-Class Luminous Studio Aesthetic.
-   Font:   Plus Jakarta Sans (rounded geometric sans)
+   Design: Real Social Network Constellation Canvas (Apple VisionOS / Liquid Glass Craft).
+   Canvas: Hardware-Accelerated Cosmic Social Constellation Background.
+   Font:   Plus Jakarta Sans
    ============================================================ */
 
 /* ── Design Tokens ─────────────────────────────────────────── */
 :root {
-  /* ── Brand Gradient ──────────────────────────────────────── */
-  --color-primary-start:   #F72585;   /* hot magenta-pink */
-  --color-primary-end:     #9333EA;   /* vivid purple */
+  /* ── Real Sky Blue Accent Palette ───────────────────────── */
+  --color-primary-start:   #38BDF8;   /* radiant sky cyan */
+  --color-primary-end:     #0284C7;   /* deep sky blue */
   --gradient-primary:      linear-gradient(135deg, var(--color-primary-start), var(--color-primary-end));
   --gradient-primary-h:    linear-gradient(90deg,  var(--color-primary-start), var(--color-primary-end));
-  --gradient-primary-glow: linear-gradient(135deg, rgba(247, 37, 133, 0.15), rgba(147, 51, 234, 0.15));
+  --gradient-primary-glow: linear-gradient(135deg, rgba(56, 189, 248, 0.45), rgba(2, 132, 199, 0.45));
 
-  /* ── Page & Surface ──────────────────────────────────────── */
-  --color-bg:              #F8F5FD;   /* luminous lavender page bg */
-  --color-surface:         #FFFFFF;   /* pure white card surface */
-  --color-surface-glass:   rgba(255, 255, 255, 0.88);
-  --color-border:          rgba(0, 0, 0, 0.06);   /* crisp translucent divider */
-  --color-border-hover:    rgba(247, 37, 133, 0.25);
-  --color-border-input:    #E5E7EB;   /* input idle border */
+  /* ── Cosmic Magenta & Sunset Accents ─────────────────────── */
+  --color-accent-emerald:  #34D399;   /* fresh rain leaf green */
+  /* ── Vibrant Social Network Glass Surfaces ────────────────── */
+  --color-bg:              transparent;   /* 100% transparent canvas */
+  --color-surface:         rgba(15, 28, 48, 0.58); /* crystal liquid water glass fill */
+  --color-surface-solid:   #0E1B2E;   /* solid fallback */
+  --color-surface-inset:   rgba(8, 16, 30, 0.80); /* recessed field */
+  --color-surface-glass:   rgba(255, 255, 255, 0.12);
+  --backdrop-blur:         blur(36px) saturate(220%);
+  --color-border:          rgba(255, 255, 255, 0.22); /* specular water glass border */
+  --color-border-glass:    rgba(255, 255, 255, 0.45); /* specular top rim shine */
+  --color-border-hover:    rgba(56, 189, 248, 0.80);  /* sky cyan water glow */
+  --color-border-input:    rgba(255, 255, 255, 0.25);
 
-  /* ── Text ────────────────────────────────────────────────── */
-  --color-text-primary:    #0F172A;   /* slate 900 high contrast */
-  --color-text-secondary:  #475569;   /* slate 600 subtext */
-  --color-text-muted:      #94A3B8;   /* slate 400 placeholder */
-  --color-text-placeholder:#CBD5E1;   /* muted disabled */
-  --color-text-inverse:    #FFFFFF;   /* text on dark/gradient */
+  /* ── Crisp Liquid Typography ─────────────────────────────── */
+  --color-text-primary:    #F8FAFC;   /* crisp liquid white */
+  --color-text-secondary:  #CBD5E1;   /* crisp silver cloud subtext */
+  --color-text-muted:      #94A3B8;   /* muted slate */
+  --color-text-placeholder:#64748B;   /* disabled */
+  --color-text-inverse:    #0A101D;   /* high contrast dark text on bright buttons */
   --color-text-accent:     var(--color-primary-start);
 
-  /* ── Nav (Sidebar) ───────────────────────────────────────── */
-  --color-nav-bg:          rgba(255, 255, 255, 0.92);
-  --color-nav-border:      rgba(0, 0, 0, 0.05);
-  --color-nav-item-text:   #475569;
+  /* ── Nav (Sidebar & Topbar Social Constellation Glass) ───── */
+  --color-nav-bg:          rgba(10, 20, 36, 0.85);
+  --color-nav-border:      rgba(255, 255, 255, 0.12);
+  --color-nav-item-text:   #CBD5E1;
   --color-nav-item-icon:   #94A3B8;
-  --color-nav-active-bg:   rgba(247, 37, 133, 0.08);
-  --color-nav-active-text: #F72585;
-  --color-nav-active-icon: #F72585;
-
-  /* ── Stat Card Icon Tints ────────────────────────────────── */
-  --color-tint-pink:       rgba(247, 37, 133, 0.10);
-  --color-tint-purple:     rgba(147, 51, 234, 0.10);
-  --color-tint-orange:     rgba(249, 115, 22, 0.10);
-  --color-tint-amber:      rgba(234, 179, 8, 0.10);
-  --color-tint-green:      rgba(22, 163, 74, 0.10);
-  --color-tint-blue:       rgba(59, 130, 246, 0.10);
-  --color-tint-red:        rgba(239, 68, 68, 0.10);
-
-  /* ── Icon Colors ─────────────────────────────────────────── */
-  --color-icon-pink:       #F72585;
-  --color-icon-purple:     #9333EA;
-  --color-icon-orange:     #F97316;
-  --color-icon-amber:      #EAB308;
+  --color-nav-active-bg:   rgba(56, 189, 248, 0.15);
+  --color-nav-active-text: #F8FAFC;
+  --color-nav-active-icon: #38BDF8;
 
   /* ── Status Colors ───────────────────────────────────────── */
-  --color-success:         #16A34A;
-  --color-success-bg:      rgba(22, 163, 74, 0.10);
-  --color-success-border:  rgba(22, 163, 74, 0.20);
-  --color-processing:      #3B82F6;
-  --color-processing-bg:   rgba(59, 130, 246, 0.10);
-  --color-processing-border: rgba(59, 130, 246, 0.20);
-  --color-error:           #EF4444;
-  --color-error-bg:        rgba(239, 68, 68, 0.10);
-  --color-error-border:    rgba(239, 68, 68, 0.20);
-  --color-warning:         #EAB308;
-  --color-warning-bg:      rgba(234, 179, 8, 0.10);
-  --color-warning-border:  rgba(234, 179, 8, 0.20);
-  --color-draft:           #64748B;
-  --color-draft-bg:        rgba(100, 116, 139, 0.10);
-
-  /* ── Upgrade / Promo Banners ─────────────────────────────── */
-  --color-upgrade-start:   #FFF1F8;
-  --color-upgrade-end:     #F5E8FF;
+  --color-success:         #34D399;   /* emerald leaf green */
+  --color-success-bg:      rgba(52, 211, 153, 0.20);
+  --color-success-border:  rgba(52, 211, 153, 0.40);
+  --color-processing:      #38BDF8;   /* real sky blue */
+  --color-processing-bg:   rgba(56, 189, 248, 0.20);
+  --color-processing-border: rgba(56, 189, 248, 0.40);
+  --color-error:           #F43F5E;
+  --color-error-bg:        rgba(244, 63, 94, 0.20);
+  --color-error-border:    rgba(244, 63, 94, 0.40);
+  --color-warning:         #FBBF24;   /* sunbeam yellow */
+  --color-warning-bg:      rgba(251, 191, 36, 0.20);
+  --color-warning-border:    rgba(251, 191, 36, 0.40);
 
   /* ── Typography ──────────────────────────────────────────── */
   --font-body:             'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -88,26 +74,31 @@
   --space-8:    32px;
   --space-10:   40px;
   --space-12:   48px;
-  --space-16:   64px;
 
   /* ── Border Radii ────────────────────────────────────────── */
-  --radius-sm:     6px;
-  --radius:        10px;
-  --radius-md:     12px;
-  --radius-input:  10px;
-  --radius-card:   18px;
+  --radius-sm:     8px;
+  --radius:        12px;
+  --radius-md:     14px;
+  --radius-input:  14px;
+  --radius-card:   24px;
   --radius-pill:   999px;
 
-  /* ── Shadows & Rim Lighting ──────────────────────────────── */
-  --shadow-card:       0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(0, 0, 0, 0.05);
-  --shadow-card-hover: 0 16px 36px -4px rgba(247, 37, 133, 0.12), 0 0 0 1px rgba(247, 37, 133, 0.22);
-  --shadow-btn:        0 4px 16px rgba(247, 37, 133, 0.35);
-  --shadow-modal:      0 24px 64px -12px rgba(15, 23, 42, 0.18);
-  --shadow-sidebar:    4px 0 24px rgba(0, 0, 0, 0.03);
+  /* ── Specular Top Rim Highlights & Soft Floating Shadows ─── */
+  --shadow-card:       
+    inset 0 1.5px 1px rgba(255, 255, 255, 0.45),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.40),
+    0 24px 60px -12px rgba(2, 132, 199, 0.38);
+  --shadow-card-hover: 
+    inset 0 1.5px 1px rgba(255, 255, 255, 0.70),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.50),
+    0 32px 72px -12px rgba(56, 189, 248, 0.50);
+  --shadow-btn:        0 8px 24px rgba(56, 189, 248, 0.40);
+  --shadow-inset:      inset 0 2px 8px rgba(0, 0, 0, 0.50), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  --shadow-modal:      0 32px 80px -16px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.30);
 
   /* ── Transitions ─────────────────────────────────────────── */
-  --transition:      180ms cubic-bezier(0.16, 1, 0.3, 1);
-  --transition-slow: 300ms cubic-bezier(0.16, 1, 0.3, 1);
+  --transition:      160ms cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-slow: 280ms cubic-bezier(0.16, 1, 0.3, 1);
 
   /* ── Layout ──────────────────────────────────────────────── */
   --sidebar-width:  230px;
@@ -115,15 +106,15 @@
   --content-px:     32px;
 
   /* ── Backward-Compat Aliases ─────────────────────────────── */
-  --bg:           var(--color-bg);
+  --bg:           transparent;
   --surface:      var(--color-surface);
   --card:         var(--color-surface);
-  --card-hover:   #F8FAFC;
+  --card-hover:   rgba(30, 41, 59, 0.80);
   --border:       var(--color-border);
   --border-light: var(--color-border-input);
   --accent:       var(--color-primary-start);
-  --accent-dim:   #E01070;
-  --accent-glow:  rgba(247, 37, 133, 0.15);
+  --accent-dim:   #0284C7;
+  --accent-glow:  rgba(56, 189, 248, 0.22);
   --accent-subtle:var(--color-nav-active-bg);
   --text-1:       var(--color-text-primary);
   --text-2:       var(--color-text-secondary);
@@ -143,16 +134,12 @@
 /* ── Reset ─────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-html { height: 100%; font-size: 16px; }
+html { height: 100%; font-size: 16px; background: #0A1628; }
 
 body {
   min-height: 100%;
   font-family: var(--font-body);
-  background-color: var(--color-bg);
-  background-image: 
-    radial-gradient(ellipse 65% 45% at 20% -10%, rgba(247, 37, 133, 0.06), transparent 60%),
-    radial-gradient(ellipse 50% 50% at 85% 100%, rgba(147, 51, 234, 0.05), transparent 60%);
-  background-attachment: fixed;
+  background-color: transparent !important;
   color: var(--color-text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -160,7 +147,72 @@ body {
   overflow-y: auto;
 }
 
-#root { min-height: 100%; }
+#root { min-height: 100%; background: transparent !important; }
+
+/* ── Hardware-Accelerated Deep Midnight Radial Dark Canvas ── */
+/* ── Hardware-Accelerated Luminous Ocean Water & Sky Cyan Canvas ── */
+.app-fixed-bg-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -100;
+  pointer-events: none;
+  background-color: #0A1628;
+  background-image: 
+    radial-gradient(circle at 25% 20%, rgba(56, 189, 248, 0.40) 0%, rgba(2, 132, 199, 0.22) 40%, transparent 70%),
+    radial-gradient(circle at 80% 25%, rgba(45, 212, 191, 0.35) 0%, rgba(14, 165, 233, 0.20) 45%, transparent 70%),
+    radial-gradient(circle at 50% 85%, rgba(14, 165, 233, 0.30) 0%, rgba(15, 23, 42, 0.60) 60%, transparent 80%),
+    linear-gradient(160deg, #0A1628 0%, #0F2537 40%, #071322 100%);
+  transform: translateZ(0);
+  will-change: transform;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { height: 100%; font-size: 16px; background: #0A0D1A; }
+
+body {
+  min-height: 100%;
+  font-family: var(--font-body);
+  background-color: transparent !important;
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+#root { min-height: 100%; background: transparent !important; }
+
+/* ── Hardware-Accelerated Deep Midnight Radial Dark Canvas ── */
+/* ── Hardware-Accelerated Luminous Ocean Water & Sky Cyan Canvas ── */
+.app-fixed-bg-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -100;
+  pointer-events: none;
+  background-color: #0A1628;
+  background-image: 
+    radial-gradient(circle at 25% 20%, rgba(56, 189, 248, 0.40) 0%, rgba(2, 132, 199, 0.22) 40%, transparent 70%),
+    radial-gradient(circle at 80% 25%, rgba(45, 212, 191, 0.35) 0%, rgba(14, 165, 233, 0.20) 45%, transparent 70%),
+    radial-gradient(circle at 50% 85%, rgba(14, 165, 233, 0.30) 0%, rgba(15, 23, 42, 0.60) 60%, transparent 80%),
+    linear-gradient(160deg, #0A1628 0%, #0F2537 40%, #071322 100%);
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+/* Ensure App Shell & Page Wrappers are 100% Transparent so Background Social Constellation Canvas shines through */
+.app-shell-container, .app-shell-content, .app-shell-main, .app-layout, .app-body, .create-view-wrapper, .landing, .history-hub-wrapper {
+  background: transparent !important;
+}
 
 /* ── Typography ────────────────────────────────────────────── */
 h1, h2, h3 {
@@ -174,7 +226,7 @@ h1, h2, h3 {
 p { line-height: 1.6; }
 
 a { color: var(--color-text-accent); text-decoration: none; transition: color var(--transition); }
-a:hover { color: var(--color-primary-end); text-decoration: none; }
+a:hover { color: var(--color-primary-start); text-decoration: none; }
 
 code, .mono {
   font-family: var(--font-mono);
@@ -182,13 +234,13 @@ code, .mono {
 }
 
 /* ── Scrollbar ─────────────────────────────────────────────── */
-::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.12); border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.25); border-radius: 99px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--color-primary-start); }
 
 /* ── Selection ─────────────────────────────────────────────── */
-::selection { background: rgba(247, 37, 133, 0.18); color: var(--color-text-primary); }
+::selection { background: rgba(56, 189, 248, 0.40); color: #FFFFFF; }
 
 /* ── Focus ─────────────────────────────────────────────────── */
 :focus-visible {
@@ -197,47 +249,29 @@ code, .mono {
   border-radius: var(--radius-sm);
 }
 
-/* ── Reduced motion ────────────────────────────────────────── */
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-  }
+/* ── Specular Water Glass Cards ───────────────────────────── */
+.glass-card {
+  background: var(--color-surface);
+  backdrop-filter: var(--backdrop-blur);
+  -webkit-backdrop-filter: var(--backdrop-blur);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  transition: all var(--transition);
 }
 
-/* ── Utility classes ───────────────────────────────────────── */
-.sr-only {
-  position: absolute;
-  width: 1px; height: 1px;
-  padding: 0; margin: -1px;
-  overflow: hidden;
-  clip: rect(0,0,0,0);
-  white-space: nowrap;
-  border: 0;
+.glass-card:hover {
+  border-color: var(--color-border-hover);
+  box-shadow: var(--shadow-card-hover);
 }
 
-.truncate {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.animate-fade-in {
-  animation: fadeIn 250ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* ── Button base ───────────────────────────────────────────── */
+/* ── Button Base: Real Clear Sky Blue ───────────────────────── */
 .btn {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
   padding: 0 var(--space-5);
-  height: var(--btn-height);
+  height: 40px;
   border-radius: var(--radius-pill);
   font-family: var(--font-body);
   font-size: 14px;
@@ -257,43 +291,46 @@ code, .mono {
 
 .btn:disabled { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
 
+/* Primary Action Button: Real Sky Blue (#38BDF8 to #0284C7) */
 .btn-primary {
   background: var(--gradient-primary);
-  color: var(--color-text-inverse);
+  color: #0A101D;
+  font-weight: 800;
   box-shadow: var(--shadow-btn);
 }
 .btn-primary:hover {
-  filter: brightness(1.08);
-  box-shadow: 0 6px 20px rgba(247, 37, 133, 0.45);
+  filter: brightness(1.15);
+  box-shadow: 0 10px 28px rgba(56, 189, 248, 0.60);
   transform: translateY(-1px);
 }
 
 .btn-ghost {
-  background: var(--color-surface);
+  background: rgba(255, 255, 255, 0.10);
+  backdrop-filter: blur(14px);
   color: var(--color-text-primary);
-  border: 1px solid var(--color-border-input);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  border: 1px solid var(--color-border);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 .btn-ghost:hover {
-  background: var(--color-bg);
+  background: rgba(255, 255, 255, 0.18);
   border-color: var(--color-primary-start);
   color: var(--color-primary-start);
 }
 
 .btn-sm {
-  height: var(--btn-height-sm);
+  height: 34px;
   padding: 0 var(--space-4);
   font-size: 13px;
 }
 
 .btn-icon {
-  width: var(--btn-height-sm);
-  height: var(--btn-height-sm);
+  width: 34px;
+  height: 34px;
   padding: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: var(--color-surface);
+  background: rgba(255, 255, 255, 0.10);
   color: var(--color-text-secondary);
   border: 1px solid var(--color-border);
   border-radius: 50%;

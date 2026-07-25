@@ -1,8 +1,8 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import {
-  Upload, Sparkles, Check, Lock, X, ImageIcon, Video, ChevronDown, ChevronUp, Lightbulb
+  Upload, Sparkles, Check, Lock, X, Video, Lightbulb, Command, Plus, CornerDownLeft, Sliders
 } from 'lucide-react'
-import { PLATFORMS, isPlatformAccessible, FREE_PLATFORM_IDS } from '@@config/platforms'
+import { PLATFORMS, isPlatformAccessible } from '@@config/platforms'
 import type { PlatformTier } from '@@config/platforms'
 import { useAppStore } from '../store/app'
 import { PlatformIcon } from './PlatformIcon'
@@ -17,11 +17,18 @@ interface CreateStepPanelProps {
 }
 
 const PROMPT_IDEAS = [
-  { label: '🚀 Product Launch', text: 'Launching my new SaaS tool that helps designers export assets 10x faster. Key features include automated batch export, AI color palettes, and Figma plugin integration.' },
-  { label: '💡 Thought Leadership', text: '5 key lessons learned after scaling our startup to 10k users without spending a dollar on paid ads. Lesson 1: Build in public from day one.' },
-  { label: '📢 Weekly Update', text: 'Weekly product update: We just shipped dark mode, 3x faster page loads, and updated Slack integration. Try it out now!' },
+  { label: '🚀 Product Launch', text: 'Launching my new SaaS tool that helps creators export multi-platform social posts 10x faster. Key features include automated formatting, AI brand voices, and instant client ZIP downloads.' },
+  { label: '💡 Thought Leadership', text: '5 key lessons learned scaling our startup to 10k users without spending a dollar on paid ads. Lesson 1: Build in public from day one.' },
+  { label: '📢 Weekly Feature Update', text: 'Weekly product update: We just shipped dark mode, 3x faster page loads, and updated Slack integration. Try it out now!' },
   { label: '🎨 Design Showcase', text: 'Behind the scenes of our new brand redesign. How we simplified our color palette and built a high-performance design system.' },
-  { label: '🔥 Customer Story', text: 'How Acme Corp saved 15 hours a week on content creation using PostMaker. Here is the full breakdown of their workflow.' },
+  { label: '🔥 Customer Success Story', text: 'How Acme Corp saved 15 hours a week on content creation using PostMaker. Here is the full breakdown of their workflow.' },
+]
+
+const TONE_MODES = [
+  { id: 'viral', label: '🔥 Viral Hook', prefix: 'Write with maximum engagement and a high-converting hook: ' },
+  { id: 'professional', label: '💼 Executive', prefix: 'Write in a polished, authoritative executive tone: ' },
+  { id: 'casual', label: '💬 Casual Founder', prefix: 'Write in a warm, authentic, builder-first voice: ' },
+  { id: 'technical', label: '⚡ Deep Technical', prefix: 'Write with precise technical depth, zero fluff, and clear architectural insights: ' },
 ]
 
 export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: CreateStepPanelProps) {
@@ -33,12 +40,27 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
     isGenerating, addToast
   } = useAppStore()
 
-  const [showAllPlatforms, setShowAllPlatforms] = useState(false)
+  const [categoryFilter, setCategoryFilter] = useState<string>('all')
   const [showPromptIdeas, setShowPromptIdeas] = useState(false)
   const [isDragOver, setIsDragOver] = useState(false)
+  const [selectedTone, setSelectedTone] = useState<string | null>(null)
 
   const imageInputRef = useRef<HTMLInputElement>(null)
   const videoInputRef = useRef<HTMLInputElement>(null)
+
+  // Keyboard shortcut listener: Cmd/Ctrl + Enter to trigger generation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        if (!isGenerating && prompt.trim() && selectedPlatforms.length > 0) {
+          e.preventDefault()
+          onGenerateClick()
+        }
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isGenerating, prompt, selectedPlatforms, onGenerateClick])
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? [])
@@ -103,255 +125,296 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
     }
   }
 
-  const handleSelectAll = () => {
+  // Grouped platforms filtering
+  const filteredPlatforms = useMemo(() => {
+    if (categoryFilter === 'all') return PLATFORMS
+    return PLATFORMS.filter(p => p.group === categoryFilter)
+  }, [categoryFilter])
+
+  // Category counts
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: PLATFORMS.length }
+    PLATFORMS.forEach(p => {
+      counts[p.group] = (counts[p.group] || 0) + 1
+    })
+    return counts
+  }, [])
+
+  const handleSelectCategoryGroup = (group: string) => {
     if (isGenerating) return
-    const accessibleIds = PLATFORMS
-      .filter(p => isPlatformAccessible(p.id, userPlan))
+    const groupPlatforms = PLATFORMS
+      .filter(p => (group === 'all' ? true : p.group === group) && isPlatformAccessible(p.id, userPlan))
       .map(p => p.id)
-    
-    const allSelected = accessibleIds.every(id => selectedPlatforms.includes(id))
-    if (allSelected) {
-      setSelectedPlatforms([])
+
+    const allGroupSelected = groupPlatforms.every(id => selectedPlatforms.includes(id))
+    if (allGroupSelected) {
+      setSelectedPlatforms(selectedPlatforms.filter(id => !groupPlatforms.includes(id)))
     } else {
-      setSelectedPlatforms(accessibleIds)
+      setSelectedPlatforms(Array.from(new Set([...selectedPlatforms, ...groupPlatforms])))
     }
   }
 
-  const defaultVisibleCount = 10
-  const displayedPlatforms = showAllPlatforms ? PLATFORMS : PLATFORMS.slice(0, defaultVisibleCount)
-  const hiddenCount = PLATFORMS.length - defaultVisibleCount
+  const applyToneMode = (toneId: string, prefix: string) => {
+    if (selectedTone === toneId) {
+      setSelectedTone(null)
+      return
+    }
+    setSelectedTone(toneId)
+    if (!prompt.startsWith(prefix)) {
+      setPrompt(prefix + prompt.replace(/^(Write with maximum engagement|Write in a polished|Write in a warm|Write with precise technical depth)[^:]*:\s*/i, ''))
+    }
+  }
 
   return (
-    <div className={`create-step-panel ${isGenerating ? 'disabled-locked' : ''}`}>
-      {/* Inline lock banner if generating */}
+    <div className={`create-studio-container ${isGenerating ? 'disabled-locked' : ''}`}>
+      {/* Hidden File Inputs */}
+      <input
+        ref={imageInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        style={{ display: 'none' }}
+        onChange={handleImageSelect}
+        disabled={isGenerating}
+      />
+      <input
+        ref={videoInputRef}
+        type="file"
+        accept="video/*"
+        style={{ display: 'none' }}
+        onChange={handleVideoSelect}
+        disabled={isGenerating}
+      />
+
+      {/* Generation Lock Banner */}
       {isGenerating && (
-        <div className="lock-banner">
-          <Sparkles size={14} className="spin" />
-          <span>Generation in progress. Editing inputs is locked until generation completes.</span>
+        <div className="studio-lock-banner">
+          <Sparkles size={16} className="spin text-primary" />
+          <span>Generating multi-platform post kit... Creation panel locked.</span>
         </div>
       )}
 
-      {/* Header Title */}
-      <div className="step-panel-header">
-        <div>
-          <h2 className="step-panel-title">Create New Post ✨</h2>
-          <p className="step-panel-subtitle">AI will generate platform-native posts tailored to your selected channels.</p>
-        </div>
-      </div>
-
-      {/* STEP 1: Upload Media */}
-      <div className="step-card">
-        <div className="step-card-header">
-          <div className="step-number">1</div>
-          <div>
-            <h3 className="step-title">
-              Upload Media {imageFiles.length > 0 && `(${imageFiles.length}/4)`}
-            </h3>
-            <p className="step-description">Attach up to 4 images or a video file (Optional)</p>
+      {/* LIQUID WATER GLASS PROMPT CARD */}
+      <div className="studio-canvas-card glass-card">
+        <div className="canvas-header-row">
+          <div className="canvas-title-group">
+            <h1 className="canvas-heading">What would you like to create?</h1>
+            <p className="canvas-sub">Describe your post topic or announcement to generate multi-platform native content</p>
           </div>
-        </div>
 
-        <div className="step-card-body">
-          <input
-            ref={imageInputRef}
-            type="file"
-            accept="image/*"
-            multiple
-            style={{ display: 'none' }}
-            onChange={handleImageSelect}
-            disabled={isGenerating}
-          />
-          <input
-            ref={videoInputRef}
-            type="file"
-            accept="video/*"
-            style={{ display: 'none' }}
-            onChange={handleVideoSelect}
-            disabled={isGenerating}
-          />
-
-          {imageFiles.length === 0 && !videoFile ? (
-            <div
-              className={`dropzone ${isDragOver ? 'dragover' : ''}`}
-              onDragOver={e => { e.preventDefault(); setIsDragOver(true); }}
-              onDragLeave={() => setIsDragOver(false)}
-              onDrop={handleDrop}
-            >
-              <div className="dropzone-icon">
-                <Upload size={22} />
-              </div>
-              <div className="dropzone-content">
-                <p className="dropzone-text">
-                  <button type="button" className="dropzone-link" onClick={() => imageInputRef.current?.click()} disabled={isGenerating}>
-                    Upload up to 4 images
-                  </button>
-                  {' or '}
-                  <button type="button" className="dropzone-link" onClick={() => videoInputRef.current?.click()} disabled={isGenerating}>
-                    video file
-                  </button>
-                </p>
-                <p className="dropzone-sub">Drag & drop or click to upload · Max 4 JPG/PNG/WEBP (30MB total) or MP4 (100MB)</p>
-              </div>
-            </div>
-          ) : (
-            <div className="media-preview-card">
-              {imageFiles.length > 0 && (
-                <div className="media-preview-grid">
-                  {imageFiles.map((file, idx) => (
-                    <div key={`${file.name}-${idx}`} className="media-preview-row">
-                      <div className="media-preview-thumb">
-                        <span className="order-badge">#{idx + 1}</span>
-                        <img src={URL.createObjectURL(file)} alt={`Upload ${idx + 1}`} />
-                      </div>
-                      <div className="media-preview-info">
-                        <span className="media-preview-name">{file.name}</span>
-                        <span className="media-preview-meta">Image · {(file.size / (1024 * 1024)).toFixed(2)} MB</span>
-                      </div>
-                      <div className="media-preview-actions">
-                        <button
-                          type="button"
-                          className="btn-icon"
-                          onClick={() => removeImageFile(idx)}
-                          disabled={isGenerating}
-                          title="Remove image"
-                        >
-                          <X size={15} />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-
-                  <div className="media-grid-footer">
-                    {imageFiles.length < 4 ? (
-                      <button
-                        type="button"
-                        className="btn-ghost btn-sm"
-                        onClick={() => imageInputRef.current?.click()}
-                        disabled={isGenerating}
-                      >
-                        + Add another image ({imageFiles.length}/4)
-                      </button>
-                    ) : (
-                      <span className="max-images-badge">Max 4 images attached</span>
-                    )}
-                    <button
-                      type="button"
-                      className="btn-ghost btn-sm text-error"
-                      onClick={() => setImageFiles([])}
-                      disabled={isGenerating}
-                    >
-                      Remove All
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {videoFile && (
-                <div className="media-preview-row">
-                  <div className="media-preview-thumb video-thumb">
-                    <Video size={24} />
-                  </div>
-                  <div className="media-preview-info">
-                    <span className="media-preview-name">{videoFile.name}</span>
-                    <span className="media-preview-meta">Video · {(videoFile.size / (1024 * 1024)).toFixed(2)} MB</span>
-                  </div>
-                  <div className="media-preview-actions">
-                    <button type="button" className="btn-ghost btn-sm" onClick={() => videoInputRef.current?.click()} disabled={isGenerating}>
-                      Change
-                    </button>
-                    <button type="button" className="btn-icon" onClick={() => setVideoFile(null)} disabled={isGenerating} title="Remove video">
-                      <X size={15} />
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* STEP 2: Write Your Prompt */}
-      <div className="step-card">
-        <div className="step-card-header" style={{ justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-            <div className="step-number">2</div>
-            <div>
-              <h3 className="step-title">Write Your Prompt</h3>
-              <p className="step-description">Describe what you want AI to generate or summarize</p>
-            </div>
-          </div>
           <button
             type="button"
-            className="prompt-ideas-btn"
+            className="prompt-presets-btn"
             onClick={() => setShowPromptIdeas(!showPromptIdeas)}
             disabled={isGenerating}
           >
             <Lightbulb size={13} />
-            <span>Prompt Ideas</span>
+            <span>Prompt Presets ✨</span>
           </button>
         </div>
 
-        {/* Prompt Ideas Drawer */}
+        {/* Prompt Ideas Popover */}
         {showPromptIdeas && (
-          <div className="prompt-ideas-box">
-            <p className="ideas-title">Click a template to populate:</p>
-            <div className="ideas-grid">
+          <div className="prompt-presets-popover animate-fade-in glass-card">
+            <div className="presets-header">
+              <span>Select a preset to auto-populate prompt</span>
+              <button type="button" className="btn-icon-xs" onClick={() => setShowPromptIdeas(false)}>
+                <X size={13} />
+              </button>
+            </div>
+            <div className="presets-list">
               {PROMPT_IDEAS.map((idea, idx) => (
                 <button
                   key={idx}
                   type="button"
-                  className="idea-chip"
+                  className="preset-item-btn"
                   onClick={() => {
                     setPrompt(idea.text)
                     setShowPromptIdeas(false)
                   }}
                   disabled={isGenerating}
                 >
-                  <span className="idea-chip-label">{idea.label}</span>
+                  <span className="preset-item-label">{idea.label}</span>
+                  <span className="preset-item-text truncate">{idea.text}</span>
                 </button>
               ))}
             </div>
           </div>
         )}
 
-        <div className="step-card-body">
-          <div className="prompt-container">
-            <textarea
-              className="step-prompt-textarea"
-              value={prompt}
-              onChange={e => setPrompt(e.target.value)}
-              placeholder="Describe what you want to post about...&#10;&#10;e.g. Launching my new SaaS tool that helps designers export assets 10x faster. Highlight top 3 benefits and include a strong call to action."
-              rows={5}
-              disabled={isGenerating}
-              maxLength={2000}
-            />
-            <div className="prompt-footer">
-              <span className={`prompt-counter ${prompt.length > 1800 ? 'warning' : ''}`}>
-                {prompt.length} / 2000
-              </span>
+        {/* Prompt Textarea */}
+        <div className="prompt-textarea-wrapper">
+          <textarea
+            className="studio-prompt-textarea"
+            value={prompt}
+            onChange={e => setPrompt(e.target.value)}
+            placeholder="Describe your post topic, product release, or announcement...&#10;&#10;e.g. Launching our new Figma asset export plugin. Highlight top 3 benefits: 10x faster exports, automatic dark mode tokens, and team cloud sync. Include a strong call to action."
+            rows={5}
+            disabled={isGenerating}
+            maxLength={2000}
+          />
+
+          {/* Integrated Tone Preset Toolbar */}
+          <div className="prompt-tone-bar">
+            <span className="tone-bar-label">
+              <Sliders size={12} /> Voice Tone:
+            </span>
+            <div className="tone-pills-row">
+              {TONE_MODES.map(tone => (
+                <button
+                  key={tone.id}
+                  type="button"
+                  className={`tone-pill-btn ${selectedTone === tone.id ? 'active' : ''}`}
+                  onClick={() => applyToneMode(tone.id, tone.prefix)}
+                  disabled={isGenerating}
+                >
+                  {tone.label}
+                </button>
+              ))}
             </div>
           </div>
         </div>
+
+        {/* MEDIA ATTACHMENTS GALLERY & DROPZONE */}
+        <div className="media-attachment-section">
+          {imageFiles.length > 0 || videoFile ? (
+            <div className="media-gallery-container">
+              <div className="gallery-header">
+                <span className="gallery-title">
+                  Attached Media ({imageFiles.length > 0 ? `${imageFiles.length}/4 Images` : '1 Video'})
+                </span>
+                <button
+                  type="button"
+                  className="btn-link-sm text-error"
+                  onClick={() => { setImageFiles([]); setVideoFile(null); }}
+                  disabled={isGenerating}
+                >
+                  Remove All
+                </button>
+              </div>
+
+              <div className="media-gallery-grid">
+                {/* Image Thumbnails */}
+                {imageFiles.map((file, idx) => (
+                  <div key={`${file.name}-${idx}`} className="gallery-thumb-card">
+                    <span className="thumb-order-tag">#{idx + 1}</span>
+                    <img src={URL.createObjectURL(file)} alt="" />
+                    <button
+                      type="button"
+                      className="thumb-delete-btn"
+                      onClick={() => removeImageFile(idx)}
+                      disabled={isGenerating}
+                      title="Remove image"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                ))}
+
+                {/* Video Card */}
+                {videoFile && (
+                  <div className="gallery-thumb-card video-card">
+                    <Video size={20} className="text-primary" />
+                    <span className="thumb-order-tag">MP4</span>
+                    <button
+                      type="button"
+                      className="thumb-delete-btn"
+                      onClick={() => setVideoFile(null)}
+                      disabled={isGenerating}
+                      title="Remove video"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                )}
+
+                {/* Add Image Button */}
+                {imageFiles.length > 0 && imageFiles.length < 4 && !videoFile && (
+                  <button
+                    type="button"
+                    className="gallery-add-tile"
+                    onClick={() => imageInputRef.current?.click()}
+                    disabled={isGenerating}
+                  >
+                    <Plus size={18} />
+                    <span>Add Image ({imageFiles.length}/4)</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div
+              className={`dropzone-strip ${isDragOver ? 'dragover' : ''}`}
+              onDragOver={e => { e.preventDefault(); setIsDragOver(true); }}
+              onDragLeave={() => setIsDragOver(false)}
+              onDrop={handleDrop}
+            >
+              <div className="dropzone-strip-left">
+                <Upload size={15} className="text-muted" />
+                <span className="dropzone-strip-text">Attach visual media (Optional)</span>
+              </div>
+              <div className="dropzone-strip-actions">
+                <button
+                  type="button"
+                  className="btn-attach-pill"
+                  onClick={() => imageInputRef.current?.click()}
+                  disabled={isGenerating}
+                >
+                  + Add Images (up to 4)
+                </button>
+                <button
+                  type="button"
+                  className="btn-attach-pill"
+                  onClick={() => videoInputRef.current?.click()}
+                  disabled={isGenerating}
+                >
+                  + Add Video MP4
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Studio Prompt Footer Bar & Primary Action CTA */}
+        <div className="canvas-footer-bar">
+          <div className="canvas-footer-left">
+            <span className={`canvas-char-counter ${prompt.length > 1800 ? 'warning' : ''}`}>
+              {prompt.length} / 2000
+            </span>
+            <span className="canvas-shortcut-hint">
+              <Command size={11} /> + Enter
+            </span>
+          </div>
+
+          <button
+            type="button"
+            className="btn btn-primary generate-main-btn"
+            disabled={isGenerating || !prompt.trim() || selectedPlatforms.length === 0}
+            onClick={onGenerateClick}
+          >
+            <Sparkles size={16} />
+            <span>Generate Kit ({selectedPlatforms.length} Channels)</span>
+            <CornerDownLeft size={14} />
+          </button>
+        </div>
       </div>
 
-      {/* STEP 3: Select Platforms */}
-      <div className="step-card">
-        <div className="step-card-header" style={{ justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-            <div className="step-number">3</div>
-            <div>
-              <h3 className="step-title">Select Platforms ({selectedPlatforms.length} selected)</h3>
-              <p className="step-description">Choose target social networks for platform-native post generation</p>
-            </div>
+      {/* LIQUID WATER GLASS PLATFORM SELECTOR CARD */}
+      <div className="studio-platforms-card glass-card">
+        <div className="platforms-card-header">
+          <div className="platforms-header-title">
+            <h3>Select Target Channels ({selectedPlatforms.length} selected)</h3>
+            <p>Generate perfectly tailored, native posts for every network</p>
           </div>
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+
+          <div className="platforms-header-actions">
             <button
               type="button"
               className="btn-ghost btn-sm"
-              onClick={handleSelectAll}
+              onClick={() => handleSelectCategoryGroup(categoryFilter)}
               disabled={isGenerating}
             >
-              Select All
+              Select All in Category
             </button>
             {selectedPlatforms.length > 0 && (
               <button
@@ -360,503 +423,650 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
                 onClick={() => setSelectedPlatforms([])}
                 disabled={isGenerating}
               >
-                Clear
+                Clear All
               </button>
             )}
           </div>
         </div>
 
-        <div className="step-card-body">
-          <div className="platform-selection-grid">
-            {displayedPlatforms.map(platform => {
-              const isSelected = selectedPlatforms.includes(platform.id)
-              const isAccessible = isPlatformAccessible(platform.id, userPlan)
-
-              return (
-                <button
-                  key={platform.id}
-                  type="button"
-                  className={[
-                    'platform-card-item',
-                    isSelected ? 'selected' : '',
-                    !isAccessible ? 'locked' : ''
-                  ].join(' ')}
-                  style={{
-                    '--platform-brand': platform.brandColor
-                  } as React.CSSProperties}
-                  onClick={() => {
-                    if (isGenerating) return
-                    if (!isAccessible) {
-                      onLockedClick(platform.name)
-                      return
-                    }
-                    togglePlatform(platform.id)
-                  }}
-                  disabled={isGenerating}
-                >
-                  <div className="platform-card-left">
-                    <span className="platform-card-icon-wrap">
-                      <PlatformIcon id={platform.id} size={18} />
-                    </span>
-                    <span className="platform-card-name">{platform.name}</span>
-                  </div>
-
-                  <div className="platform-card-right">
-                    {!isAccessible ? (
-                      <span className="platform-card-lock" title="Upgrade required">
-                        <Lock size={12} />
-                      </span>
-                    ) : (
-                      <span className={`platform-card-checkbox ${isSelected ? 'checked' : ''}`}>
-                        {isSelected && <Check size={11} strokeWidth={3} />}
-                      </span>
-                    )}
-                  </div>
-                </button>
-              )
-            })}
-          </div>
-
-          {/* Show More / Show Less Toggle for full 33 platforms scale */}
-          <div className="platform-expand-row">
+        {/* Category Tabs */}
+        <div className="platform-category-tabs">
+          {[
+            { id: 'all', label: 'All Channels' },
+            { id: 'shortform', label: 'Social & Shortform' },
+            { id: 'professional', label: 'Professional' },
+            { id: 'video', label: 'Video & Media' },
+            { id: 'community', label: 'Community' },
+            { id: 'longform', label: 'Longform' }
+          ].map(tab => (
             <button
+              key={tab.id}
               type="button"
-              className="platform-expand-btn"
-              onClick={() => setShowAllPlatforms(!showAllPlatforms)}
+              className={`cat-tab-btn ${categoryFilter === tab.id ? 'active' : ''}`}
+              onClick={() => setCategoryFilter(tab.id)}
             >
-              {showAllPlatforms ? (
-                <>
-                  <span>Show Less</span>
-                  <ChevronUp size={14} />
-                </>
-              ) : (
-                <>
-                  <span>+ Show All 33 Platforms ({hiddenCount} more)</span>
-                  <ChevronDown size={14} />
-                </>
-              )}
+              <span>{tab.label}</span>
+              <span className="tab-count-chip">{categoryCounts[tab.id] || 0}</span>
             </button>
-          </div>
+          ))}
+        </div>
+
+        {/* Platform Grid */}
+        <div className="studio-platform-grid">
+          {filteredPlatforms.map(platform => {
+            const isSelected = selectedPlatforms.includes(platform.id)
+            const isAccessible = isPlatformAccessible(platform.id, userPlan)
+
+            return (
+              <button
+                key={platform.id}
+                type="button"
+                className={[
+                  'studio-platform-pill',
+                  isSelected ? 'selected' : '',
+                  !isAccessible ? 'locked' : ''
+                ].join(' ')}
+                onClick={() => {
+                  if (isGenerating) return
+                  if (!isAccessible) {
+                    onLockedClick(platform.name)
+                    return
+                  }
+                  togglePlatform(platform.id)
+                }}
+                disabled={isGenerating}
+              >
+                <div className="pill-left">
+                  <PlatformIcon id={platform.id} size={18} />
+                  <span className="pill-name">{platform.name}</span>
+                </div>
+
+                <div className="pill-right">
+                  {!isAccessible ? (
+                    <Lock size={12} className="pill-lock-icon" />
+                  ) : (
+                    <span className={`pill-check ${isSelected ? 'checked' : ''}`}>
+                      {isSelected && <Check size={11} strokeWidth={3} />}
+                    </span>
+                  )}
+                </div>
+              </button>
+            )
+          })}
         </div>
       </div>
 
       <style>{`
-        .create-step-panel {
+        .create-studio-container {
+          max-width: 920px;
+          margin: 0 auto;
+          width: 100%;
           display: flex;
           flex-direction: column;
-          gap: 20px;
-          flex: 1;
-          min-width: 0;
-          padding-bottom: 32px;
-          transition: opacity var(--transition);
+          gap: 24px;
+          padding-bottom: 60px;
         }
 
-        .create-step-panel.disabled-locked {
-          opacity: 0.65;
+        .create-studio-container.disabled-locked {
+          opacity: 0.7;
           pointer-events: none;
         }
 
-        .lock-banner {
+        .studio-lock-banner {
           display: flex;
           align-items: center;
-          gap: 8px;
-          padding: 10px 16px;
-          background: rgba(236, 72, 153, 0.08);
-          border: 1px solid rgba(236, 72, 153, 0.25);
+          gap: 10px;
+          padding: 12px 18px;
+          background: rgba(56, 189, 248, 0.12);
+          border: 1px solid rgba(56, 189, 248, 0.30);
           border-radius: var(--radius-card);
-          font-size: 13px;
+          font-size: 13.5px;
           font-weight: 600;
-          color: var(--color-nav-active-text);
+          color: var(--color-primary-start);
         }
 
-        .step-panel-header {
-          margin-bottom: 4px;
+        /* Liquid Water Drop Glass Cards */
+        .studio-canvas-card {
+          padding: 24px;
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+          position: relative;
         }
 
-        .step-panel-title {
+        .canvas-header-row {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+        }
+
+        .canvas-title-group {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .canvas-heading {
           font-size: 22px;
           font-weight: 800;
           color: var(--color-text-primary);
           letter-spacing: -0.03em;
         }
 
-        .step-panel-subtitle {
-          font-size: 14px;
-          color: var(--color-text-secondary);
-          margin-top: 2px;
-        }
-
-        /* Step Card Styling */
-        .step-card {
-          background: var(--color-surface);
-          border: 1px solid var(--color-border);
-          border-radius: var(--radius-card);
-          padding: 20px 24px;
-          box-shadow: var(--shadow-card);
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
-          transition: border-color var(--transition);
-        }
-
-        .step-card:hover {
-          border-color: var(--color-border-input);
-        }
-
-        .step-card-header {
-          display: flex;
-          align-items: flex-start;
-          gap: 12px;
-        }
-
-        .step-number {
-          width: 28px;
-          height: 28px;
-          border-radius: 50%;
-          background: rgba(247, 37, 133, 0.10);
-          color: var(--color-primary-start);
+        .canvas-sub {
           font-size: 13px;
-          font-weight: 700;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-          margin-top: 2px;
-        }
-
-        .step-title {
-          font-size: 15px;
-          font-weight: 700;
-          color: var(--color-text-primary);
-          letter-spacing: -0.01em;
-        }
-
-        .step-description {
-          font-size: 12.5px;
           color: var(--color-text-secondary);
-          margin-top: 1px;
         }
 
-        /* Step 1 Dropzone */
-        .dropzone {
-          border: 1.5px dashed var(--color-border-input);
-          border-radius: var(--radius-card);
-          padding: 24px;
-          display: flex;
+        .prompt-presets-btn {
+          display: inline-flex;
           align-items: center;
-          justify-content: center;
-          gap: 16px;
-          background: var(--color-bg);
-          transition: all var(--transition);
-          cursor: pointer;
-        }
-
-        .dropzone.dragover, .dropzone:hover {
-          border-color: var(--color-primary-start);
-          background: rgba(247, 37, 133, 0.03);
-        }
-
-        .dropzone-icon {
-          width: 44px;
-          height: 44px;
-          border-radius: 12px;
-          background: var(--color-surface);
-          border: 1px solid var(--color-border);
+          gap: 6px;
+          padding: 6px 12px;
+          border-radius: var(--radius-pill);
+          border: 1px solid rgba(56, 189, 248, 0.30);
+          background: rgba(56, 189, 248, 0.10);
           color: var(--color-primary-start);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
+          font-size: 12.5px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all var(--transition);
         }
 
-        .dropzone-content {
+        .prompt-presets-btn:hover {
+          background: rgba(56, 189, 248, 0.18);
+        }
+
+        .prompt-presets-popover {
+          position: absolute;
+          top: 60px;
+          right: 24px;
+          width: 440px;
+          max-width: calc(100% - 48px);
+          z-index: 50;
+          padding: 12px;
           display: flex;
           flex-direction: column;
-          gap: 2px;
+          gap: 8px;
+          background: var(--color-surface-solid);
+          backdrop-filter: var(--backdrop-blur);
+          -webkit-backdrop-filter: var(--backdrop-blur);
+          border: 1px solid var(--color-border);
+          box-shadow: 0 24px 60px rgba(0, 0, 0, 0.80);
         }
 
-        .dropzone-text {
-          font-size: 13.5px;
-          font-weight: 600;
-          color: var(--color-text-primary);
+        .presets-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          font-size: 11.5px;
+          font-weight: 700;
+          color: var(--color-text-secondary);
         }
 
-        .dropzone-link {
-          color: var(--color-primary-start);
+        .btn-icon-xs {
           background: none;
           border: none;
-          font-size: inherit;
-          font-weight: 700;
-          cursor: pointer;
-          padding: 0;
-          text-decoration: underline;
-        }
-
-        .dropzone-sub {
-          font-size: 11.5px;
           color: var(--color-text-muted);
+          cursor: pointer;
         }
 
-        .media-preview-card {
-          background: var(--color-bg);
+        .presets-list {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          max-height: 240px;
+          overflow-y: auto;
+        }
+
+        .preset-item-btn {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 2px;
+          padding: 8px 12px;
+          border-radius: var(--radius);
+          background: rgba(255, 255, 255, 0.05);
           border: 1px solid var(--color-border);
-          border-radius: var(--radius-card);
-          padding: 12px 16px;
+          cursor: pointer;
+          text-align: left;
+          transition: all var(--transition);
         }
 
-        .media-preview-grid {
+        .preset-item-btn:hover {
+          border-color: var(--color-primary-start);
+          background: var(--color-nav-active-bg);
+        }
+
+        .preset-item-label {
+          font-size: 12px;
+          font-weight: 700;
+          color: var(--color-text-primary);
+        }
+
+        .preset-item-text {
+          font-size: 11.5px;
+          color: var(--color-text-secondary);
+          width: 100%;
+        }
+
+        .prompt-textarea-wrapper {
+          position: relative;
+          background: var(--color-surface-inset);
+          border: 1px solid var(--color-border-input);
+          border-radius: var(--radius-card);
+          box-shadow: var(--shadow-inset);
+          overflow: hidden;
+          transition: border-color var(--transition), box-shadow var(--transition);
+        }
+
+        .prompt-textarea-wrapper:focus-within {
+          border-color: var(--color-primary-start);
+          box-shadow: 0 0 24px rgba(56, 189, 248, 0.30), var(--shadow-inset);
+        }
+
+        .studio-prompt-textarea {
+          width: 100%;
+          background: transparent;
+          border: none;
+          padding: 16px;
+          font-family: var(--font-body);
+          font-size: 14.5px;
+          color: var(--color-text-primary);
+          line-height: 1.6;
+          resize: vertical;
+          outline: none;
+        }
+
+        .prompt-tone-bar {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 8px 14px;
+          background: rgba(0, 0, 0, 0.40);
+          border-top: 1px solid rgba(255, 255, 255, 0.06);
+          overflow-x: auto;
+        }
+
+        .tone-bar-label {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          font-size: 11px;
+          font-weight: 700;
+          color: #64748B;
+          white-space: nowrap;
+        }
+
+        .tone-pills-row {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+
+        .tone-pill-btn {
+          font-size: 11px;
+          font-weight: 600;
+          padding: 3px 9px;
+          border-radius: 99px;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          color: #94A3B8;
+          cursor: pointer;
+          white-space: nowrap;
+          transition: all var(--transition);
+        }
+
+        .tone-pill-btn:hover {
+          color: #F8FAFC;
+          background: rgba(255, 255, 255, 0.10);
+        }
+
+        .tone-pill-btn.active {
+          background: rgba(56, 189, 248, 0.15);
+          color: var(--color-primary-start);
+          border-color: rgba(56, 189, 248, 0.30);
+        }
+
+        /* Multi-Image Attachment Gallery */
+        .media-attachment-section {
+          width: 100%;
+        }
+
+        .media-gallery-container {
+          background: var(--color-surface-inset);
+          border: 1px solid var(--color-border);
+          border-radius: var(--radius);
+          padding: 12px 14px;
+          box-shadow: var(--shadow-inset);
           display: flex;
           flex-direction: column;
           gap: 10px;
         }
 
-        .media-preview-row {
+        .gallery-header {
           display: flex;
           align-items: center;
-          gap: 12px;
+          justify-content: space-between;
         }
 
-        .media-preview-thumb {
+        .gallery-title {
+          font-size: 12px;
+          font-weight: 700;
+          color: var(--color-text-primary);
+        }
+
+        .btn-link-sm {
+          background: none;
+          border: none;
+          font-size: 11.5px;
+          font-weight: 600;
+          cursor: pointer;
+        }
+
+        .btn-link-sm.text-error { color: var(--color-error); }
+
+        .media-gallery-grid {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          flex-wrap: wrap;
+        }
+
+        .gallery-thumb-card {
           position: relative;
-          width: 48px;
-          height: 48px;
+          width: 72px;
+          height: 72px;
           border-radius: var(--radius-sm);
           overflow: hidden;
-          background: var(--color-surface);
+          background: #000000;
           border: 1px solid var(--color-border);
           flex-shrink: 0;
           display: flex;
           align-items: center;
           justify-content: center;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         }
 
-        .order-badge {
-          position: absolute;
-          top: 2px;
-          left: 2px;
-          background: rgba(15, 23, 42, 0.85);
-          color: white;
-          font-size: 10px;
-          font-weight: 700;
-          padding: 1px 4px;
-          border-radius: 4px;
-          line-height: 1;
-          z-index: 2;
-        }
-
-        .media-grid-footer {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding-top: 8px;
-          border-top: 1px solid var(--color-border);
-          margin-top: 4px;
-        }
-
-        .max-images-badge {
-          font-size: 12px;
-          font-weight: 600;
-          color: var(--color-text-muted);
-          background: var(--color-surface);
-          padding: 4px 10px;
-          border-radius: var(--radius-pill);
-          border: 1px solid var(--color-border);
-        }
-
-        .text-error {
-          color: var(--color-error, #EF4444);
-        }
-
-        .media-preview-thumb img {
+        .gallery-thumb-card img {
           width: 100%;
           height: 100%;
           object-fit: cover;
         }
 
-        .media-preview-thumb.video-thumb {
-          color: var(--color-primary-start);
+        .gallery-thumb-card.video-card {
+          background: var(--color-nav-active-bg);
+          border-color: rgba(56, 189, 248, 0.4);
         }
 
-        .media-preview-info {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          min-width: 0;
+        .thumb-order-tag {
+          position: absolute;
+          top: 2px;
+          left: 2px;
+          background: rgba(0, 0, 0, 0.85);
+          color: white;
+          font-size: 9.5px;
+          font-weight: 700;
+          padding: 1px 4px;
+          border-radius: 4px;
+          z-index: 2;
         }
 
-        .media-preview-name {
-          font-size: 13px;
-          font-weight: 600;
-          color: var(--color-text-primary);
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
-
-        .media-preview-meta {
-          font-size: 11px;
-          color: var(--color-text-secondary);
-        }
-
-        .media-preview-actions {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-        }
-
-        /* Step 2 Prompt Area */
-        .prompt-ideas-btn {
-          display: inline-flex;
-          align-items: center;
-          gap: 5px;
-          padding: 4px 10px;
-          border-radius: var(--radius-pill);
-          border: 1px solid rgba(247, 37, 133, 0.2);
-          background: rgba(247, 37, 133, 0.06);
-          color: var(--color-primary-start);
-          font-size: 12px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all var(--transition);
-        }
-
-        .prompt-ideas-btn:hover {
-          background: rgba(247, 37, 133, 0.12);
-        }
-
-        .prompt-ideas-box {
-          background: var(--color-bg);
-          border: 1px solid var(--color-border);
-          border-radius: var(--radius);
-          padding: 12px 14px;
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-        }
-
-        .ideas-title {
-          font-size: 11px;
-          font-weight: 600;
-          color: var(--color-text-secondary);
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-        }
-
-        .ideas-grid {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 6px;
-        }
-
-        .idea-chip {
-          padding: 5px 12px;
-          border-radius: var(--radius-pill);
-          background: var(--color-surface);
-          border: 1px solid var(--color-border);
-          color: var(--color-text-primary);
-          font-size: 12px;
-          font-weight: 500;
-          cursor: pointer;
-          transition: all var(--transition);
-        }
-
-        .idea-chip:hover {
-          border-color: var(--color-primary-start);
-          color: var(--color-primary-start);
-        }
-
-        .prompt-container {
-          position: relative;
-        }
-
-        .step-prompt-textarea {
-          width: 100%;
-          background: var(--color-bg);
-          border: 1px solid var(--color-border-input);
-          border-radius: var(--radius-card);
-          padding: 14px 16px;
-          font-family: var(--font-body);
-          font-size: 14px;
-          color: var(--color-text-primary);
-          line-height: 1.6;
-          resize: vertical;
-          outline: none;
-          transition: border-color var(--transition);
-        }
-
-        .step-prompt-textarea:focus {
-          border-color: var(--color-primary-start);
-          background: var(--color-surface);
-        }
-
-        .prompt-footer {
-          display: flex;
-          justify-content: flex-end;
-          margin-top: 6px;
-        }
-
-        .prompt-counter {
-          font-size: 11px;
-          font-family: var(--font-mono);
-          color: var(--color-text-muted);
-        }
-
-        .prompt-counter.warning {
-          color: var(--color-error);
-        }
-
-        /* Step 3 Platform Grid */
-        .platform-selection-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-          gap: 10px;
-        }
-
-        .platform-card-item {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 10px 12px;
-          border-radius: var(--radius);
-          border: 1px solid var(--color-border);
-          background: var(--color-surface);
-          cursor: pointer;
-          transition: all 150ms ease;
-          text-align: left;
-        }
-
-        .platform-card-item:hover:not(.locked) {
-          border-color: var(--color-border-input);
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-        }
-
-        .platform-card-item.selected {
-          border-color: var(--platform-brand, var(--color-primary-start));
-          background: color-mix(in srgb, var(--platform-brand, var(--color-primary-start)) 8%, var(--color-surface));
-        }
-
-        .platform-card-item.locked {
-          opacity: 0.5;
-          cursor: not-allowed;
-          background: var(--color-bg);
-        }
-
-        .platform-card-left {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          min-width: 0;
-        }
-
-        .platform-card-icon-wrap {
+        .thumb-delete-btn {
+          position: absolute;
+          top: 2px;
+          right: 2px;
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          background: rgba(0, 0, 0, 0.85);
+          color: white;
+          border: none;
           display: flex;
           align-items: center;
           justify-content: center;
-          flex-shrink: 0;
+          cursor: pointer;
+          z-index: 2;
+          transition: background var(--transition);
         }
 
-        .platform-card-name {
+        .thumb-delete-btn:hover {
+          background: var(--color-error);
+        }
+
+        .gallery-add-tile {
+          width: 120px;
+          height: 72px;
+          border-radius: var(--radius-sm);
+          border: 1.5px dashed var(--color-border-input);
+          background: rgba(255, 255, 255, 0.04);
+          color: var(--color-primary-start);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 4px;
+          font-size: 11.5px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: all var(--transition);
+        }
+
+        .gallery-add-tile:hover {
+          border-color: var(--color-primary-start);
+          background: var(--color-nav-active-bg);
+        }
+
+        .dropzone-strip {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 10px 14px;
+          background: var(--color-surface-inset);
+          border: 1px dashed var(--color-border-input);
+          border-radius: var(--radius);
+          box-shadow: var(--shadow-inset);
+          transition: all var(--transition);
+        }
+
+        .dropzone-strip.dragover, .dropzone-strip:hover {
+          border-color: var(--color-primary-start);
+          background: rgba(56, 189, 248, 0.06);
+        }
+
+        .dropzone-strip-left {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .dropzone-strip-text {
+          font-size: 13px;
+          color: var(--color-text-secondary);
+        }
+
+        .dropzone-strip-actions {
+          display: flex;
+          gap: 8px;
+        }
+
+        .btn-attach-pill {
+          font-size: 12px;
+          font-weight: 600;
+          color: var(--color-primary-start);
+          background: rgba(255, 255, 255, 0.06);
+          border: 1px solid var(--color-border);
+          padding: 4px 10px;
+          border-radius: var(--radius-pill);
+          cursor: pointer;
+          transition: all var(--transition);
+        }
+
+        .btn-attach-pill:hover {
+          border-color: var(--color-primary-start);
+          background: var(--color-nav-active-bg);
+        }
+
+        /* Clean Studio Canvas Footer & Primary CTA */
+        .canvas-footer-bar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding-top: 8px;
+        }
+
+        .canvas-footer-left {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .canvas-char-counter {
+          font-family: var(--font-mono);
+          font-size: 11.5px;
+          color: var(--color-text-muted);
+        }
+
+        .canvas-char-counter.warning { color: var(--color-error); }
+
+        .canvas-shortcut-hint {
+          display: inline-flex;
+          align-items: center;
+          gap: 3px;
+          font-size: 11px;
+          font-weight: 600;
+          color: #64748B;
+          background: rgba(255, 255, 255, 0.05);
+          padding: 2px 6px;
+          border-radius: 4px;
+        }
+
+        .generate-main-btn {
+          height: 44px;
+          padding: 0 24px;
+          font-size: 14.5px;
+          font-weight: 800;
+        }
+
+        /* Categorized Platform Selector Card */
+        .studio-platforms-card {
+          padding: 24px;
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+
+        .platforms-card-header {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 16px;
+        }
+
+        .platforms-header-title h3 {
+          font-size: 17px;
+          font-weight: 700;
+          color: var(--color-text-primary);
+        }
+
+        .platforms-header-title p {
+          font-size: 13px;
+          color: var(--color-text-secondary);
+          margin-top: 2px;
+        }
+
+        .platforms-header-actions {
+          display: flex;
+          gap: 8px;
+        }
+
+        .platform-category-tabs {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          overflow-x: auto;
+          padding-bottom: 4px;
+        }
+
+        .cat-tab-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 6px 12px;
+          border-radius: var(--radius-pill);
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid var(--color-border);
+          color: var(--color-text-secondary);
           font-size: 12.5px;
+          font-weight: 600;
+          cursor: pointer;
+          white-space: nowrap;
+          transition: all var(--transition);
+        }
+
+        .cat-tab-btn.active {
+          background: var(--color-nav-active-bg);
+          color: var(--color-primary-start);
+          border-color: rgba(56, 189, 248, 0.4);
+        }
+
+        .tab-count-chip {
+          font-size: 10px;
+          padding: 1px 6px;
+          border-radius: 99px;
+          background: rgba(255, 255, 255, 0.10);
+        }
+
+        .studio-platform-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+          gap: 10px;
+        }
+
+        /* Liquid Water Glass Platform Pill */
+        .studio-platform-pill {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 10px 14px;
+          border-radius: var(--radius-md);
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          background: rgba(255, 255, 255, 0.04);
+          backdrop-filter: blur(14px);
+          cursor: pointer;
+          transition: all var(--transition);
+          text-align: left;
+        }
+
+        .studio-platform-pill:hover:not(.locked) {
+          border-color: rgba(14, 165, 233, 0.50);
+          background: rgba(255, 255, 255, 0.10);
+          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 4px 16px rgba(14, 165, 233, 0.15);
+          transform: translateY(-2px);
+        }
+
+        /* Clean Selected State: Illuminated Sky Blue Rain Glow */
+        .studio-platform-pill.selected {
+          border-color: rgba(14, 165, 233, 0.60);
+          background: rgba(14, 165, 233, 0.16);
+          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.30), 0 6px 20px rgba(14, 165, 233, 0.20);
+        }
+
+        .studio-platform-pill.locked {
+          opacity: 0.4;
+          cursor: not-allowed;
+          background: rgba(255, 255, 255, 0.02);
+        }
+
+        .pill-left {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          min-width: 0;
+        }
+
+        .pill-name {
+          font-size: 13px;
           font-weight: 600;
           color: var(--color-text-primary);
           white-space: nowrap;
@@ -864,84 +1074,26 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
           text-overflow: ellipsis;
         }
 
-        .platform-card-right {
-          display: flex;
-          align-items: center;
-          flex-shrink: 0;
-          margin-left: 6px;
-        }
+        .pill-right { flex-shrink: 0; }
 
-        .platform-card-checkbox {
-          width: 16px;
-          height: 16px;
+        .pill-check {
+          width: 18px;
+          height: 18px;
           border-radius: 4px;
           border: 1.5px solid var(--color-text-muted);
           display: flex;
           align-items: center;
           justify-content: center;
-          transition: all 150ms ease;
-          color: white;
-        }
-
-        .platform-card-checkbox.checked {
-          background: var(--platform-brand, var(--color-primary-start));
-          border-color: var(--platform-brand, var(--color-primary-start));
-        }
-
-        .platform-card-lock {
-          color: var(--color-text-muted);
-          display: flex;
-          align-items: center;
-        }
-
-        .platform-expand-row {
-          display: flex;
-          justify-content: center;
-          margin-top: 14px;
-        }
-
-        .platform-expand-btn {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          padding: 8px 16px;
-          border-radius: var(--radius-pill);
-          border: 1px solid var(--color-border-input);
-          background: var(--color-surface);
-          color: var(--color-text-secondary);
-          font-size: 12.5px;
-          font-weight: 600;
-          cursor: pointer;
+          color: #0F172A;
           transition: all var(--transition);
         }
 
-        .platform-expand-btn:hover {
+        .pill-check.checked {
+          background: var(--color-primary-start);
           border-color: var(--color-primary-start);
-          color: var(--color-primary-start);
         }
 
-        @media (max-width: 640px) {
-          .step-card {
-            padding: 16px 14px;
-            gap: 12px;
-          }
-          .step-panel-title {
-            font-size: 19px;
-          }
-          .step-panel-subtitle {
-            font-size: 13px;
-          }
-          .platform-selection-grid {
-            grid-template-columns: repeat(2, 1fr);
-            gap: 8px;
-          }
-          .platform-card-item {
-            padding: 8px 10px;
-          }
-          .platform-card-name {
-            font-size: 11.5px;
-          }
-        }
+        .pill-lock-icon { color: var(--color-text-muted); }
       `}</style>
     </div>
   )

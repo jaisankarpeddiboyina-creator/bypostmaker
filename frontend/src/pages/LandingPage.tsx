@@ -85,37 +85,49 @@ export default function LandingPage() {
 
       {/* Hero */}
       <section className="hero">
-        <div className="hero-inner">
-          <div className="hero-badge">
-            <Sparkles size={12} />
-            <span>30+ platforms · One prompt</span>
+        <div className="hero-inner-grid">
+          <div className="hero-content">
+            <div className="hero-badge">
+              <span className="hero-badge-dot" />
+              <Sparkles size={13} className="text-primary" />
+              <span>30+ Platforms · One Prompt</span>
+            </div>
+
+            <h1 className="hero-title">
+              Write once.<br />
+              Generate <span className="hero-accent">everywhere.</span>
+            </h1>
+
+            <p className="hero-sub">
+              Describe what you want to share. PostMaker generates
+              platform-perfect content for every social network
+              and packages it into a ready-to-use content kit.
+            </p>
+
+            <div className="hero-cta-row">
+              <button className="btn hero-btn-primary" onClick={handleCTA}>
+                <Sparkles size={16} />
+                {user ? 'Open PostMaker Studio' : 'Start free — no card needed'}
+              </button>
+              <span className="hero-cta-note">5 free generations · Instant ZIP download</span>
+            </div>
+
+            {/* Platform ticker */}
+            <div className="platform-ticker">
+              <div className="ticker-track">
+                {[...PLATFORMS_PREVIEW, ...PLATFORMS_PREVIEW].map((name, i) => (
+                  <div key={i} className="ticker-item">{name}</div>
+                ))}
+              </div>
+            </div>
           </div>
 
-          <h1 className="hero-title">
-            Write once.<br />
-            Generate <span className="hero-accent">everywhere.</span>
-          </h1>
-
-          <p className="hero-sub">
-            Describe what you want to share. PostMaker generates
-            platform-perfect content for every social network
-            and packages it into a ready-to-use content kit.
-          </p>
-
-          <div className="hero-cta-row">
-            <button className="btn hero-btn-primary" onClick={handleCTA}>
-              <Sparkles size={16} />
-              {user ? 'Open PostMaker' : 'Start free — no card needed'}
-            </button>
-            <span className="hero-cta-note">5 free generations · No credit card</span>
-          </div>
-
-          {/* Platform ticker */}
-          <div className="platform-ticker">
-            <div className="ticker-track">
-              {[...PLATFORMS_PREVIEW, ...PLATFORMS_PREVIEW].map((name, i) => (
-                <div key={i} className="ticker-item">{name}</div>
-              ))}
+          {/* Hero Visual Showcase Card */}
+          <div className="hero-visual-card">
+            <img src="/assets/hero_megaphone.png" alt="PostMaker Multi-Platform Engine" className="hero-showcase-img" />
+            <div className="hero-visual-badge">
+              <Sparkles size={14} className="sparkle-icon" />
+              <span>Broadcast to 30+ Social Networks</span>
             </div>
           </div>
         </div>
@@ -203,6 +215,22 @@ export default function LandingPage() {
                 <p className="feature-desc">{f.desc}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Social Orbs Ecosystem Banner */}
+      <section className="section social-orbs-section">
+        <div className="section-inner social-orbs-inner">
+          <div className="social-orbs-text">
+            <div className="section-label">MULTI-PLATFORM POWER</div>
+            <h2 className="section-title">One Engine. 30+ Social Networks.</h2>
+            <p className="social-orbs-desc">
+              From X/Twitter long-form threads and LinkedIn executive carousels to TikTok short-form hooks and Reddit posts — PostMaker formats and styles every post natively for its target audience.
+            </p>
+          </div>
+          <div className="social-orbs-img-wrapper">
+            <img src="/assets/social_orbs.png" alt="Supported Social Media Networks" className="social-orbs-img" />
           </div>
         </div>
       </section>
@@ -358,7 +386,7 @@ export default function LandingPage() {
           min-height: 100vh;
           overflow-y: auto;
           overflow-x: hidden;
-          background: var(--bg);
+          background: transparent;
         }
 
         /* Nav */
@@ -366,9 +394,10 @@ export default function LandingPage() {
           position: sticky;
           top: 0;
           z-index: 100;
-          border-bottom: 1px solid var(--border);
-          background: rgba(8,8,8,0.85);
-          backdrop-filter: blur(12px);
+          border-bottom: 1px solid var(--color-border);
+          background: var(--color-nav-bg);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
         }
         .landing-nav-inner {
           max-width: 1100px;
@@ -404,92 +433,171 @@ export default function LandingPage() {
 
         /* Hero */
         .hero {
-          padding: 100px 24px 80px;
-          text-align: center;
+          padding: 80px 24px 60px;
           position: relative;
           overflow: hidden;
         }
-        .hero::before {
-          content: '';
-          position: absolute;
-          top: -200px;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 800px;
-          height: 600px;
-          background: radial-gradient(ellipse, rgba(124,58,237,0.12) 0%, transparent 70%);
-          pointer-events: none;
-        }
-        .hero-inner {
-          max-width: 700px;
+        .hero-inner-grid {
+          max-width: 1200px;
           margin: 0 auto;
-          position: relative;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 48px;
+          align-items: center;
+        }
+        .hero-content {
+          text-align: left;
         }
         .hero-badge {
           display: inline-flex;
           align-items: center;
-          gap: 6px;
-          padding: 5px 14px;
-          border: 1px solid rgba(124,58,237,0.3);
+          gap: 8px;
+          padding: 6px 16px;
+          border: 1px solid rgba(56, 189, 248, 0.40);
           border-radius: 99px;
-          background: var(--accent-subtle);
-          color: var(--accent);
-          font-size: 12px;
-          font-weight: 600;
-          margin-bottom: 28px;
+          background: rgba(56, 189, 248, 0.14);
+          color: var(--color-primary-start);
+          font-size: 12.5px;
+          font-weight: 700;
+          margin-bottom: 24px;
           letter-spacing: 0.02em;
+          box-shadow: 0 0 20px rgba(56, 189, 248, 0.25);
+        }
+        .hero-badge-dot {
+          width: 7px;
+          height: 7px;
+          border-radius: 50%;
+          background: var(--color-primary-start);
+          box-shadow: 0 0 8px var(--color-primary-start);
+          animation: pulseDot 1.5s infinite ease-in-out;
         }
         .hero-title {
           font-family: var(--font-display);
-          font-size: clamp(48px, 8vw, 76px);
+          font-size: clamp(40px, 5vw, 64px);
           font-weight: 800;
           color: var(--text-1);
-          line-height: 1.0;
-          margin-bottom: 24px;
+          line-height: 1.05;
+          margin-bottom: 20px;
           letter-spacing: -0.04em;
         }
         .hero-accent {
-          background: linear-gradient(135deg, #7c3aed, #a855f7);
+          background: linear-gradient(135deg, #38BDF8 0%, #EC4899 50%, #FBBF24 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
         }
         .hero-sub {
-          font-size: 18px;
+          font-size: 17px;
           color: var(--text-2);
-          line-height: 1.7;
-          margin-bottom: 36px;
-          max-width: 540px;
-          margin-left: auto;
-          margin-right: auto;
+          line-height: 1.65;
+          margin-bottom: 32px;
+          max-width: 520px;
         }
         .hero-cta-row {
           display: flex;
           align-items: center;
-          justify-content: center;
           gap: 16px;
-          margin-bottom: 48px;
+          margin-bottom: 36px;
           flex-wrap: wrap;
         }
         .hero-btn-primary {
           height: 48px;
           padding: 0 28px;
           font-size: 15px;
-          font-weight: 600;
-          background: var(--accent);
-          color: white;
+          font-weight: 700;
+          background: var(--gradient-primary);
+          color: #0A101D;
           border: none;
-          border-radius: var(--radius-lg);
+          border-radius: var(--radius-pill);
           cursor: pointer;
           display: flex;
           align-items: center;
           gap: 8px;
+          box-shadow: 0 10px 28px rgba(56, 189, 248, 0.50);
           transition: all var(--transition);
         }
-        .hero-btn-primary:hover { background: var(--accent-dim); transform: translateY(-1px); }
+        .hero-btn-primary:hover { filter: brightness(1.15); transform: translateY(-1px); }
         .hero-cta-note {
           font-size: 13px;
           color: var(--text-3);
+        }
+
+        /* Hero Visual Card */
+        .hero-visual-card {
+          position: relative;
+          background: var(--color-surface);
+          backdrop-filter: blur(24px);
+          -webkit-backdrop-filter: blur(24px);
+          border: 1px solid var(--color-border);
+          border-radius: var(--radius-card);
+          padding: 16px;
+          box-shadow: var(--shadow-card);
+          overflow: hidden;
+          transition: transform var(--transition);
+        }
+        .hero-visual-card:hover {
+          transform: translateY(-4px);
+          border-color: var(--color-border-hover);
+          box-shadow: var(--shadow-card-hover);
+        }
+        .hero-showcase-img {
+          width: 100%;
+          height: auto;
+          border-radius: 16px;
+          display: block;
+          object-fit: cover;
+        }
+        .hero-visual-badge {
+          position: absolute;
+          bottom: 28px;
+          left: 50%;
+          transform: translateX(-50%);
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 18px;
+          background: rgba(11, 16, 28, 0.85);
+          backdrop-filter: blur(16px);
+          border: 1px solid var(--color-border);
+          border-radius: var(--radius-pill);
+          color: #FFF;
+          font-size: 13px;
+          font-weight: 700;
+          box-shadow: 0 12px 32px rgba(0, 0, 0, 0.60);
+          white-space: nowrap;
+        }
+        .sparkle-icon { color: #FBBF24; }
+
+        /* Social Orbs Section */
+        .social-orbs-section {
+          padding: 60px 24px;
+        }
+        .social-orbs-inner {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 40px;
+          align-items: center;
+          background: var(--color-surface);
+          backdrop-filter: blur(28px);
+          -webkit-backdrop-filter: blur(28px);
+          border: 1px solid var(--color-border);
+          border-radius: var(--radius-card);
+          padding: 40px;
+          box-shadow: var(--shadow-card);
+        }
+        .social-orbs-text { text-align: left; }
+        .social-orbs-desc { font-size: 15px; color: var(--text-2); line-height: 1.65; margin-top: 12px; }
+        .social-orbs-img-wrapper { overflow: hidden; border-radius: 18px; }
+        .social-orbs-img { width: 100%; height: auto; border-radius: 18px; display: block; object-fit: cover; }
+
+        @media (max-width: 900px) {
+          .hero-inner-grid, .social-orbs-inner {
+            grid-template-columns: 1fr;
+            text-align: center;
+          }
+          .hero-content, .social-orbs-text { text-align: center; }
+          .hero-sub { margin-left: auto; margin-right: auto; }
+          .hero-cta-row { justify-content: center; }
         }
 
         /* Platform ticker */

@@ -301,7 +301,7 @@ export default function AuthPage({ mode }: AuthPageProps) {
       <style>{`
         .auth-page {
           min-height: 100vh;
-          background: var(--bg);
+          background: transparent;
           display: grid;
           place-items: center;
           padding: var(--space-6) var(--space-4);

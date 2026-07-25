@@ -396,9 +396,9 @@ export function ResultsView() {
 
         .results-cards-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(360px, 470px));
+          grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
           justify-content: center;
-          gap: 32px;
+          gap: 24px;
           align-items: flex-start;
           width: 100%;
           max-width: 1500px;
