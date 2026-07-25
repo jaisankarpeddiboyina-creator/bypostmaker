@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import {
-  Copy, Download, MessageSquare, Check, Heart, Repeat, Share2, Bookmark, Sparkles, MoreHorizontal
+  MessageSquare, Heart, Repeat, Share2, Bookmark, MoreHorizontal
 } from 'lucide-react'
 import { PLATFORM_MAP } from '@@config/platforms'
 import { useAppStore } from '../../store/app'
-import { PlatformIcon } from '../PlatformIcon'
 import { generateClientZip, sanitize } from '../../lib/downloadKit'
 import type { CardProps } from './types'
+import { UnifiedCardShell } from './UnifiedCardShell'
 
 function FormattedContent({ content, linkColor }: { content: string; linkColor?: string }) {
   const color = linkColor || '#1D9BF0'
@@ -143,34 +143,24 @@ export function TwitterCard({ platformId, post, campaignId, imageFiles, videoFil
   const shareUrl = platform?.shareUrl(post.content, {})
   const charLimit = platform?.charLimit || 280
   const charCount = post.content.length
-  const isOverLimit = charCount > charLimit
 
   return (
-    <div className="tw-card-wrapper">
-      {/* Top Control Toolbar */}
-      <div className="tw-control-bar">
-        <div className="tw-control-platform">
-          <PlatformIcon id="twitter" size={15} color="#1DA1F2" />
-          <span className="tw-control-title">X (Twitter)</span>
-          <span className="tw-ready-badge">• Ready</span>
-          {post.edited && <span className="pc-edited">edited</span>}
-        </div>
-        <div className="tw-control-actions">
-          <button className="tw-tool-btn" onClick={onOpenRefinement} title="Refine with AI">
-            <Sparkles size={12} color="#1DA1F2" />
-            <span>Refine</span>
-          </button>
-          <button className={`tw-tool-btn ${copied ? 'copied' : ''}`} onClick={handleCopy} title="Copy tweet">
-            {copied ? <Check size={12} color="#10B981" /> : <Copy size={12} />}
-            <span>{copied ? 'Copied' : 'Copy'}</span>
-          </button>
-          <button className="tw-tool-btn" onClick={handleDownload} disabled={downloading} title="Download kit">
-            <Download size={12} />
-            <span>Kit</span>
-          </button>
-        </div>
-      </div>
-
+    <UnifiedCardShell
+      platformId="twitter"
+      platformName="X (Twitter)"
+      brandColor="#1DA1F2"
+      status="Ready"
+      edited={post.edited}
+      charCount={charCount}
+      charLimit={charLimit}
+      shareUrl={shareUrl}
+      copied={copied}
+      downloading={downloading}
+      isEditing={isEditing}
+      onRefine={onOpenRefinement}
+      onCopy={handleCopy}
+      onDownload={handleDownload}
+    >
       {/* Authentic 1:1 X (Twitter) Post Box */}
       <div className={`tw-post-box ${isEditing ? 'editing' : ''}`}>
         {/* Profile Header Row */}
@@ -267,41 +257,18 @@ export function TwitterCard({ platformId, post, campaignId, imageFiles, videoFil
         </div>
       </div>
 
-      {/* Bottom Control Toolbar */}
-      <div className="tw-footer-bar">
-        <span className={`tw-footer-chars ${isOverLimit ? 'over' : ''}`}>
-          {charCount}/{charLimit} chars
-        </span>
-        {isEditing && <span className="tw-footer-hint">⌘↵ save · Esc cancel</span>}
-        {!isEditing && shareUrl && post.content && (
-          <a href={shareUrl} target="_blank" rel="noopener noreferrer" className="tw-footer-share">
-            Share to X →
-          </a>
-        )}
-      </div>
-
       <style>{`
-        .tw-card-wrapper {
-          display: flex; flex-direction: column; width: 100%; max-width: 470px; margin: 0 auto; gap: 8px;
-        }
-        .tw-control-bar {
-          display: flex; align-items: center; justify-content: space-between; padding: 8px 12px;
-          background: #ffffff; border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.03);
-        }
-        .tw-control-platform { display: flex; align-items: center; gap: 6px; }
-        .tw-control-title { font-size: 12px; font-weight: 800; color: #1DA1F2; text-transform: uppercase; letter-spacing: 0.04em; }
-        .tw-ready-badge { font-size: 11px; font-weight: 600; color: var(--color-success); }
-        .tw-control-actions { display: flex; align-items: center; gap: 6px; }
-        .tw-tool-btn {
-          display: flex; align-items: center; gap: 4px; padding: 4px 10px; background: #F8F9FA; border: 1px solid #E9ECEF;
-          border-radius: 6px; font-size: 11px; font-weight: 600; color: #495057; cursor: pointer; transition: all 120ms ease;
-        }
-        .tw-tool-btn:hover { background: #E9ECEF; color: #212529; }
         .tw-post-box {
-          background: #ffffff; border: 1px solid #cfd9de; border-radius: 16px; padding: 14px; overflow: hidden; display: flex;
-          flex-direction: column; gap: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); transition: border-color 150ms ease;
+          background: #ffffff;
+          padding: 14px;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          transition: background 150ms ease;
         }
-        .tw-post-box.editing { border-color: #1d9bf0; box-shadow: 0 0 0 2px rgba(29, 155, 240, 0.15); }
+        .tw-post-box.editing {
+          background: #F8FAFC;
+        }
         .tw-profile-header { display: flex; align-items: center; gap: 10px; }
         .tw-avatar {
           width: 40px; height: 40px; border-radius: 50%; background: #1DA1F2; display: flex; align-items: center;
@@ -351,13 +318,7 @@ export function TwitterCard({ platformId, post, campaignId, imageFiles, videoFil
         .tw-action-item.like:hover, .tw-action-item.like.active { color: #f91880; }
         .tw-action-item.bookmark:hover, .tw-action-item.bookmark.active { color: #1d9bf0; }
         .tw-action-item.share:hover { color: #1d9bf0; }
-        .tw-footer-bar { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #ffffff; border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.03); }
-        .tw-footer-chars { font-size: 11.5px; color: #536471; font-family: var(--font-mono); font-weight: 500; white-space: nowrap; }
-        .tw-footer-chars.over { color: var(--color-error); font-weight: 700; }
-        .tw-footer-hint { font-size: 11px; color: #536471; white-space: nowrap; }
-        .tw-footer-share { font-size: 12.5px; font-weight: 700; color: #1DA1F2; text-decoration: none; }
-        .tw-footer-share:hover { text-decoration: underline; }
       `}</style>
-    </div>
+    </UnifiedCardShell>
   )
 }

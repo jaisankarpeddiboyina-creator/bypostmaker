@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import {
-  Copy, Download, Check, Sparkles, Triangle
+  Triangle
 } from 'lucide-react'
 import { PLATFORM_MAP } from '@@config/platforms'
 import { useAppStore } from '../../store/app'
-import { PlatformIcon } from '../PlatformIcon'
 import { generateClientZip, sanitize } from '../../lib/downloadKit'
 import type { CardProps } from './types'
+import { UnifiedCardShell } from './UnifiedCardShell'
 
 function FormattedContent({ content, linkColor }: { content: string; linkColor?: string }) {
   const color = linkColor || '#FF6600'
@@ -123,33 +123,26 @@ export function HackerNewsCard({ platformId, post, campaignId, imageFiles, video
   }
 
   const shareUrl = platform?.shareUrl(post.content, post.extraFields)
+  const charLimit = platform?.charLimit || 2000
+  const charCount = post.content.length
 
   return (
-    <div className="hn-card-wrapper">
-      {/* Top Control Toolbar */}
-      <div className="hn-control-bar">
-        <div className="hn-control-platform">
-          <PlatformIcon id="hackernews" size={15} color="#FF6600" />
-          <span className="hn-control-title">Hacker News</span>
-          <span className="hn-ready-badge">• Ready</span>
-          {post.edited && <span className="pc-edited">edited</span>}
-        </div>
-        <div className="hn-control-actions">
-          <button className="hn-tool-btn" onClick={onOpenRefinement} title="Refine with AI">
-            <Sparkles size={12} color="#FF6600" />
-            <span>Refine</span>
-          </button>
-          <button className={`hn-tool-btn ${copied ? 'copied' : ''}`} onClick={handleCopy} title="Copy post">
-            {copied ? <Check size={12} color="#10B981" /> : <Copy size={12} />}
-            <span>{copied ? 'Copied' : 'Copy'}</span>
-          </button>
-          <button className="hn-tool-btn" onClick={handleDownload} disabled={downloading} title="Download kit">
-            <Download size={12} />
-            <span>Kit</span>
-          </button>
-        </div>
-      </div>
-
+    <UnifiedCardShell
+      platformId="hackernews"
+      platformName="Hacker News"
+      brandColor="#FF6600"
+      status="Ready"
+      edited={post.edited}
+      charCount={charCount}
+      charLimit={charLimit}
+      shareUrl={shareUrl}
+      copied={copied}
+      downloading={downloading}
+      isEditing={isEditing}
+      onRefine={onOpenRefinement}
+      onCopy={handleCopy}
+      onDownload={handleDownload}
+    >
       {/* Authentic 1:1 Hacker News Retro Orange Container */}
       <div className={`hn-post-box ${isEditing ? 'editing' : ''}`}>
         {/* Hacker News Header Banner */}
@@ -211,42 +204,11 @@ export function HackerNewsCard({ platformId, post, campaignId, imageFiles, video
         </div>
       </div>
 
-      {/* Bottom Control Toolbar */}
-      <div className="hn-footer-bar">
-        {isEditing ? (
-          <span className="hn-footer-hint">⌘↵ save · Esc cancel</span>
-        ) : (
-          shareUrl && (
-            <a href={shareUrl} target="_blank" rel="noopener noreferrer" className="hn-footer-share">
-              Submit to Hacker News →
-            </a>
-          )
-        )}
-      </div>
-
       <style>{`
-        .hn-card-wrapper {
-          display: flex; flex-direction: column; width: 100%; max-width: 520px; margin: 0 auto; gap: 8px;
-        }
-        .hn-control-bar {
-          display: flex; align-items: center; justify-content: space-between; padding: 8px 12px;
-          background: #ffffff; border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.03);
-        }
-        .hn-control-platform { display: flex; align-items: center; gap: 6px; }
-        .hn-control-title { font-size: 12px; font-weight: 800; color: #FF6600; text-transform: uppercase; letter-spacing: 0.04em; }
-        .hn-ready-badge { font-size: 11px; font-weight: 600; color: var(--color-success); }
-        .hn-control-actions { display: flex; align-items: center; gap: 6px; }
-        .hn-tool-btn {
-          display: flex; align-items: center; gap: 4px; padding: 4px 10px; background: #F8F9FA; border: 1px solid #E9ECEF;
-          border-radius: 6px; font-size: 11px; font-weight: 600; color: #495057; cursor: pointer; transition: all 120ms ease;
-        }
-        .hn-tool-btn:hover { background: #E9ECEF; color: #212529; }
-
         .hn-post-box {
-          background: #f6f6ef; border: 1px solid #e5e5d8; border-radius: 8px; overflow: hidden;
-          display: flex; flex-direction: column; box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: border-color 150ms ease;
+          background: #f6f6ef; overflow: hidden; display: flex; flex-direction: column; transition: background 150ms ease;
         }
-        .hn-post-box.editing { border-color: #FF6600; box-shadow: 0 0 0 2px rgba(255, 102, 0, 0.2); }
+        .hn-post-box.editing { background: #ffffff; }
 
         .hn-banner {
           background: #ff6600; padding: 6px 10px; display: flex; align-items: center; gap: 8px; color: #222222; font-family: Verdana, Geneva, sans-serif;
@@ -284,12 +246,7 @@ export function HackerNewsCard({ platformId, post, campaignId, imageFiles, video
           color: #222222; background: #ffffff; border: 1.5px solid #FF6600; border-radius: 6px; padding: 10px;
           outline: none; resize: vertical; min-height: 90px; box-sizing: border-box;
         }
-
-        .hn-footer-bar { display: flex; align-items: center; justify-content: flex-end; padding: 8px 12px; background: #ffffff; border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.03); }
-        .hn-footer-hint { font-size: 11px; color: #666666; white-space: nowrap; }
-        .hn-footer-share { font-size: 12.5px; font-weight: 700; color: #FF6600; text-decoration: none; }
-        .hn-footer-share:hover { text-decoration: underline; }
       `}</style>
-    </div>
+    </UnifiedCardShell>
   )
 }

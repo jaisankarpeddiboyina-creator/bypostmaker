@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import {
-  Copy, Download, MessageSquare, Check, Triangle, Sparkles, TrendingUp
+  MessageSquare, Triangle, TrendingUp
 } from 'lucide-react'
 import { PLATFORM_MAP } from '@@config/platforms'
 import { useAppStore } from '../../store/app'
-import { PlatformIcon } from '../PlatformIcon'
 import { generateClientZip, sanitize } from '../../lib/downloadKit'
 import type { CardProps } from './types'
+import { UnifiedCardShell } from './UnifiedCardShell'
 
 function FormattedContent({ content, linkColor }: { content: string; linkColor?: string }) {
   const color = linkColor || '#0E2150'
@@ -125,34 +125,26 @@ export function IndieHackersCard({ platformId, post, campaignId, imageFiles, vid
   }
 
   const shareUrl = platform?.shareUrl(post.content, {})
+  const charLimit = platform?.charLimit || 20000
   const charCount = post.content.length
 
   return (
-    <div className="ih-card-wrapper">
-      {/* Top Control Toolbar */}
-      <div className="ih-control-bar">
-        <div className="ih-control-platform">
-          <PlatformIcon id="indiehackers" size={15} color="#0E2150" />
-          <span className="ih-control-title">Indie Hackers</span>
-          <span className="ih-ready-badge">• Ready</span>
-          {post.edited && <span className="pc-edited">edited</span>}
-        </div>
-        <div className="ih-control-actions">
-          <button className="ih-tool-btn" onClick={onOpenRefinement} title="Refine with AI">
-            <Sparkles size={12} color="#0E2150" />
-            <span>Refine</span>
-          </button>
-          <button className={`ih-tool-btn ${copied ? 'copied' : ''}`} onClick={handleCopy} title="Copy post">
-            {copied ? <Check size={12} color="#10B981" /> : <Copy size={12} />}
-            <span>{copied ? 'Copied' : 'Copy'}</span>
-          </button>
-          <button className="ih-tool-btn" onClick={handleDownload} disabled={downloading} title="Download kit">
-            <Download size={12} />
-            <span>Kit</span>
-          </button>
-        </div>
-      </div>
-
+    <UnifiedCardShell
+      platformId="indiehackers"
+      platformName="Indie Hackers"
+      brandColor="#0E2150"
+      status="Ready"
+      edited={post.edited}
+      charCount={charCount}
+      charLimit={charLimit}
+      shareUrl={shareUrl}
+      copied={copied}
+      downloading={downloading}
+      isEditing={isEditing}
+      onRefine={onOpenRefinement}
+      onCopy={handleCopy}
+      onDownload={handleDownload}
+    >
       {/* Authentic 1:1 Indie Hackers Builder Post Card */}
       <div className={`ih-post-box ${isEditing ? 'editing' : ''}`}>
         <div className="ih-card-header">
@@ -216,42 +208,11 @@ export function IndieHackersCard({ platformId, post, campaignId, imageFiles, vid
         </div>
       </div>
 
-      {/* Bottom Control Toolbar */}
-      <div className="ih-footer-bar">
-        <span className="ih-footer-chars">
-          {charCount} chars
-        </span>
-        {isEditing && <span className="ih-footer-hint">⌘↵ save · Esc cancel</span>}
-        {!isEditing && shareUrl && post.content && (
-          <a href={shareUrl} target="_blank" rel="noopener noreferrer" className="ih-footer-share">
-            Post on Indie Hackers →
-          </a>
-        )}
-      </div>
-
       <style>{`
-        .ih-card-wrapper {
-          display: flex; flex-direction: column; width: 100%; max-width: 520px; margin: 0 auto; gap: 8px;
-        }
-        .ih-control-bar {
-          display: flex; align-items: center; justify-content: space-between; padding: 8px 12px;
-          background: #ffffff; border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.03);
-        }
-        .ih-control-platform { display: flex; align-items: center; gap: 6px; }
-        .ih-control-title { font-size: 12px; font-weight: 800; color: #0E2150; text-transform: uppercase; letter-spacing: 0.04em; }
-        .ih-ready-badge { font-size: 11px; font-weight: 600; color: var(--color-success); }
-        .ih-control-actions { display: flex; align-items: center; gap: 6px; }
-        .ih-tool-btn {
-          display: flex; align-items: center; gap: 4px; padding: 4px 10px; background: #F8F9FA; border: 1px solid #E9ECEF;
-          border-radius: 6px; font-size: 11px; font-weight: 600; color: #495057; cursor: pointer; transition: all 120ms ease;
-        }
-        .ih-tool-btn:hover { background: #E9ECEF; color: #212529; }
-
         .ih-post-box {
-          background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px;
-          display: flex; flex-direction: column; gap: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); transition: border-color 150ms ease;
+          background: #ffffff; padding: 16px; display: flex; flex-direction: column; gap: 12px; transition: background 150ms ease;
         }
-        .ih-post-box.editing { border-color: #0E2150; box-shadow: 0 0 0 2px rgba(14, 33, 80, 0.2); }
+        .ih-post-box.editing { background: #F8FAFC; }
 
         .ih-author-row { display: flex; align-items: center; gap: 10px; }
         .ih-avatar {
@@ -292,13 +253,7 @@ export function IndieHackersCard({ platformId, post, campaignId, imageFiles, vid
         .ih-vote-btn.upvoted { background: #0E2150; color: #ffffff; border-color: #0E2150; }
 
         .ih-comment-link { display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: #64748b; }
-
-        .ih-footer-bar { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #ffffff; border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.03); }
-        .ih-footer-chars { font-size: 11.5px; color: #64748b; font-family: var(--font-mono); font-weight: 500; white-space: nowrap; }
-        .ih-footer-hint { font-size: 11px; color: #64748b; white-space: nowrap; }
-        .ih-footer-share { font-size: 12.5px; font-weight: 700; color: #0E2150; text-decoration: none; }
-        .ih-footer-share:hover { text-decoration: underline; }
       `}</style>
-    </div>
+    </UnifiedCardShell>
   )
 }

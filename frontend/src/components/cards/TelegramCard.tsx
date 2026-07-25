@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import {
-  Copy, Download, Check, Sparkles, Eye, Share2
+  Eye
 } from 'lucide-react'
 import { PLATFORM_MAP } from '@@config/platforms'
 import { useAppStore } from '../../store/app'
-import { PlatformIcon } from '../PlatformIcon'
 import { generateClientZip, sanitize } from '../../lib/downloadKit'
 import type { CardProps } from './types'
+import { UnifiedCardShell } from './UnifiedCardShell'
 
 function FormattedContent({ content, linkColor }: { content: string; linkColor?: string }) {
   const color = linkColor || '#2481CC'
@@ -125,31 +125,22 @@ export function TelegramCard({ platformId, post, campaignId, imageFiles, videoFi
   const charCount = post.content.length
 
   return (
-    <div className="tg-card-wrapper">
-      {/* Top Control Toolbar */}
-      <div className="tg-control-bar">
-        <div className="tg-control-platform">
-          <PlatformIcon id="telegram" size={15} color="#26A5E4" />
-          <span className="tg-control-title">Telegram</span>
-          <span className="tg-ready-badge">• Ready</span>
-          {post.edited && <span className="pc-edited">edited</span>}
-        </div>
-        <div className="tg-control-actions">
-          <button className="tg-tool-btn" onClick={onOpenRefinement} title="Refine with AI">
-            <Sparkles size={12} color="#26A5E4" />
-            <span>Refine</span>
-          </button>
-          <button className={`tg-tool-btn ${copied ? 'copied' : ''}`} onClick={handleCopy} title="Copy post">
-            {copied ? <Check size={12} color="#10B981" /> : <Copy size={12} />}
-            <span>{copied ? 'Copied' : 'Copy'}</span>
-          </button>
-          <button className="tg-tool-btn" onClick={handleDownload} disabled={downloading} title="Download kit">
-            <Download size={12} />
-            <span>Kit</span>
-          </button>
-        </div>
-      </div>
-
+    <UnifiedCardShell
+      platformId="telegram"
+      platformName="Telegram"
+      brandColor="#26A5E4"
+      status="Ready"
+      edited={post.edited}
+      charCount={charCount}
+      charLimit={charLimit}
+      shareUrl={shareUrl}
+      copied={copied}
+      downloading={downloading}
+      isEditing={isEditing}
+      onRefine={onOpenRefinement}
+      onCopy={handleCopy}
+      onDownload={handleDownload}
+    >
       {/* Authentic 1:1 Telegram Post Bubble */}
       <div className={`tg-post-box ${isEditing ? 'editing' : ''}`}>
         {/* Channel Name Line */}
@@ -199,42 +190,11 @@ export function TelegramCard({ platformId, post, campaignId, imageFiles, videoFi
         </div>
       </div>
 
-      {/* Bottom Control Toolbar */}
-      <div className="tg-footer-bar">
-        <span className="tg-footer-chars">
-          {charCount}/{charLimit} chars
-        </span>
-        {isEditing && <span className="tg-footer-hint">⌘↵ save · Esc cancel</span>}
-        {!isEditing && shareUrl && post.content && (
-          <a href={shareUrl} target="_blank" rel="noopener noreferrer" className="tg-footer-share">
-            Broadcast on Telegram →
-          </a>
-        )}
-      </div>
-
       <style>{`
-        .tg-card-wrapper {
-          display: flex; flex-direction: column; width: 100%; max-width: 440px; margin: 0 auto; gap: 8px;
-        }
-        .tg-control-bar {
-          display: flex; align-items: center; justify-content: space-between; padding: 8px 12px;
-          background: #ffffff; border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.03);
-        }
-        .tg-control-platform { display: flex; align-items: center; gap: 6px; }
-        .tg-control-title { font-size: 12px; font-weight: 800; color: #26A5E4; text-transform: uppercase; letter-spacing: 0.04em; }
-        .tg-ready-badge { font-size: 11px; font-weight: 600; color: var(--color-success); }
-        .tg-control-actions { display: flex; align-items: center; gap: 6px; }
-        .tg-tool-btn {
-          display: flex; align-items: center; gap: 4px; padding: 4px 10px; background: #F8F9FA; border: 1px solid #E9ECEF;
-          border-radius: 6px; font-size: 11px; font-weight: 600; color: #495057; cursor: pointer; transition: all 120ms ease;
-        }
-        .tg-tool-btn:hover { background: #E9ECEF; color: #212529; }
-
         .tg-post-box {
-          background: #ffffff; border: 1px solid #e0e0e0; border-radius: 14px; padding: 12px 14px;
-          display: flex; flex-direction: column; gap: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: border-color 150ms ease;
+          background: #ffffff; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; transition: background 150ms ease;
         }
-        .tg-post-box.editing { border-color: #26A5E4; box-shadow: 0 0 0 2px rgba(38, 165, 228, 0.2); }
+        .tg-post-box.editing { background: #F8FAFC; }
 
         .tg-channel-header { display: flex; align-items: center; gap: 4px; margin-bottom: 2px; }
         .tg-channel-name { font-weight: 700; font-size: 14px; color: #2481CC; }
@@ -267,13 +227,7 @@ export function TelegramCard({ platformId, post, campaignId, imageFiles, videoFi
         }
         .tg-views-count { font-weight: 500; }
         .tg-time { font-size: 11px; }
-
-        .tg-footer-bar { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #ffffff; border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.03); }
-        .tg-footer-chars { font-size: 11.5px; color: #707579; font-family: var(--font-mono); font-weight: 500; white-space: nowrap; }
-        .tg-footer-hint { font-size: 11px; color: #707579; white-space: nowrap; }
-        .tg-footer-share { font-size: 12.5px; font-weight: 700; color: #26A5E4; text-decoration: none; }
-        .tg-footer-share:hover { text-decoration: underline; }
       `}</style>
-    </div>
+    </UnifiedCardShell>
   )
 }

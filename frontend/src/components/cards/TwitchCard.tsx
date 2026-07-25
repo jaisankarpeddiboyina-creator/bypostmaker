@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import {
-  Copy, Download, Check, Users, Sparkles, Radio
+  Users, Radio
 } from 'lucide-react'
 import { PLATFORM_MAP } from '@@config/platforms'
 import { useAppStore } from '../../store/app'
-import { PlatformIcon } from '../PlatformIcon'
 import { generateClientZip, sanitize } from '../../lib/downloadKit'
 import type { CardProps } from './types'
+import { UnifiedCardShell } from './UnifiedCardShell'
 
 function FormattedContent({ content, linkColor }: { content: string; linkColor?: string }) {
   const color = linkColor || '#9146FF'
@@ -121,34 +121,26 @@ export function TwitchCard({ platformId, post, campaignId, imageFiles, videoFile
   }
 
   const shareUrl = platform?.shareUrl(post.content, {})
+  const charLimit = platform?.charLimit || 140
   const charCount = post.content.length
 
   return (
-    <div className="tw-card-wrapper">
-      {/* Top Control Toolbar */}
-      <div className="tw-control-bar">
-        <div className="tw-control-platform">
-          <PlatformIcon id="twitch" size={15} color="#9146FF" />
-          <span className="tw-control-title">Twitch</span>
-          <span className="tw-ready-badge">• Ready</span>
-          {post.edited && <span className="pc-edited">edited</span>}
-        </div>
-        <div className="tw-control-actions">
-          <button className="tw-tool-btn" onClick={onOpenRefinement} title="Refine with AI">
-            <Sparkles size={12} color="#9146FF" />
-            <span>Refine</span>
-          </button>
-          <button className={`tw-tool-btn ${copied ? 'copied' : ''}`} onClick={handleCopy} title="Copy stream title">
-            {copied ? <Check size={12} color="#10B981" /> : <Copy size={12} />}
-            <span>{copied ? 'Copied' : 'Copy'}</span>
-          </button>
-          <button className="tw-tool-btn" onClick={handleDownload} disabled={downloading} title="Download kit">
-            <Download size={12} />
-            <span>Kit</span>
-          </button>
-        </div>
-      </div>
-
+    <UnifiedCardShell
+      platformId="twitch"
+      platformName="Twitch"
+      brandColor="#9146FF"
+      status="Ready"
+      edited={post.edited}
+      charCount={charCount}
+      charLimit={charLimit}
+      shareUrl={shareUrl}
+      copied={copied}
+      downloading={downloading}
+      isEditing={isEditing}
+      onRefine={onOpenRefinement}
+      onCopy={handleCopy}
+      onDownload={handleDownload}
+    >
       {/* Authentic 1:1 Twitch Stream Card */}
       <div className={`tw-post-box ${isEditing ? 'editing' : ''}`}>
         {/* Stream Preview Thumbnail */}
@@ -214,42 +206,11 @@ export function TwitchCard({ platformId, post, campaignId, imageFiles, videoFile
         </div>
       </div>
 
-      {/* Bottom Control Toolbar */}
-      <div className="tw-footer-bar">
-        <span className="tw-footer-chars">
-          {charCount} chars
-        </span>
-        {isEditing && <span className="tw-footer-hint">⌘↵ save · Esc cancel</span>}
-        {!isEditing && shareUrl && post.content && (
-          <a href={shareUrl} target="_blank" rel="noopener noreferrer" className="tw-footer-share">
-            Go Live on Twitch →
-          </a>
-        )}
-      </div>
-
       <style>{`
-        .tw-card-wrapper {
-          display: flex; flex-direction: column; width: 100%; max-width: 480px; margin: 0 auto; gap: 8px;
-        }
-        .tw-control-bar {
-          display: flex; align-items: center; justify-content: space-between; padding: 8px 12px;
-          background: #ffffff; border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.03);
-        }
-        .tw-control-platform { display: flex; align-items: center; gap: 6px; }
-        .tw-control-title { font-size: 12px; font-weight: 800; color: #9146FF; text-transform: uppercase; letter-spacing: 0.04em; }
-        .tw-ready-badge { font-size: 11px; font-weight: 600; color: var(--color-success); }
-        .tw-control-actions { display: flex; align-items: center; gap: 6px; }
-        .tw-tool-btn {
-          display: flex; align-items: center; gap: 4px; padding: 4px 10px; background: #F8F9FA; border: 1px solid #E9ECEF;
-          border-radius: 6px; font-size: 11px; font-weight: 600; color: #495057; cursor: pointer; transition: all 120ms ease;
-        }
-        .tw-tool-btn:hover { background: #E9ECEF; color: #212529; }
-
         .tw-post-box {
-          background: #ffffff; border: 1px solid #e5e5e5; border-radius: 12px; padding: 14px;
-          display: flex; flex-direction: column; gap: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.04); transition: border-color 150ms ease;
+          background: #ffffff; padding: 14px; display: flex; flex-direction: column; gap: 12px; transition: background 150ms ease;
         }
-        .tw-post-box.editing { border-color: #9146FF; box-shadow: 0 0 0 2px rgba(145, 70, 255, 0.25); }
+        .tw-post-box.editing { background: #F8FAFC; }
 
         .tw-thumbnail-frame { position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 8px; overflow: hidden; background: #18181b; }
         .tw-stream-img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -293,13 +254,7 @@ export function TwitchCard({ platformId, post, campaignId, imageFiles, videoFile
         .tw-category-row { display: flex; align-items: center; gap: 6px; margin-top: 2px; }
         .tw-category-tag { font-size: 12px; font-weight: 600; color: #53535f; }
         .tw-tag-pill { font-size: 11px; font-weight: 600; color: #53535f; background: #f2f2f5; padding: 1px 6px; border-radius: 99px; }
-
-        .tw-footer-bar { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #ffffff; border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.03); }
-        .tw-footer-chars { font-size: 11.5px; color: #53535f; font-family: var(--font-mono); font-weight: 500; white-space: nowrap; }
-        .tw-footer-hint { font-size: 11px; color: #53535f; white-space: nowrap; }
-        .tw-footer-share { font-size: 12.5px; font-weight: 700; color: #9146FF; text-decoration: none; }
-        .tw-footer-share:hover { text-decoration: underline; }
       `}</style>
-    </div>
+    </UnifiedCardShell>
   )
 }

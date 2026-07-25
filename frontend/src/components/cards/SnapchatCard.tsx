@@ -1,12 +1,13 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import {
-  Copy, Download, Check, Sparkles, Send
+  Send
 } from 'lucide-react'
 import { PLATFORM_MAP } from '@@config/platforms'
 import { useAppStore } from '../../store/app'
 import { PlatformIcon } from '../PlatformIcon'
 import { generateClientZip, sanitize } from '../../lib/downloadKit'
 import type { CardProps } from './types'
+import { UnifiedCardShell } from './UnifiedCardShell'
 
 function FormattedContent({ content, linkColor }: { content: string; linkColor?: string }) {
   const color = linkColor || '#FFFC00'
@@ -121,34 +122,26 @@ export function SnapchatCard({ platformId, post, campaignId, imageFiles, videoFi
   }
 
   const shareUrl = platform?.shareUrl(post.content, {})
+  const charLimit = platform?.charLimit || 250
   const charCount = post.content.length
 
   return (
-    <div className="sc-card-wrapper">
-      {/* Top Control Toolbar */}
-      <div className="sc-control-bar">
-        <div className="sc-control-platform">
-          <PlatformIcon id="snapchat" size={15} color="#000000" />
-          <span className="sc-control-title">Snapchat</span>
-          <span className="sc-ready-badge">• Ready</span>
-          {post.edited && <span className="pc-edited">edited</span>}
-        </div>
-        <div className="sc-control-actions">
-          <button className="sc-tool-btn" onClick={onOpenRefinement} title="Refine with AI">
-            <Sparkles size={12} color="#000000" />
-            <span>Refine</span>
-          </button>
-          <button className={`sc-tool-btn ${copied ? 'copied' : ''}`} onClick={handleCopy} title="Copy caption">
-            {copied ? <Check size={12} color="#10B981" /> : <Copy size={12} />}
-            <span>{copied ? 'Copied' : 'Copy'}</span>
-          </button>
-          <button className="sc-tool-btn" onClick={handleDownload} disabled={downloading} title="Download kit">
-            <Download size={12} />
-            <span>Kit</span>
-          </button>
-        </div>
-      </div>
-
+    <UnifiedCardShell
+      platformId="snapchat"
+      platformName="Snapchat"
+      brandColor="#000000"
+      status="Ready"
+      edited={post.edited}
+      charCount={charCount}
+      charLimit={charLimit}
+      shareUrl={shareUrl}
+      copied={copied}
+      downloading={downloading}
+      isEditing={isEditing}
+      onRefine={onOpenRefinement}
+      onCopy={handleCopy}
+      onDownload={handleDownload}
+    >
       {/* Authentic 1:1 Snapchat 9:16 Story Frame */}
       <div className={`sc-post-box ${isEditing ? 'editing' : ''}`}>
         <div className="sc-story-frame">
@@ -206,42 +199,11 @@ export function SnapchatCard({ platformId, post, campaignId, imageFiles, videoFi
         </div>
       </div>
 
-      {/* Bottom Control Toolbar */}
-      <div className="sc-footer-bar">
-        <span className="sc-footer-chars">
-          {charCount} chars
-        </span>
-        {isEditing && <span className="sc-footer-hint">⌘↵ save · Esc cancel</span>}
-        {!isEditing && shareUrl && post.content && (
-          <a href={shareUrl} target="_blank" rel="noopener noreferrer" className="sc-footer-share">
-            Send Snap →
-          </a>
-        )}
-      </div>
-
       <style>{`
-        .sc-card-wrapper {
-          display: flex; flex-direction: column; width: 100%; max-width: 340px; margin: 0 auto; gap: 8px;
-        }
-        .sc-control-bar {
-          display: flex; align-items: center; justify-content: space-between; padding: 8px 12px;
-          background: #ffffff; border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.03);
-        }
-        .sc-control-platform { display: flex; align-items: center; gap: 6px; }
-        .sc-control-title { font-size: 12px; font-weight: 800; color: #000000; text-transform: uppercase; letter-spacing: 0.04em; }
-        .sc-ready-badge { font-size: 11px; font-weight: 600; color: var(--color-success); }
-        .sc-control-actions { display: flex; align-items: center; gap: 6px; }
-        .sc-tool-btn {
-          display: flex; align-items: center; gap: 4px; padding: 4px 8px; background: #F8F9FA; border: 1px solid #E9ECEF;
-          border-radius: 6px; font-size: 11px; font-weight: 600; color: #495057; cursor: pointer; transition: all 120ms ease;
-        }
-        .sc-tool-btn:hover { background: #E9ECEF; color: #212529; }
-
         .sc-post-box {
-          background: #000000; border: 1px solid #222222; border-radius: 20px; padding: 6px;
-          box-shadow: 0 4px 16px rgba(0,0,0,0.2); transition: border-color 150ms ease;
+          background: #000000; padding: 6px; display: flex; flex-direction: column; transition: background 150ms ease;
         }
-        .sc-post-box.editing { border-color: #FFFC00; box-shadow: 0 0 0 2px rgba(255, 252, 0, 0.4); }
+        .sc-post-box.editing { background: #111111; }
 
         .sc-story-frame {
           position: relative; width: 100%; aspect-ratio: 9 / 16; border-radius: 16px; overflow: hidden; background: #111111;
@@ -290,13 +252,7 @@ export function SnapchatCard({ platformId, post, campaignId, imageFiles, videoFi
           background: rgba(255,255,255,0.25); border-radius: 99px; padding: 8px 16px; color: #ffffff; font-size: 12px; font-weight: 600;
           backdrop-filter: blur(8px);
         }
-
-        .sc-footer-bar { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #ffffff; border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.03); }
-        .sc-footer-chars { font-size: 11.5px; color: #777777; font-family: var(--font-mono); font-weight: 500; white-space: nowrap; }
-        .sc-footer-hint { font-size: 11px; color: #777777; white-space: nowrap; }
-        .sc-footer-share { font-size: 12.5px; font-weight: 700; color: #000000; text-decoration: none; }
-        .sc-footer-share:hover { text-decoration: underline; }
       `}</style>
-    </div>
+    </UnifiedCardShell>
   )
 }

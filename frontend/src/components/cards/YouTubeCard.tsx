@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import {
-  Copy, Download, MessageSquare, Check, ThumbsUp, ThumbsDown, Share2, Sparkles, MoreVertical
+  MessageSquare, ThumbsUp, ThumbsDown, Share2, MoreVertical
 } from 'lucide-react'
 import { PLATFORM_MAP } from '@@config/platforms'
 import { useAppStore } from '../../store/app'
-import { PlatformIcon } from '../PlatformIcon'
 import { generateClientZip, sanitize } from '../../lib/downloadKit'
 import type { CardProps } from './types'
+import { UnifiedCardShell } from './UnifiedCardShell'
 
 function FormattedContent({ content, linkColor }: { content: string; linkColor?: string }) {
   const color = linkColor || '#3EA6FF'
@@ -145,31 +145,22 @@ export function YouTubeCard({ platformId, post, campaignId, imageFiles, videoFil
   const charCount = post.content.length
 
   return (
-    <div className="yt-card-wrapper">
-      {/* Top Control Toolbar */}
-      <div className="yt-control-bar">
-        <div className="yt-control-platform">
-          <PlatformIcon id="youtube" size={15} color="#FF0000" />
-          <span className="yt-control-title">YouTube</span>
-          <span className="yt-ready-badge">• Ready</span>
-          {post.edited && <span className="pc-edited">edited</span>}
-        </div>
-        <div className="yt-control-actions">
-          <button className="yt-tool-btn" onClick={onOpenRefinement} title="Refine with AI">
-            <Sparkles size={12} color="#FF0000" />
-            <span>Refine</span>
-          </button>
-          <button className={`yt-tool-btn ${copied ? 'copied' : ''}`} onClick={handleCopy} title="Copy post">
-            {copied ? <Check size={12} color="#10B981" /> : <Copy size={12} />}
-            <span>{copied ? 'Copied' : 'Copy'}</span>
-          </button>
-          <button className="yt-tool-btn" onClick={handleDownload} disabled={downloading} title="Download kit">
-            <Download size={12} />
-            <span>Kit</span>
-          </button>
-        </div>
-      </div>
-
+    <UnifiedCardShell
+      platformId="youtube"
+      platformName="YouTube"
+      brandColor="#FF0000"
+      status="Ready"
+      edited={post.edited}
+      charCount={charCount}
+      charLimit={charLimit}
+      shareUrl={shareUrl}
+      copied={copied}
+      downloading={downloading}
+      isEditing={isEditing}
+      onRefine={onOpenRefinement}
+      onCopy={handleCopy}
+      onDownload={handleDownload}
+    >
       {/* Authentic 1:1 YouTube Community Post Card */}
       <div className={`yt-post-box ${isEditing ? 'editing' : ''}`}>
         {/* Creator Header */}
@@ -249,42 +240,11 @@ export function YouTubeCard({ platformId, post, campaignId, imageFiles, videoFil
         </div>
       </div>
 
-      {/* Bottom Control Toolbar */}
-      <div className="yt-footer-bar">
-        <span className="yt-footer-chars">
-          {charCount}/{charLimit} chars
-        </span>
-        {isEditing && <span className="yt-footer-hint">⌘↵ save · Esc cancel</span>}
-        {!isEditing && shareUrl && post.content && (
-          <a href={shareUrl} target="_blank" rel="noopener noreferrer" className="yt-footer-share">
-            Post to YouTube →
-          </a>
-        )}
-      </div>
-
       <style>{`
-        .yt-card-wrapper {
-          display: flex; flex-direction: column; width: 100%; max-width: 520px; margin: 0 auto; gap: 8px;
-        }
-        .yt-control-bar {
-          display: flex; align-items: center; justify-content: space-between; padding: 8px 12px;
-          background: #ffffff; border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.03);
-        }
-        .yt-control-platform { display: flex; align-items: center; gap: 6px; }
-        .yt-control-title { font-size: 12px; font-weight: 800; color: #FF0000; text-transform: uppercase; letter-spacing: 0.04em; }
-        .yt-ready-badge { font-size: 11px; font-weight: 600; color: var(--color-success); }
-        .yt-control-actions { display: flex; align-items: center; gap: 6px; }
-        .yt-tool-btn {
-          display: flex; align-items: center; gap: 4px; padding: 4px 10px; background: #F8F9FA; border: 1px solid #E9ECEF;
-          border-radius: 6px; font-size: 11px; font-weight: 600; color: #495057; cursor: pointer; transition: all 120ms ease;
-        }
-        .yt-tool-btn:hover { background: #E9ECEF; color: #212529; }
-        
         .yt-post-box {
-          background: #ffffff; border: 1px solid #e5e5e5; border-radius: 12px; overflow: hidden;
-          display: flex; flex-direction: column; box-shadow: 0 2px 8px rgba(0,0,0,0.03); transition: border-color 150ms ease;
+          background: #ffffff; display: flex; flex-direction: column; transition: background 150ms ease;
         }
-        .yt-post-box.editing { border-color: #FF0000; box-shadow: 0 0 0 2px rgba(255, 0, 0, 0.15); }
+        .yt-post-box.editing { background: #F8FAFC; }
         
         .yt-profile-header { display: flex; align-items: center; gap: 12px; padding: 12px 16px 8px; }
         .yt-avatar {
@@ -333,13 +293,7 @@ export function YouTubeCard({ platformId, post, campaignId, imageFiles, videoFil
         .yt-action-btn:hover { background: #e5e5e5; }
         .yt-count { font-weight: 600; font-size: 12px; color: #0f0f0f; }
         .yt-action-text { font-size: 13px; font-weight: 500; color: #0f0f0f; }
-
-        .yt-footer-bar { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #ffffff; border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.03); }
-        .yt-footer-chars { font-size: 11.5px; color: #606060; font-family: var(--font-mono); font-weight: 500; white-space: nowrap; }
-        .yt-footer-hint { font-size: 11px; color: #606060; white-space: nowrap; }
-        .yt-footer-share { font-size: 12.5px; font-weight: 700; color: #FF0000; text-decoration: none; }
-        .yt-footer-share:hover { text-decoration: underline; }
       `}</style>
-    </div>
+    </UnifiedCardShell>
   )
 }

@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import {
-  Copy, Download, Check, Sparkles, Star, GitFork, Tag
+  Star, Tag
 } from 'lucide-react'
 import { PLATFORM_MAP } from '@@config/platforms'
 import { useAppStore } from '../../store/app'
-import { PlatformIcon } from '../PlatformIcon'
 import { generateClientZip, sanitize } from '../../lib/downloadKit'
 import type { CardProps } from './types'
+import { UnifiedCardShell } from './UnifiedCardShell'
 
 function FormattedContent({ content, linkColor }: { content: string; linkColor?: string }) {
   const color = linkColor || '#0969DA'
@@ -124,34 +124,26 @@ export function GitHubCard({ platformId, post, campaignId, imageFiles, videoFile
   }
 
   const shareUrl = platform?.shareUrl(post.content, {})
+  const charLimit = platform?.charLimit || 100000
   const charCount = post.content.length
 
   return (
-    <div className="gh-card-wrapper">
-      {/* Top Control Toolbar */}
-      <div className="gh-control-bar">
-        <div className="gh-control-platform">
-          <PlatformIcon id="github" size={15} color="#24292E" />
-          <span className="gh-control-title">GitHub</span>
-          <span className="gh-ready-badge">• Ready</span>
-          {post.edited && <span className="pc-edited">edited</span>}
-        </div>
-        <div className="gh-control-actions">
-          <button className="gh-tool-btn" onClick={onOpenRefinement} title="Refine with AI">
-            <Sparkles size={12} color="#24292E" />
-            <span>Refine</span>
-          </button>
-          <button className={`gh-tool-btn ${copied ? 'copied' : ''}`} onClick={handleCopy} title="Copy release">
-            {copied ? <Check size={12} color="#10B981" /> : <Copy size={12} />}
-            <span>{copied ? 'Copied' : 'Copy'}</span>
-          </button>
-          <button className="gh-tool-btn" onClick={handleDownload} disabled={downloading} title="Download kit">
-            <Download size={12} />
-            <span>Kit</span>
-          </button>
-        </div>
-      </div>
-
+    <UnifiedCardShell
+      platformId="github"
+      platformName="GitHub"
+      brandColor="#24292E"
+      status="Ready"
+      edited={post.edited}
+      charCount={charCount}
+      charLimit={charLimit}
+      shareUrl={shareUrl}
+      copied={copied}
+      downloading={downloading}
+      isEditing={isEditing}
+      onRefine={onOpenRefinement}
+      onCopy={handleCopy}
+      onDownload={handleDownload}
+    >
       {/* Authentic 1:1 GitHub Light Release Card */}
       <div className={`gh-post-box ${isEditing ? 'editing' : ''}`}>
         {/* Repo Header */}
@@ -210,42 +202,11 @@ export function GitHubCard({ platformId, post, campaignId, imageFiles, videoFile
         </div>
       </div>
 
-      {/* Bottom Control Toolbar */}
-      <div className="gh-footer-bar">
-        <span className="gh-footer-chars">
-          {charCount} chars
-        </span>
-        {isEditing && <span className="gh-footer-hint">⌘↵ save · Esc cancel</span>}
-        {!isEditing && shareUrl && post.content && (
-          <a href={shareUrl} target="_blank" rel="noopener noreferrer" className="gh-footer-share">
-            View on GitHub →
-          </a>
-        )}
-      </div>
-
       <style>{`
-        .gh-card-wrapper {
-          display: flex; flex-direction: column; width: 100%; max-width: 520px; margin: 0 auto; gap: 8px;
-        }
-        .gh-control-bar {
-          display: flex; align-items: center; justify-content: space-between; padding: 8px 12px;
-          background: #ffffff; border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.03);
-        }
-        .gh-control-platform { display: flex; align-items: center; gap: 6px; }
-        .gh-control-title { font-size: 12px; font-weight: 800; color: #24292E; text-transform: uppercase; letter-spacing: 0.04em; }
-        .gh-ready-badge { font-size: 11px; font-weight: 600; color: var(--color-success); }
-        .gh-control-actions { display: flex; align-items: center; gap: 6px; }
-        .gh-tool-btn {
-          display: flex; align-items: center; gap: 4px; padding: 4px 10px; background: #F8F9FA; border: 1px solid #E9ECEF;
-          border-radius: 6px; font-size: 11px; font-weight: 600; color: #495057; cursor: pointer; transition: all 120ms ease;
-        }
-        .gh-tool-btn:hover { background: #E9ECEF; color: #212529; }
-
         .gh-post-box {
-          background: #ffffff; border: 1px solid #d0d7de; border-radius: 10px; padding: 16px;
-          display: flex; flex-direction: column; gap: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); transition: border-color 150ms ease;
+          background: #ffffff; padding: 16px; display: flex; flex-direction: column; gap: 12px; transition: background 150ms ease;
         }
-        .gh-post-box.editing { border-color: #0969DA; box-shadow: 0 0 0 2px rgba(9, 105, 218, 0.2); }
+        .gh-post-box.editing { background: #F8FAFC; }
 
         .gh-repo-header { display: flex; align-items: center; justify-content: space-between; padding-bottom: 12px; border-bottom: 1px solid #d0d7de; }
         .gh-repo-path { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
@@ -279,13 +240,7 @@ export function GitHubCard({ platformId, post, campaignId, imageFiles, videoFile
           justify-content: center; color: #ffffff; font-weight: 700; font-size: 10px; flex-shrink: 0; overflow: hidden;
         }
         .gh-avatar-img { width: 100%; height: 100%; object-fit: cover; }
-
-        .gh-footer-bar { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #ffffff; border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.03); }
-        .gh-footer-chars { font-size: 11.5px; color: #57606a; font-family: var(--font-mono); font-weight: 500; white-space: nowrap; }
-        .gh-footer-hint { font-size: 11px; color: #57606a; white-space: nowrap; }
-        .gh-footer-share { font-size: 12.5px; font-weight: 700; color: #0969DA; text-decoration: none; }
-        .gh-footer-share:hover { text-decoration: underline; }
       `}</style>
-    </div>
+    </UnifiedCardShell>
   )
 }

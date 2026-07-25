@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import {
-  Copy, Download, MessageSquare, Check, Heart, Bookmark, Sparkles
+  MessageSquare, Heart, Bookmark
 } from 'lucide-react'
 import { PLATFORM_MAP } from '@@config/platforms'
 import { useAppStore } from '../../store/app'
-import { PlatformIcon } from '../PlatformIcon'
 import { generateClientZip, sanitize } from '../../lib/downloadKit'
 import type { CardProps } from './types'
+import { UnifiedCardShell } from './UnifiedCardShell'
 
 function FormattedContent({ content, linkColor }: { content: string; linkColor?: string }) {
   const color = linkColor || '#3B82F6'
@@ -141,34 +141,26 @@ export function DevToCard({ platformId, post, campaignId, imageFiles, videoFile,
   }
 
   const shareUrl = platform?.shareUrl(post.content, {})
+  const charLimit = platform?.charLimit || 100000
   const charCount = post.content.length
 
   return (
-    <div className="dev-card-wrapper">
-      {/* Top Control Toolbar */}
-      <div className="dev-control-bar">
-        <div className="dev-control-platform">
-          <PlatformIcon id="devto" size={15} color="#0A0A0A" />
-          <span className="dev-control-title">dev.to</span>
-          <span className="dev-ready-badge">• Ready</span>
-          {post.edited && <span className="pc-edited">edited</span>}
-        </div>
-        <div className="dev-control-actions">
-          <button className="dev-tool-btn" onClick={onOpenRefinement} title="Refine with AI">
-            <Sparkles size={12} color="#0A0A0A" />
-            <span>Refine</span>
-          </button>
-          <button className={`dev-tool-btn ${copied ? 'copied' : ''}`} onClick={handleCopy} title="Copy article">
-            {copied ? <Check size={12} color="#10B981" /> : <Copy size={12} />}
-            <span>{copied ? 'Copied' : 'Copy'}</span>
-          </button>
-          <button className="dev-tool-btn" onClick={handleDownload} disabled={downloading} title="Download kit">
-            <Download size={12} />
-            <span>Kit</span>
-          </button>
-        </div>
-      </div>
-
+    <UnifiedCardShell
+      platformId="devto"
+      platformName="dev.to"
+      brandColor="#0A0A0A"
+      status="Ready"
+      edited={post.edited}
+      charCount={charCount}
+      charLimit={charLimit}
+      shareUrl={shareUrl}
+      copied={copied}
+      downloading={downloading}
+      isEditing={isEditing}
+      onRefine={onOpenRefinement}
+      onCopy={handleCopy}
+      onDownload={handleDownload}
+    >
       {/* Authentic 1:1 dev.to Article Card Box */}
       <div className={`dev-post-box ${isEditing ? 'editing' : ''}`}>
         {/* Cover Image Frame */}
@@ -253,42 +245,11 @@ export function DevToCard({ platformId, post, campaignId, imageFiles, videoFile,
         </div>
       </div>
 
-      {/* Bottom Control Toolbar */}
-      <div className="dev-footer-bar">
-        <span className="dev-footer-chars">
-          {charCount} chars
-        </span>
-        {isEditing && <span className="dev-footer-hint">⌘↵ save · Esc cancel</span>}
-        {!isEditing && shareUrl && post.content && (
-          <a href={shareUrl} target="_blank" rel="noopener noreferrer" className="dev-footer-share">
-            Publish on dev.to →
-          </a>
-        )}
-      </div>
-
       <style>{`
-        .dev-card-wrapper {
-          display: flex; flex-direction: column; width: 100%; max-width: 540px; margin: 0 auto; gap: 8px;
-        }
-        .dev-control-bar {
-          display: flex; align-items: center; justify-content: space-between; padding: 8px 12px;
-          background: #ffffff; border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.03);
-        }
-        .dev-control-platform { display: flex; align-items: center; gap: 6px; }
-        .dev-control-title { font-size: 12px; font-weight: 800; color: #0A0A0A; text-transform: uppercase; letter-spacing: 0.04em; }
-        .dev-ready-badge { font-size: 11px; font-weight: 600; color: var(--color-success); }
-        .dev-control-actions { display: flex; align-items: center; gap: 6px; }
-        .dev-tool-btn {
-          display: flex; align-items: center; gap: 4px; padding: 4px 10px; background: #F8F9FA; border: 1px solid #E9ECEF;
-          border-radius: 6px; font-size: 11px; font-weight: 600; color: #495057; cursor: pointer; transition: all 120ms ease;
-        }
-        .dev-tool-btn:hover { background: #E9ECEF; color: #212529; }
-
         .dev-post-box {
-          background: #ffffff; border: 1px solid #d6d6d7; border-radius: 12px; overflow: hidden;
-          display: flex; flex-direction: column; box-shadow: 0 2px 10px rgba(0,0,0,0.04); transition: border-color 150ms ease;
+          background: #ffffff; display: flex; flex-direction: column; transition: background 150ms ease;
         }
-        .dev-post-box.editing { border-color: #3B82F6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2); }
+        .dev-post-box.editing { background: #F8FAFC; }
 
         .dev-cover-frame { width: 100%; aspect-ratio: 100 / 42; max-height: 220px; overflow: hidden; background: #f5f5f5; }
         .dev-cover-img { width: 100%; height: 100%; object-fit: cover; }
@@ -336,13 +297,7 @@ export function DevToCard({ platformId, post, campaignId, imageFiles, videoFile,
         .dev-read-time { font-size: 12px; color: #717171; }
         .dev-bookmark-btn { background: transparent; border: none; cursor: pointer; padding: 4px; border-radius: 4px; }
         .dev-bookmark-btn:hover { background: #f5f5f5; }
-
-        .dev-footer-bar { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #ffffff; border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.03); }
-        .dev-footer-chars { font-size: 11.5px; color: #717171; font-family: var(--font-mono); font-weight: 500; white-space: nowrap; }
-        .dev-footer-hint { font-size: 11px; color: #717171; white-space: nowrap; }
-        .dev-footer-share { font-size: 12.5px; font-weight: 700; color: #0A0A0A; text-decoration: none; }
-        .dev-footer-share:hover { text-decoration: underline; }
       `}</style>
-    </div>
+    </UnifiedCardShell>
   )
 }

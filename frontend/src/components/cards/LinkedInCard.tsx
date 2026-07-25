@@ -1,13 +1,12 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import {
-  Copy, Download, Check, Sparkles, MoreHorizontal, X, Globe,
-  ThumbsUp, MessageSquare, Repeat, Send, ChevronLeft, ChevronRight, Maximize2
+  X, Globe, ThumbsUp, MessageSquare, Repeat, Send, ChevronLeft, ChevronRight, Maximize2, MoreHorizontal
 } from 'lucide-react'
 import { PLATFORM_MAP } from '@@config/platforms'
 import { useAppStore } from '../../store/app'
-import { PlatformIcon } from '../PlatformIcon'
 import { generateClientZip, sanitize } from '../../lib/downloadKit'
 import type { CardProps } from './types'
+import { UnifiedCardShell } from './UnifiedCardShell'
 
 function FormattedContent({ content, linkColor }: { content: string; linkColor?: string }) {
   const color = linkColor || '#0a66c2'
@@ -67,7 +66,6 @@ export function LinkedInCard({ platformId, post, campaignId, imageFiles, videoFi
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const userName = user?.name || 'Your Brand'
-  const handleName = user?.name ? user.name.toLowerCase().replace(/\s+/g, '') : 'yourbrand'
 
   useEffect(() => {
     if (!platform || platform.maxImages === 0 || platform.imagePosition === 'none' || imageFiles.length === 0) {
@@ -145,34 +143,24 @@ export function LinkedInCard({ platformId, post, campaignId, imageFiles, videoFi
   const shareUrl = platform?.shareUrl(post.content, {})
   const charLimit = platform?.charLimit || 3000
   const charCount = post.content.length
-  const isOverLimit = charCount > charLimit
 
   return (
-    <div className="li-card-wrapper">
-      {/* Top Control Toolbar */}
-      <div className="li-control-bar">
-        <div className="li-control-platform">
-          <PlatformIcon id="linkedin" size={15} color="#0A66C2" />
-          <span className="li-control-title">LinkedIn</span>
-          <span className="li-ready-badge">• Ready</span>
-          {post.edited && <span className="pc-edited">edited</span>}
-        </div>
-        <div className="li-control-actions">
-          <button className="li-tool-btn" onClick={onOpenRefinement} title="Refine with AI">
-            <Sparkles size={12} color="#0A66C2" />
-            <span>Refine</span>
-          </button>
-          <button className={`li-tool-btn ${copied ? 'copied' : ''}`} onClick={handleCopy} title="Copy post">
-            {copied ? <Check size={12} color="#10B981" /> : <Copy size={12} />}
-            <span>{copied ? 'Copied' : 'Copy'}</span>
-          </button>
-          <button className="li-tool-btn" onClick={handleDownload} disabled={downloading} title="Download kit">
-            <Download size={12} />
-            <span>Kit</span>
-          </button>
-        </div>
-      </div>
-
+    <UnifiedCardShell
+      platformId="linkedin"
+      platformName="LinkedIn"
+      brandColor="#0A66C2"
+      status="Ready"
+      edited={post.edited}
+      charCount={charCount}
+      charLimit={charLimit}
+      shareUrl={shareUrl}
+      copied={copied}
+      downloading={downloading}
+      isEditing={isEditing}
+      onRefine={onOpenRefinement}
+      onCopy={handleCopy}
+      onDownload={handleDownload}
+    >
       {/* Authentic 1:1 LinkedIn Post Box */}
       <div className={`li-post-box ${isEditing ? 'editing' : ''}`}>
         {/* Activity Top Bar */}
@@ -314,41 +302,11 @@ export function LinkedInCard({ platformId, post, campaignId, imageFiles, videoFi
         </div>
       </div>
 
-      {/* Bottom Control Toolbar */}
-      <div className="li-footer-bar">
-        <span className={`li-footer-chars ${isOverLimit ? 'over' : ''}`}>
-          {charCount}/{charLimit} chars
-        </span>
-        {isEditing && <span className="li-footer-hint">⌘↵ save · Esc cancel</span>}
-        {!isEditing && shareUrl && post.content && (
-          <a href={shareUrl} target="_blank" rel="noopener noreferrer" className="li-footer-share">
-            Share to LinkedIn →
-          </a>
-        )}
-      </div>
-
       <style>{`
-        .li-card-wrapper {
-          display: flex; flex-direction: column; width: 100%; max-width: 540px; margin: 0 auto; gap: 8px;
-        }
-        .li-control-bar {
-          display: flex; align-items: center; justify-content: space-between; padding: 8px 12px;
-          background: #ffffff; border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.03);
-        }
-        .li-control-platform { display: flex; align-items: center; gap: 6px; }
-        .li-control-title { font-size: 12px; font-weight: 800; color: #0A66C2; text-transform: uppercase; letter-spacing: 0.04em; }
-        .li-ready-badge { font-size: 11px; font-weight: 600; color: var(--color-success); }
-        .li-control-actions { display: flex; align-items: center; gap: 6px; }
-        .li-tool-btn {
-          display: flex; align-items: center; gap: 4px; padding: 4px 10px; background: #F8F9FA; border: 1px solid #E9ECEF;
-          border-radius: 6px; font-size: 11px; font-weight: 600; color: #495057; cursor: pointer; transition: all 120ms ease;
-        }
-        .li-tool-btn:hover { background: #E9ECEF; color: #212529; }
         .li-post-box {
-          background: #ffffff; border: 1px solid #e0e0e0; border-radius: 10px; overflow: hidden; display: flex;
-          flex-direction: column; box-shadow: 0 2px 10px rgba(0,0,0,0.04); transition: border-color 150ms ease;
+          background: #ffffff; display: flex; flex-direction: column; transition: background 150ms ease;
         }
-        .li-post-box.editing { border-color: #0a66c2; box-shadow: 0 0 0 2px rgba(10, 102, 194, 0.15); }
+        .li-post-box.editing { background: #F8FAFC; }
         
         .li-activity-bar {
           display: flex; align-items: center; justify-content: space-between; padding: 10px 16px 4px;
@@ -436,14 +394,7 @@ export function LinkedInCard({ platformId, post, campaignId, imageFiles, videoFi
         .li-action-btn:hover { background: #f3f3f3; }
         .li-action-btn.liked { color: #0a66c2; }
         .li-action-btn.reposted { color: #0a66c2; }
-
-        .li-footer-bar { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #ffffff; border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.03); }
-        .li-footer-chars { font-size: 11.5px; color: #666666; font-family: var(--font-mono); font-weight: 500; white-space: nowrap; }
-        .li-footer-chars.over { color: var(--color-error); font-weight: 700; }
-        .li-footer-hint { font-size: 11px; color: #666666; white-space: nowrap; }
-        .li-footer-share { font-size: 12.5px; font-weight: 700; color: #0A66C2; text-decoration: none; }
-        .li-footer-share:hover { text-decoration: underline; }
       `}</style>
-    </div>
+    </UnifiedCardShell>
   )
 }

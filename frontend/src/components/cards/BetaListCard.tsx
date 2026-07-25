@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import {
-  Copy, Download, Check, Sparkles, Rocket
+  Rocket
 } from 'lucide-react'
 import { PLATFORM_MAP } from '@@config/platforms'
 import { useAppStore } from '../../store/app'
-import { PlatformIcon } from '../PlatformIcon'
 import { generateClientZip, sanitize } from '../../lib/downloadKit'
 import type { CardProps } from './types'
+import { UnifiedCardShell } from './UnifiedCardShell'
 
 function FormattedContent({ content, linkColor }: { content: string; linkColor?: string }) {
   const color = linkColor || '#FF5A5F'
@@ -126,34 +126,26 @@ export function BetaListCard({ platformId, post, campaignId, imageFiles, videoFi
   }
 
   const shareUrl = platform?.shareUrl(post.content, {})
+  const charLimit = platform?.charLimit || 140
   const charCount = post.content.length
 
   return (
-    <div className="bl-card-wrapper">
-      {/* Top Control Toolbar */}
-      <div className="bl-control-bar">
-        <div className="bl-control-platform">
-          <PlatformIcon id="betalist" size={15} color="#FF5A5F" />
-          <span className="bl-control-title">BetaList</span>
-          <span className="bl-ready-badge">• Ready</span>
-          {post.edited && <span className="pc-edited">edited</span>}
-        </div>
-        <div className="bl-control-actions">
-          <button className="bl-tool-btn" onClick={onOpenRefinement} title="Refine with AI">
-            <Sparkles size={12} color="#FF5A5F" />
-            <span>Refine</span>
-          </button>
-          <button className={`bl-tool-btn ${copied ? 'copied' : ''}`} onClick={handleCopy} title="Copy pitch">
-            {copied ? <Check size={12} color="#10B981" /> : <Copy size={12} />}
-            <span>{copied ? 'Copied' : 'Copy'}</span>
-          </button>
-          <button className="bl-tool-btn" onClick={handleDownload} disabled={downloading} title="Download kit">
-            <Download size={12} />
-            <span>Kit</span>
-          </button>
-        </div>
-      </div>
-
+    <UnifiedCardShell
+      platformId="betalist"
+      platformName="BetaList"
+      brandColor="#FF5A5F"
+      status="Ready"
+      edited={post.edited}
+      charCount={charCount}
+      charLimit={charLimit}
+      shareUrl={shareUrl}
+      copied={copied}
+      downloading={downloading}
+      isEditing={isEditing}
+      onRefine={onOpenRefinement}
+      onCopy={handleCopy}
+      onDownload={handleDownload}
+    >
       {/* Authentic 1:1 BetaList Startup Launch Card */}
       <div className={`bl-post-box ${isEditing ? 'editing' : ''}`}>
         {/* Startup Screenshot Frame */}
@@ -199,42 +191,11 @@ export function BetaListCard({ platformId, post, campaignId, imageFiles, videoFi
         </div>
       </div>
 
-      {/* Bottom Control Toolbar */}
-      <div className="bl-footer-bar">
-        <span className="bl-footer-chars">
-          {charCount} chars
-        </span>
-        {isEditing && <span className="bl-footer-hint">⌘↵ save · Esc cancel</span>}
-        {!isEditing && shareUrl && post.content && (
-          <a href={shareUrl} target="_blank" rel="noopener noreferrer" className="bl-footer-share">
-            Submit Startup →
-          </a>
-        )}
-      </div>
-
       <style>{`
-        .bl-card-wrapper {
-          display: flex; flex-direction: column; width: 100%; max-width: 480px; margin: 0 auto; gap: 8px;
-        }
-        .bl-control-bar {
-          display: flex; align-items: center; justify-content: space-between; padding: 8px 12px;
-          background: #ffffff; border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.03);
-        }
-        .bl-control-platform { display: flex; align-items: center; gap: 6px; }
-        .bl-control-title { font-size: 12px; font-weight: 800; color: #FF5A5F; text-transform: uppercase; letter-spacing: 0.04em; }
-        .bl-ready-badge { font-size: 11px; font-weight: 600; color: var(--color-success); }
-        .bl-control-actions { display: flex; align-items: center; gap: 6px; }
-        .bl-tool-btn {
-          display: flex; align-items: center; gap: 4px; padding: 4px 10px; background: #F8F9FA; border: 1px solid #E9ECEF;
-          border-radius: 6px; font-size: 11px; font-weight: 600; color: #495057; cursor: pointer; transition: all 120ms ease;
-        }
-        .bl-tool-btn:hover { background: #E9ECEF; color: #212529; }
-
         .bl-post-box {
-          background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 16px;
-          display: flex; flex-direction: column; gap: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.04); transition: border-color 150ms ease;
+          background: #ffffff; padding: 16px; display: flex; flex-direction: column; gap: 12px; transition: background 150ms ease;
         }
-        .bl-post-box.editing { border-color: #FF5A5F; box-shadow: 0 0 0 2px rgba(255, 90, 95, 0.25); }
+        .bl-post-box.editing { background: #F8FAFC; }
 
         .bl-media-frame { width: 100%; aspect-ratio: 16 / 9; border-radius: 8px; overflow: hidden; background: #fafafa; border: 1px solid #f0f0f0; }
         .bl-startup-img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -258,13 +219,7 @@ export function BetaListCard({ platformId, post, campaignId, imageFiles, videoFi
           padding: 8px 18px; border-radius: 8px; cursor: pointer; transition: background 120ms ease;
         }
         .bl-access-btn:hover { background: #e04b50; }
-
-        .bl-footer-bar { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #ffffff; border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.03); }
-        .bl-footer-chars { font-size: 11.5px; color: #64748b; font-family: var(--font-mono); font-weight: 500; white-space: nowrap; }
-        .bl-footer-hint { font-size: 11px; color: #64748b; white-space: nowrap; }
-        .bl-footer-share { font-size: 12.5px; font-weight: 700; color: #FF5A5F; text-decoration: none; }
-        .bl-footer-share:hover { text-decoration: underline; }
       `}</style>
-    </div>
+    </UnifiedCardShell>
   )
 }

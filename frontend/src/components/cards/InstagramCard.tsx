@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import {
-  Copy, Download, MessageSquare, Check, Heart, Repeat, Bookmark, Send, Sparkles, MoreHorizontal
+  MessageSquare, Heart, Repeat, Bookmark, Send, MoreHorizontal
 } from 'lucide-react'
 import { PLATFORM_MAP } from '@@config/platforms'
 import { useAppStore } from '../../store/app'
-import { PlatformIcon } from '../PlatformIcon'
 import { generateClientZip, sanitize } from '../../lib/downloadKit'
 import type { CardProps } from './types'
+import { UnifiedCardShell } from './UnifiedCardShell'
 
 function FormattedContent({ content, linkColor }: { content: string; linkColor?: string }) {
   const color = linkColor || '#0095F6'
@@ -65,7 +65,6 @@ export function InstagramCard({ platformId, post, campaignId, imageFiles, videoF
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  const userName = user?.name || 'Your Brand'
   const handleName = user?.name ? user.name.toLowerCase().replace(/\s+/g, '.') : 'your.brand'
 
   useEffect(() => {
@@ -144,34 +143,24 @@ export function InstagramCard({ platformId, post, campaignId, imageFiles, videoF
   const shareUrl = platform?.shareUrl(post.content, {})
   const charLimit = platform?.charLimit || 2200
   const charCount = post.content.length
-  const isOverLimit = charCount > charLimit
 
   return (
-    <div className="ig-card-wrapper">
-      {/* Top Control Toolbar */}
-      <div className="ig-control-bar">
-        <div className="ig-control-platform">
-          <PlatformIcon id="instagram" size={15} color="#E1306C" />
-          <span className="ig-control-title">Instagram</span>
-          <span className="ig-ready-badge">• Ready</span>
-          {post.edited && <span className="pc-edited">edited</span>}
-        </div>
-        <div className="ig-control-actions">
-          <button className="ig-tool-btn" onClick={onOpenRefinement} title="Refine with AI">
-            <Sparkles size={12} color="#E1306C" />
-            <span>Refine</span>
-          </button>
-          <button className={`ig-tool-btn ${copied ? 'copied' : ''}`} onClick={handleCopy} title="Copy caption">
-            {copied ? <Check size={12} color="#10B981" /> : <Copy size={12} />}
-            <span>{copied ? 'Copied' : 'Copy'}</span>
-          </button>
-          <button className="ig-tool-btn" onClick={handleDownload} disabled={downloading} title="Download kit">
-            <Download size={12} />
-            <span>Kit</span>
-          </button>
-        </div>
-      </div>
-
+    <UnifiedCardShell
+      platformId="instagram"
+      platformName="Instagram"
+      brandColor="#E1306C"
+      status="Ready"
+      edited={post.edited}
+      charCount={charCount}
+      charLimit={charLimit}
+      shareUrl={shareUrl}
+      copied={copied}
+      downloading={downloading}
+      isEditing={isEditing}
+      onRefine={onOpenRefinement}
+      onCopy={handleCopy}
+      onDownload={handleDownload}
+    >
       {/* Authentic 1:1 Instagram Post Box */}
       <div className={`ig-post-box ${isEditing ? 'editing' : ''}`}>
         {/* Profile Header */}
@@ -281,41 +270,11 @@ export function InstagramCard({ platformId, post, campaignId, imageFiles, videoF
         </div>
       </div>
 
-      {/* Bottom Control Toolbar */}
-      <div className="ig-footer-bar">
-        <span className={`ig-footer-chars ${isOverLimit ? 'over' : ''}`}>
-          {charCount}/{charLimit} chars
-        </span>
-        {isEditing && <span className="ig-footer-hint">⌘↵ save · Esc cancel</span>}
-        {!isEditing && shareUrl && post.content && (
-          <a href={shareUrl} target="_blank" rel="noopener noreferrer" className="ig-footer-share">
-            Share to Instagram →
-          </a>
-        )}
-      </div>
-
       <style>{`
-        .ig-card-wrapper {
-          display: flex; flex-direction: column; width: 100%; max-width: 470px; margin: 0 auto; gap: 8px;
-        }
-        .ig-control-bar {
-          display: flex; align-items: center; justify-content: space-between; padding: 8px 12px;
-          background: #ffffff; border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.03);
-        }
-        .ig-control-platform { display: flex; align-items: center; gap: 6px; }
-        .ig-control-title { font-size: 12px; font-weight: 800; color: #E1306C; text-transform: uppercase; letter-spacing: 0.04em; }
-        .ig-ready-badge { font-size: 11px; font-weight: 600; color: var(--color-success); }
-        .ig-control-actions { display: flex; align-items: center; gap: 6px; }
-        .ig-tool-btn {
-          display: flex; align-items: center; gap: 4px; padding: 4px 10px; background: #F8F9FA; border: 1px solid #E9ECEF;
-          border-radius: 6px; font-size: 11px; font-weight: 600; color: #495057; cursor: pointer; transition: all 120ms ease;
-        }
-        .ig-tool-btn:hover { background: #E9ECEF; color: #212529; }
         .ig-post-box {
-          background: #ffffff; border: 1px solid #dbdbdb; border-radius: 12px; overflow: hidden; display: flex;
-          flex-direction: column; box-shadow: 0 2px 10px rgba(0,0,0,0.04); transition: border-color 150ms ease;
+          background: #ffffff; display: flex; flex-direction: column; transition: background 150ms ease;
         }
-        .ig-post-box.editing { border-color: #0095F6; box-shadow: 0 0 0 2px rgba(0, 149, 246, 0.15); }
+        .ig-post-box.editing { background: #F8FAFC; }
         .ig-profile-header { display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: #ffffff; }
         .ig-avatar {
           width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
@@ -367,13 +326,7 @@ export function InstagramCard({ platformId, post, campaignId, imageFiles, videoF
         .ig-caption-text { font-size: 14px; line-height: 1.55; color: #262626; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; white-space: pre-wrap; word-break: break-word; }
         .ig-caption-username { font-weight: 700; color: #262626; margin-right: 6px; }
         .ig-hashtag-text { color: #0095F6 !important; font-weight: 500 !important; background: transparent !important; padding: 0 !important; border-radius: 0 !important; }
-        .ig-footer-bar { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #ffffff; border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.03); }
-        .ig-footer-chars { font-size: 11.5px; color: #8e8e8e; font-family: var(--font-mono); font-weight: 500; white-space: nowrap; }
-        .ig-footer-chars.over { color: var(--color-error); font-weight: 700; }
-        .ig-footer-hint { font-size: 11px; color: #8e8e8e; white-space: nowrap; }
-        .ig-footer-share { font-size: 12.5px; font-weight: 700; color: #E1306C; text-decoration: none; }
-        .ig-footer-share:hover { text-decoration: underline; }
       `}</style>
-    </div>
+    </UnifiedCardShell>
   )
 }

@@ -1,12 +1,13 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import {
-  Copy, Download, Check, Share2, MoreHorizontal, Sparkles
+  Share2, MoreHorizontal
 } from 'lucide-react'
 import { PLATFORM_MAP } from '@@config/platforms'
 import { useAppStore } from '../../store/app'
 import { PlatformIcon } from '../PlatformIcon'
 import { generateClientZip, sanitize } from '../../lib/downloadKit'
 import type { CardProps } from './types'
+import { UnifiedCardShell } from './UnifiedCardShell'
 
 function FormattedContent({ content, linkColor }: { content: string; linkColor?: string }) {
   const color = linkColor || '#BD081C'
@@ -131,31 +132,22 @@ export function PinterestCard({ platformId, post, campaignId, imageFiles, videoF
   const charCount = post.content.length
 
   return (
-    <div className="pin-card-wrapper">
-      {/* Top Control Toolbar */}
-      <div className="pin-control-bar">
-        <div className="pin-control-platform">
-          <PlatformIcon id="pinterest" size={15} color="#BD081C" />
-          <span className="pin-control-title">Pinterest</span>
-          <span className="pin-ready-badge">• Ready</span>
-          {post.edited && <span className="pc-edited">edited</span>}
-        </div>
-        <div className="pin-control-actions">
-          <button className="pin-tool-btn" onClick={onOpenRefinement} title="Refine with AI">
-            <Sparkles size={12} color="#BD081C" />
-            <span>Refine</span>
-          </button>
-          <button className={`pin-tool-btn ${copied ? 'copied' : ''}`} onClick={handleCopy} title="Copy pin text">
-            {copied ? <Check size={12} color="#10B981" /> : <Copy size={12} />}
-            <span>{copied ? 'Copied' : 'Copy'}</span>
-          </button>
-          <button className="pin-tool-btn" onClick={handleDownload} disabled={downloading} title="Download kit">
-            <Download size={12} />
-            <span>Kit</span>
-          </button>
-        </div>
-      </div>
-
+    <UnifiedCardShell
+      platformId="pinterest"
+      platformName="Pinterest"
+      brandColor="#BD081C"
+      status="Ready"
+      edited={post.edited}
+      charCount={charCount}
+      charLimit={charLimit}
+      shareUrl={shareUrl}
+      copied={copied}
+      downloading={downloading}
+      isEditing={isEditing}
+      onRefine={onOpenRefinement}
+      onCopy={handleCopy}
+      onDownload={handleDownload}
+    >
       {/* Authentic 1:1 Pinterest Vertical Pin Container */}
       <div className={`pin-post-box ${isEditing ? 'editing' : ''}`}>
         {/* Media Frame with Overlay Pin Action */}
@@ -225,42 +217,10 @@ export function PinterestCard({ platformId, post, campaignId, imageFiles, videoF
         </div>
       </div>
 
-      {/* Bottom Control Toolbar */}
-      <div className="pin-footer-bar">
-        <span className="pin-footer-chars">
-          {charCount}/{charLimit} chars
-        </span>
-        {isEditing && <span className="pin-footer-hint">⌘↵ save · Esc cancel</span>}
-        {!isEditing && shareUrl && post.content && (
-          <a href={shareUrl} target="_blank" rel="noopener noreferrer" className="pin-footer-share">
-            Pin to Pinterest →
-          </a>
-        )}
-      </div>
-
       <style>{`
-        .pin-card-wrapper {
-          display: flex; flex-direction: column; width: 100%; max-width: 320px; margin: 0 auto; gap: 8px;
-        }
-        .pin-control-bar {
-          display: flex; align-items: center; justify-content: space-between; padding: 8px 12px;
-          background: #ffffff; border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.03);
-        }
-        .pin-control-platform { display: flex; align-items: center; gap: 6px; }
-        .pin-control-title { font-size: 12px; font-weight: 800; color: #BD081C; text-transform: uppercase; letter-spacing: 0.04em; }
-        .pin-ready-badge { font-size: 11px; font-weight: 600; color: var(--color-success); }
-        .pin-control-actions { display: flex; align-items: center; gap: 6px; }
-        .pin-tool-btn {
-          display: flex; align-items: center; gap: 4px; padding: 4px 10px; background: #F8F9FA; border: 1px solid #E9ECEF;
-          border-radius: 6px; font-size: 11px; font-weight: 600; color: #495057; cursor: pointer; transition: all 120ms ease;
-        }
-        .pin-tool-btn:hover { background: #E9ECEF; color: #212529; }
-        
         .pin-post-box {
-          background: #ffffff; border-radius: 24px; overflow: hidden; border: 1px solid #E9E9E9;
-          display: flex; flex-direction: column; box-shadow: 0 4px 16px rgba(0,0,0,0.06); transition: border-color 150ms ease;
+          background: #ffffff; display: flex; flex-direction: column; transition: background 150ms ease;
         }
-        .pin-post-box.editing { border-color: #BD081C; box-shadow: 0 0 0 2px rgba(189, 8, 28, 0.2); }
 
         .pin-media-viewport { position: relative; width: 100%; aspect-ratio: 2 / 3; background: #f0f0f0; overflow: hidden; }
         .pin-img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -302,13 +262,7 @@ export function PinterestCard({ platformId, post, campaignId, imageFiles, videoF
         }
         .pin-avatar-img { width: 100%; height: 100%; object-fit: cover; }
         .pin-user-name { font-size: 12px; font-weight: 600; color: #111111; }
-
-        .pin-footer-bar { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #ffffff; border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.03); }
-        .pin-footer-chars { font-size: 11.5px; color: #666666; font-family: var(--font-mono); font-weight: 500; white-space: nowrap; }
-        .pin-footer-hint { font-size: 11px; color: #666666; white-space: nowrap; }
-        .pin-footer-share { font-size: 12.5px; font-weight: 700; color: #BD081C; text-decoration: none; }
-        .pin-footer-share:hover { text-decoration: underline; }
       `}</style>
-    </div>
+    </UnifiedCardShell>
   )
 }

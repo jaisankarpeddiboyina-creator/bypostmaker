@@ -1,12 +1,13 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import {
-  Copy, Download, Check, ThumbsUp, Eye, Sparkles
+  ThumbsUp, Eye
 } from 'lucide-react'
 import { PLATFORM_MAP } from '@@config/platforms'
 import { useAppStore } from '../../store/app'
 import { PlatformIcon } from '../PlatformIcon'
 import { generateClientZip, sanitize } from '../../lib/downloadKit'
 import type { CardProps } from './types'
+import { UnifiedCardShell } from './UnifiedCardShell'
 
 function FormattedContent({ content, linkColor }: { content: string; linkColor?: string }) {
   const color = linkColor || '#0057FF'
@@ -130,34 +131,26 @@ export function BehanceCard({ platformId, post, campaignId, imageFiles, videoFil
   }
 
   const shareUrl = platform?.shareUrl(post.content, {})
+  const charLimit = platform?.charLimit || 10000
   const charCount = post.content.length
 
   return (
-    <div className="be-card-wrapper">
-      {/* Top Control Toolbar */}
-      <div className="be-control-bar">
-        <div className="be-control-platform">
-          <PlatformIcon id="behance" size={15} color="#0057FF" />
-          <span className="be-control-title">Behance</span>
-          <span className="be-ready-badge">• Ready</span>
-          {post.edited && <span className="pc-edited">edited</span>}
-        </div>
-        <div className="be-control-actions">
-          <button className="be-tool-btn" onClick={onOpenRefinement} title="Refine with AI">
-            <Sparkles size={12} color="#0057FF" />
-            <span>Refine</span>
-          </button>
-          <button className={`be-tool-btn ${copied ? 'copied' : ''}`} onClick={handleCopy} title="Copy project text">
-            {copied ? <Check size={12} color="#10B981" /> : <Copy size={12} />}
-            <span>{copied ? 'Copied' : 'Copy'}</span>
-          </button>
-          <button className="be-tool-btn" onClick={handleDownload} disabled={downloading} title="Download kit">
-            <Download size={12} />
-            <span>Kit</span>
-          </button>
-        </div>
-      </div>
-
+    <UnifiedCardShell
+      platformId="behance"
+      platformName="Behance"
+      brandColor="#0057FF"
+      status="Ready"
+      edited={post.edited}
+      charCount={charCount}
+      charLimit={charLimit}
+      shareUrl={shareUrl}
+      copied={copied}
+      downloading={downloading}
+      isEditing={isEditing}
+      onRefine={onOpenRefinement}
+      onCopy={handleCopy}
+      onDownload={handleDownload}
+    >
       {/* Authentic 1:1 Behance Portfolio Project Card */}
       <div className={`be-post-box ${isEditing ? 'editing' : ''}`}>
         {/* Cover Canvas Frame */}
@@ -221,42 +214,11 @@ export function BehanceCard({ platformId, post, campaignId, imageFiles, videoFil
         </div>
       </div>
 
-      {/* Bottom Control Toolbar */}
-      <div className="be-footer-bar">
-        <span className="be-footer-chars">
-          {charCount} chars
-        </span>
-        {isEditing && <span className="be-footer-hint">⌘↵ save · Esc cancel</span>}
-        {!isEditing && shareUrl && post.content && (
-          <a href={shareUrl} target="_blank" rel="noopener noreferrer" className="be-footer-share">
-            Publish Project →
-          </a>
-        )}
-      </div>
-
       <style>{`
-        .be-card-wrapper {
-          display: flex; flex-direction: column; width: 100%; max-width: 500px; margin: 0 auto; gap: 8px;
-        }
-        .be-control-bar {
-          display: flex; align-items: center; justify-content: space-between; padding: 8px 12px;
-          background: #ffffff; border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.03);
-        }
-        .be-control-platform { display: flex; align-items: center; gap: 6px; }
-        .be-control-title { font-size: 12px; font-weight: 800; color: #0057FF; text-transform: uppercase; letter-spacing: 0.04em; }
-        .be-ready-badge { font-size: 11px; font-weight: 600; color: var(--color-success); }
-        .be-control-actions { display: flex; align-items: center; gap: 6px; }
-        .be-tool-btn {
-          display: flex; align-items: center; gap: 4px; padding: 4px 10px; background: #F8F9FA; border: 1px solid #E9ECEF;
-          border-radius: 6px; font-size: 11px; font-weight: 600; color: #495057; cursor: pointer; transition: all 120ms ease;
-        }
-        .be-tool-btn:hover { background: #E9ECEF; color: #212529; }
-
         .be-post-box {
-          background: #ffffff; border: 1px solid #e8e8e8; border-radius: 12px; padding: 14px;
-          display: flex; flex-direction: column; gap: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.04); transition: border-color 150ms ease;
+          background: #ffffff; padding: 14px; display: flex; flex-direction: column; gap: 12px; transition: background 150ms ease;
         }
-        .be-post-box.editing { border-color: #0057FF; box-shadow: 0 0 0 2px rgba(0, 87, 255, 0.25); }
+        .be-post-box.editing { background: #F8FAFC; }
 
         .be-media-frame { width: 100%; aspect-ratio: 16 / 10; border-radius: 8px; overflow: hidden; background: #f4f4f4; border: 1px solid #eeeeee; }
         .be-project-img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -292,13 +254,7 @@ export function BehanceCard({ platformId, post, campaignId, imageFiles, videoFil
           font-size: 13.5px; line-height: 1.45; color: #191919; background: #ffffff; border: 1.5px solid #0057FF;
           border-radius: 8px; padding: 8px; outline: none; resize: vertical; min-height: 80px; box-sizing: border-box;
         }
-
-        .be-footer-bar { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #ffffff; border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.03); }
-        .be-footer-chars { font-size: 11.5px; color: #696969; font-family: var(--font-mono); font-weight: 500; white-space: nowrap; }
-        .be-footer-hint { font-size: 11px; color: #696969; white-space: nowrap; }
-        .be-footer-share { font-size: 12.5px; font-weight: 700; color: #0057FF; text-decoration: none; }
-        .be-footer-share:hover { text-decoration: underline; }
       `}</style>
-    </div>
+    </UnifiedCardShell>
   )
 }

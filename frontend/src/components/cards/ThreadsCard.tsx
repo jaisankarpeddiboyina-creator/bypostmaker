@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import {
-  Copy, Download, MessageSquare, Check, Heart, Repeat, Send, Sparkles, MoreHorizontal
+  MessageSquare, Heart, Repeat, Send, MoreHorizontal
 } from 'lucide-react'
 import { PLATFORM_MAP } from '@@config/platforms'
 import { useAppStore } from '../../store/app'
-import { PlatformIcon } from '../PlatformIcon'
 import { generateClientZip, sanitize } from '../../lib/downloadKit'
 import type { CardProps } from './types'
+import { UnifiedCardShell } from './UnifiedCardShell'
 
 function FormattedContent({ content, linkColor }: { content: string; linkColor?: string }) {
   const color = linkColor || '#0095F6'
@@ -63,7 +63,6 @@ export function ThreadsCard({ platformId, post, campaignId, imageFiles, videoFil
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  const userName = user?.name || 'Your Brand'
   const handleName = user?.name ? user.name.toLowerCase().replace(/\s+/g, '.') : 'your.brand'
 
   useEffect(() => {
@@ -141,34 +140,24 @@ export function ThreadsCard({ platformId, post, campaignId, imageFiles, videoFil
   const shareUrl = platform?.shareUrl(post.content, {})
   const charLimit = platform?.charLimit || 500
   const charCount = post.content.length
-  const isOverLimit = charCount > charLimit
 
   return (
-    <div className="th-card-wrapper">
-      {/* Top Control Toolbar */}
-      <div className="th-control-bar">
-        <div className="th-control-platform">
-          <PlatformIcon id="threads" size={15} color="#000000" />
-          <span className="th-control-title">Threads</span>
-          <span className="th-ready-badge">• Ready</span>
-          {post.edited && <span className="pc-edited">edited</span>}
-        </div>
-        <div className="th-control-actions">
-          <button className="th-tool-btn" onClick={onOpenRefinement} title="Refine with AI">
-            <Sparkles size={12} color="#000000" />
-            <span>Refine</span>
-          </button>
-          <button className={`th-tool-btn ${copied ? 'copied' : ''}`} onClick={handleCopy} title="Copy thread">
-            {copied ? <Check size={12} color="#10B981" /> : <Copy size={12} />}
-            <span>{copied ? 'Copied' : 'Copy'}</span>
-          </button>
-          <button className="th-tool-btn" onClick={handleDownload} disabled={downloading} title="Download kit">
-            <Download size={12} />
-            <span>Kit</span>
-          </button>
-        </div>
-      </div>
-
+    <UnifiedCardShell
+      platformId="threads"
+      platformName="Threads"
+      brandColor="#000000"
+      status="Ready"
+      edited={post.edited}
+      charCount={charCount}
+      charLimit={charLimit}
+      shareUrl={shareUrl}
+      copied={copied}
+      downloading={downloading}
+      isEditing={isEditing}
+      onRefine={onOpenRefinement}
+      onCopy={handleCopy}
+      onDownload={handleDownload}
+    >
       {/* Authentic 1:1 Threads Post Container */}
       <div className={`th-post-box ${isEditing ? 'editing' : ''}`}>
         {/* Profile Header Row */}
@@ -260,41 +249,11 @@ export function ThreadsCard({ platformId, post, campaignId, imageFiles, videoFil
         </div>
       </div>
 
-      {/* Bottom Control Toolbar */}
-      <div className="th-footer-bar">
-        <span className={`th-footer-chars ${isOverLimit ? 'over' : ''}`}>
-          {charCount}/{charLimit} chars
-        </span>
-        {isEditing && <span className="th-footer-hint">⌘↵ save · Esc cancel</span>}
-        {!isEditing && shareUrl && post.content && (
-          <a href={shareUrl} target="_blank" rel="noopener noreferrer" className="th-footer-share">
-            Share to Threads →
-          </a>
-        )}
-      </div>
-
       <style>{`
-        .th-card-wrapper {
-          display: flex; flex-direction: column; width: 100%; max-width: 470px; margin: 0 auto; gap: 8px;
-        }
-        .th-control-bar {
-          display: flex; align-items: center; justify-content: space-between; padding: 8px 12px;
-          background: #ffffff; border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.03);
-        }
-        .th-control-platform { display: flex; align-items: center; gap: 6px; }
-        .th-control-title { font-size: 12px; font-weight: 800; color: #000000; text-transform: uppercase; letter-spacing: 0.04em; }
-        .th-ready-badge { font-size: 11px; font-weight: 600; color: var(--color-success); }
-        .th-control-actions { display: flex; align-items: center; gap: 6px; }
-        .th-tool-btn {
-          display: flex; align-items: center; gap: 4px; padding: 4px 10px; background: #F8F9FA; border: 1px solid #E9ECEF;
-          border-radius: 6px; font-size: 11px; font-weight: 600; color: #495057; cursor: pointer; transition: all 120ms ease;
-        }
-        .th-tool-btn:hover { background: #E9ECEF; color: #212529; }
         .th-post-box {
-          background: #ffffff; border: 1px solid #dbdbdb; border-radius: 16px; padding: 14px; overflow: hidden; display: flex;
-          flex-direction: column; gap: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.04); transition: border-color 150ms ease;
+          background: #ffffff; padding: 14px; display: flex; flex-direction: column; gap: 10px; transition: background 150ms ease;
         }
-        .th-post-box.editing { border-color: #000000; box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.15); }
+        .th-post-box.editing { background: #F8FAFC; }
         
         .th-profile-header { display: flex; align-items: center; gap: 10px; }
         .th-avatar-wrapper { position: relative; width: 36px; height: 36px; }
@@ -349,14 +308,7 @@ export function ThreadsCard({ platformId, post, campaignId, imageFiles, videoFil
         .th-action-icon.liked { color: #ed4956; transform: scale(1.1); }
         .th-action-icon:hover { transform: scale(1.1); }
         .th-action-count { font-size: 13px; font-weight: 600; color: #262626; }
-
-        .th-footer-bar { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #ffffff; border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.03); }
-        .th-footer-chars { font-size: 11.5px; color: #8e8e8e; font-family: var(--font-mono); font-weight: 500; white-space: nowrap; }
-        .th-footer-chars.over { color: var(--color-error); font-weight: 700; }
-        .th-footer-hint { font-size: 11px; color: #8e8e8e; white-space: nowrap; }
-        .th-footer-share { font-size: 12.5px; font-weight: 700; color: #000000; text-decoration: none; }
-        .th-footer-share:hover { text-decoration: underline; }
       `}</style>
-    </div>
+    </UnifiedCardShell>
   )
 }

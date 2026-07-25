@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import {
-  Copy, Download, MessageSquare, Check, Repeat, Star, Bookmark, Share2, Sparkles, Globe
+  MessageSquare, Repeat, Star, Bookmark, Share2, Globe
 } from 'lucide-react'
 import { PLATFORM_MAP } from '@@config/platforms'
 import { useAppStore } from '../../store/app'
-import { PlatformIcon } from '../PlatformIcon'
 import { generateClientZip, sanitize } from '../../lib/downloadKit'
 import type { CardProps } from './types'
+import { UnifiedCardShell } from './UnifiedCardShell'
 
 function FormattedContent({ content, linkColor }: { content: string; linkColor?: string }) {
   const color = linkColor || '#6364FF'
@@ -143,31 +143,22 @@ export function MastodonCard({ platformId, post, campaignId, imageFiles, videoFi
   const charCount = post.content.length
 
   return (
-    <div className="mas-card-wrapper">
-      {/* Top Control Toolbar */}
-      <div className="mas-control-bar">
-        <div className="mas-control-platform">
-          <PlatformIcon id="mastodon" size={15} color="#6364FF" />
-          <span className="mas-control-title">Mastodon</span>
-          <span className="mas-ready-badge">• Ready</span>
-          {post.edited && <span className="pc-edited">edited</span>}
-        </div>
-        <div className="mas-control-actions">
-          <button className="mas-tool-btn" onClick={onOpenRefinement} title="Refine with AI">
-            <Sparkles size={12} color="#6364FF" />
-            <span>Refine</span>
-          </button>
-          <button className={`mas-tool-btn ${copied ? 'copied' : ''}`} onClick={handleCopy} title="Copy toot">
-            {copied ? <Check size={12} color="#10B981" /> : <Copy size={12} />}
-            <span>{copied ? 'Copied' : 'Copy'}</span>
-          </button>
-          <button className="mas-tool-btn" onClick={handleDownload} disabled={downloading} title="Download kit">
-            <Download size={12} />
-            <span>Kit</span>
-          </button>
-        </div>
-      </div>
-
+    <UnifiedCardShell
+      platformId="mastodon"
+      platformName="Mastodon"
+      brandColor="#6364FF"
+      status="Ready"
+      edited={post.edited}
+      charCount={charCount}
+      charLimit={charLimit}
+      shareUrl={shareUrl}
+      copied={copied}
+      downloading={downloading}
+      isEditing={isEditing}
+      onRefine={onOpenRefinement}
+      onCopy={handleCopy}
+      onDownload={handleDownload}
+    >
       {/* Authentic 1:1 Mastodon Light Container */}
       <div className={`mas-post-box ${isEditing ? 'editing' : ''}`}>
         {/* Profile Header */}
@@ -251,42 +242,11 @@ export function MastodonCard({ platformId, post, campaignId, imageFiles, videoFi
         </div>
       </div>
 
-      {/* Bottom Control Toolbar */}
-      <div className="mas-footer-bar">
-        <span className="mas-footer-chars">
-          {charCount}/{charLimit} chars
-        </span>
-        {isEditing && <span className="mas-footer-hint">⌘↵ save · Esc cancel</span>}
-        {!isEditing && shareUrl && post.content && (
-          <a href={shareUrl} target="_blank" rel="noopener noreferrer" className="mas-footer-share">
-            Toot to Mastodon →
-          </a>
-        )}
-      </div>
-
       <style>{`
-        .mas-card-wrapper {
-          display: flex; flex-direction: column; width: 100%; max-width: 500px; margin: 0 auto; gap: 8px;
-        }
-        .mas-control-bar {
-          display: flex; align-items: center; justify-content: space-between; padding: 8px 12px;
-          background: #ffffff; border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.03);
-        }
-        .mas-control-platform { display: flex; align-items: center; gap: 6px; }
-        .mas-control-title { font-size: 12px; font-weight: 800; color: #6364FF; text-transform: uppercase; letter-spacing: 0.04em; }
-        .mas-ready-badge { font-size: 11px; font-weight: 600; color: var(--color-success); }
-        .mas-control-actions { display: flex; align-items: center; gap: 6px; }
-        .mas-tool-btn {
-          display: flex; align-items: center; gap: 4px; padding: 4px 10px; background: #F8F9FA; border: 1px solid #E9ECEF;
-          border-radius: 6px; font-size: 11px; font-weight: 600; color: #495057; cursor: pointer; transition: all 120ms ease;
-        }
-        .mas-tool-btn:hover { background: #E9ECEF; color: #212529; }
-
         .mas-post-box {
-          background: #ffffff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 14px;
-          display: flex; flex-direction: column; gap: 10px; color: #282c37; box-shadow: 0 2px 10px rgba(0,0,0,0.04); transition: border-color 150ms ease;
+          background: #ffffff; padding: 14px; display: flex; flex-direction: column; gap: 10px; color: #282c37; transition: background 150ms ease;
         }
-        .mas-post-box.editing { border-color: #6364FF; box-shadow: 0 0 0 2px rgba(99, 100, 255, 0.25); }
+        .mas-post-box.editing { background: #F8FAFC; }
 
         .mas-profile-header { display: flex; align-items: center; gap: 10px; }
         .mas-avatar {
@@ -329,13 +289,7 @@ export function MastodonCard({ platformId, post, campaignId, imageFiles, videoFi
         .mas-count { font-size: 12px; font-weight: 600; }
         .mas-count.blue { color: #6364FF; }
         .mas-count.yellow { color: #ca8a04; }
-
-        .mas-footer-bar { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #ffffff; border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.03); }
-        .mas-footer-chars { font-size: 11.5px; color: #606984; font-family: var(--font-mono); font-weight: 500; white-space: nowrap; }
-        .mas-footer-hint { font-size: 11px; color: #606984; white-space: nowrap; }
-        .mas-footer-share { font-size: 12.5px; font-weight: 700; color: #6364FF; text-decoration: none; }
-        .mas-footer-share:hover { text-decoration: underline; }
       `}</style>
-    </div>
+    </UnifiedCardShell>
   )
 }

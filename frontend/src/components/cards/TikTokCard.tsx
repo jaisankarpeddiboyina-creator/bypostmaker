@@ -1,12 +1,13 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import {
-  Copy, Download, MessageSquare, Check, Heart, Share2, Bookmark, Sparkles, Disc
+  MessageSquare, Heart, Share2, Bookmark, Disc
 } from 'lucide-react'
 import { PLATFORM_MAP } from '@@config/platforms'
 import { useAppStore } from '../../store/app'
 import { PlatformIcon } from '../PlatformIcon'
 import { generateClientZip, sanitize } from '../../lib/downloadKit'
 import type { CardProps } from './types'
+import { UnifiedCardShell } from './UnifiedCardShell'
 
 function FormattedContent({ content, linkColor }: { content: string; linkColor?: string }) {
   const color = linkColor || '#25F4EE'
@@ -136,31 +137,22 @@ export function TikTokCard({ platformId, post, campaignId, imageFiles, videoFile
   const charCount = post.content.length
 
   return (
-    <div className="tt-card-wrapper">
-      {/* Top Control Toolbar */}
-      <div className="tt-control-bar">
-        <div className="tt-control-platform">
-          <PlatformIcon id="tiktok" size={15} color="#000000" />
-          <span className="tt-control-title">TikTok</span>
-          <span className="tt-ready-badge">• Ready</span>
-          {post.edited && <span className="pc-edited">edited</span>}
-        </div>
-        <div className="tt-control-actions">
-          <button className="tt-tool-btn" onClick={onOpenRefinement} title="Refine with AI">
-            <Sparkles size={12} color="#FE2C55" />
-            <span>Refine</span>
-          </button>
-          <button className={`tt-tool-btn ${copied ? 'copied' : ''}`} onClick={handleCopy} title="Copy caption">
-            {copied ? <Check size={12} color="#10B981" /> : <Copy size={12} />}
-            <span>{copied ? 'Copied' : 'Copy'}</span>
-          </button>
-          <button className="tt-tool-btn" onClick={handleDownload} disabled={downloading} title="Download kit">
-            <Download size={12} />
-            <span>Kit</span>
-          </button>
-        </div>
-      </div>
-
+    <UnifiedCardShell
+      platformId="tiktok"
+      platformName="TikTok"
+      brandColor="#FE2C55"
+      status="Ready"
+      edited={post.edited}
+      charCount={charCount}
+      charLimit={charLimit}
+      shareUrl={shareUrl}
+      copied={copied}
+      downloading={downloading}
+      isEditing={isEditing}
+      onRefine={onOpenRefinement}
+      onCopy={handleCopy}
+      onDownload={handleDownload}
+    >
       {/* Authentic 1:1 TikTok 9:16 Mobile View Box */}
       <div className={`tt-post-box ${isEditing ? 'editing' : ''}`}>
         {/* Background Media Container */}
@@ -252,43 +244,12 @@ export function TikTokCard({ platformId, post, campaignId, imageFiles, videoFile
         </div>
       </div>
 
-      {/* Bottom Control Toolbar */}
-      <div className="tt-footer-bar">
-        <span className="tt-footer-chars">
-          {charCount}/{charLimit} chars
-        </span>
-        {isEditing && <span className="tt-footer-hint">⌘↵ save · Esc cancel</span>}
-        {!isEditing && shareUrl && post.content && (
-          <a href={shareUrl} target="_blank" rel="noopener noreferrer" className="tt-footer-share">
-            Share to TikTok →
-          </a>
-        )}
-      </div>
-
       <style>{`
-        .tt-card-wrapper {
-          display: flex; flex-direction: column; width: 100%; max-width: 380px; margin: 0 auto; gap: 8px;
-        }
-        .tt-control-bar {
-          display: flex; align-items: center; justify-content: space-between; padding: 8px 12px;
-          background: #ffffff; border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.03);
-        }
-        .tt-control-platform { display: flex; align-items: center; gap: 6px; }
-        .tt-control-title { font-size: 12px; font-weight: 800; color: #FE2C55; text-transform: uppercase; letter-spacing: 0.04em; }
-        .tt-ready-badge { font-size: 11px; font-weight: 600; color: var(--color-success); }
-        .tt-control-actions { display: flex; align-items: center; gap: 6px; }
-        .tt-tool-btn {
-          display: flex; align-items: center; gap: 4px; padding: 4px 10px; background: #F8F9FA; border: 1px solid #E9ECEF;
-          border-radius: 6px; font-size: 11px; font-weight: 600; color: #495057; cursor: pointer; transition: all 120ms ease;
-        }
-        .tt-tool-btn:hover { background: #E9ECEF; color: #212529; }
-        
         .tt-post-box {
-          position: relative; width: 100%; aspect-ratio: 9 / 14; background: #000000; border-radius: 20px;
+          position: relative; width: 100%; aspect-ratio: 9 / 14; background: #000000;
           overflow: hidden; display: flex; flex-direction: column; justify-content: space-between;
-          box-shadow: 0 8px 32px rgba(0,0,0,0.25); border: 1px solid #222222; transition: border-color 150ms ease;
+          transition: background 150ms ease;
         }
-        .tt-post-box.editing { border-color: #FE2C55; box-shadow: 0 0 0 2px rgba(254, 44, 85, 0.3); }
 
         .tt-media-viewport { position: absolute; inset: 0; z-index: 1; }
         .tt-media-img { width: 100%; height: 100%; object-fit: cover; }
@@ -331,13 +292,7 @@ export function TikTokCard({ platformId, post, campaignId, imageFiles, videoFile
           border-radius: 8px; padding: 8px; outline: none; resize: vertical; min-height: 80px; box-sizing: border-box;
         }
         .tt-audio-line { font-size: 12px; font-weight: 500; color: #ffffff; opacity: 0.9; margin-top: 8px; text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
-
-        .tt-footer-bar { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #ffffff; border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.03); }
-        .tt-footer-chars { font-size: 11.5px; color: #666666; font-family: var(--font-mono); font-weight: 500; white-space: nowrap; }
-        .tt-footer-hint { font-size: 11px; color: #666666; white-space: nowrap; }
-        .tt-footer-share { font-size: 12.5px; font-weight: 700; color: #FE2C55; text-decoration: none; }
-        .tt-footer-share:hover { text-decoration: underline; }
       `}</style>
-    </div>
+    </UnifiedCardShell>
   )
 }

@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import {
-  Copy, Download, Check, ChevronUp, ChevronDown, Bookmark, Sparkles
+  ChevronUp, ChevronDown, Bookmark, Check
 } from 'lucide-react'
 import { PLATFORM_MAP } from '@@config/platforms'
 import { useAppStore } from '../../store/app'
-import { PlatformIcon } from '../PlatformIcon'
 import { generateClientZip, sanitize } from '../../lib/downloadKit'
 import type { CardProps } from './types'
+import { UnifiedCardShell } from './UnifiedCardShell'
 
 function FormattedContent({ content, linkColor }: { content: string; linkColor?: string }) {
   const color = linkColor || '#0074CC'
@@ -140,34 +140,26 @@ export function StackOverflowCard({ platformId, post, campaignId, imageFiles, vi
   }
 
   const shareUrl = platform?.shareUrl(post.content, {})
+  const charLimit = platform?.charLimit || 30000
   const charCount = post.content.length
 
   return (
-    <div className="so-card-wrapper">
-      {/* Top Control Toolbar */}
-      <div className="so-control-bar">
-        <div className="so-control-platform">
-          <PlatformIcon id="stackoverflow" size={15} color="#F48024" />
-          <span className="so-control-title">Stack Overflow</span>
-          <span className="so-ready-badge">• Ready</span>
-          {post.edited && <span className="pc-edited">edited</span>}
-        </div>
-        <div className="so-control-actions">
-          <button className="so-tool-btn" onClick={onOpenRefinement} title="Refine with AI">
-            <Sparkles size={12} color="#F48024" />
-            <span>Refine</span>
-          </button>
-          <button className={`so-tool-btn ${copied ? 'copied' : ''}`} onClick={handleCopy} title="Copy answer">
-            {copied ? <Check size={12} color="#10B981" /> : <Copy size={12} />}
-            <span>{copied ? 'Copied' : 'Copy'}</span>
-          </button>
-          <button className="so-tool-btn" onClick={handleDownload} disabled={downloading} title="Download kit">
-            <Download size={12} />
-            <span>Kit</span>
-          </button>
-        </div>
-      </div>
-
+    <UnifiedCardShell
+      platformId="stackoverflow"
+      platformName="Stack Overflow"
+      brandColor="#F48024"
+      status="Ready"
+      edited={post.edited}
+      charCount={charCount}
+      charLimit={charLimit}
+      shareUrl={shareUrl}
+      copied={copied}
+      downloading={downloading}
+      isEditing={isEditing}
+      onRefine={onOpenRefinement}
+      onCopy={handleCopy}
+      onDownload={handleDownload}
+    >
       {/* Authentic 1:1 Stack Overflow Answer Layout */}
       <div className={`so-post-box ${isEditing ? 'editing' : ''}`}>
         {/* Question Heading Title */}
@@ -244,42 +236,11 @@ export function StackOverflowCard({ platformId, post, campaignId, imageFiles, vi
         </div>
       </div>
 
-      {/* Bottom Control Toolbar */}
-      <div className="so-footer-bar">
-        <span className="so-footer-chars">
-          {charCount} chars
-        </span>
-        {isEditing && <span className="so-footer-hint">⌘↵ save · Esc cancel</span>}
-        {!isEditing && shareUrl && post.content && (
-          <a href={shareUrl} target="_blank" rel="noopener noreferrer" className="so-footer-share">
-            Answer on Stack Overflow →
-          </a>
-        )}
-      </div>
-
       <style>{`
-        .so-card-wrapper {
-          display: flex; flex-direction: column; width: 100%; max-width: 540px; margin: 0 auto; gap: 8px;
-        }
-        .so-control-bar {
-          display: flex; align-items: center; justify-content: space-between; padding: 8px 12px;
-          background: #ffffff; border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.03);
-        }
-        .so-control-platform { display: flex; align-items: center; gap: 6px; }
-        .so-control-title { font-size: 12px; font-weight: 800; color: #F48024; text-transform: uppercase; letter-spacing: 0.04em; }
-        .so-ready-badge { font-size: 11px; font-weight: 600; color: var(--color-success); }
-        .so-control-actions { display: flex; align-items: center; gap: 6px; }
-        .so-tool-btn {
-          display: flex; align-items: center; gap: 4px; padding: 4px 10px; background: #F8F9FA; border: 1px solid #E9ECEF;
-          border-radius: 6px; font-size: 11px; font-weight: 600; color: #495057; cursor: pointer; transition: all 120ms ease;
-        }
-        .so-tool-btn:hover { background: #E9ECEF; color: #212529; }
-
         .so-post-box {
-          background: #ffffff; border: 1px solid #d6d9dc; border-radius: 10px; padding: 16px;
-          display: flex; flex-direction: column; gap: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); transition: border-color 150ms ease;
+          background: #ffffff; padding: 16px; display: flex; flex-direction: column; gap: 12px; transition: background 150ms ease;
         }
-        .so-post-box.editing { border-color: #F48024; box-shadow: 0 0 0 2px rgba(244, 128, 36, 0.2); }
+        .so-post-box.editing { background: #F8FAFC; }
 
         .so-question-header { border-bottom: 1px solid #e3e6e8; padding-bottom: 10px; }
         .so-question-title { font-size: 17px; font-weight: 700; color: #0c0d0e; line-height: 1.35; margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
@@ -316,13 +277,7 @@ export function StackOverflowCard({ platformId, post, campaignId, imageFiles, vi
         .so-user-info { display: flex; flex-direction: column; }
         .so-user-name { font-size: 12px; font-weight: 600; color: #0074CC; }
         .so-rep-badge { font-size: 10px; font-weight: 700; color: #6a737c; }
-
-        .so-footer-bar { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #ffffff; border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.03); }
-        .so-footer-chars { font-size: 11.5px; color: #6a737c; font-family: var(--font-mono); font-weight: 500; white-space: nowrap; }
-        .so-footer-hint { font-size: 11px; color: #6a737c; white-space: nowrap; }
-        .so-footer-share { font-size: 12.5px; font-weight: 700; color: #F48024; text-decoration: none; }
-        .so-footer-share:hover { text-decoration: underline; }
       `}</style>
-    </div>
+    </UnifiedCardShell>
   )
 }

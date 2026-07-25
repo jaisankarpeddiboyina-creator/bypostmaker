@@ -1,12 +1,13 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import {
-  Copy, Download, Check, ThumbsUp, ThumbsDown, MessageSquare, Share2, Sparkles
+  ThumbsUp, ThumbsDown, MessageSquare, Share2
 } from 'lucide-react'
 import { PLATFORM_MAP } from '@@config/platforms'
 import { useAppStore } from '../../store/app'
 import { PlatformIcon } from '../PlatformIcon'
 import { generateClientZip, sanitize } from '../../lib/downloadKit'
 import type { CardProps } from './types'
+import { UnifiedCardShell } from './UnifiedCardShell'
 
 function FormattedContent({ content, linkColor }: { content: string; linkColor?: string }) {
   const color = linkColor || '#FF0000'
@@ -131,34 +132,26 @@ export function YouTubeShortsCard({ platformId, post, campaignId, imageFiles, vi
   }
 
   const shareUrl = platform?.shareUrl(post.content, {})
+  const charLimit = platform?.charLimit || 5000
   const charCount = post.content.length
 
   return (
-    <div className="yts-card-wrapper">
-      {/* Top Control Toolbar */}
-      <div className="yts-control-bar">
-        <div className="yts-control-platform">
-          <PlatformIcon id="youtubeshorts" size={15} color="#FF0000" />
-          <span className="yts-control-title">YouTube Shorts</span>
-          <span className="yts-ready-badge">• Ready</span>
-          {post.edited && <span className="pc-edited">edited</span>}
-        </div>
-        <div className="yts-control-actions">
-          <button className="yts-tool-btn" onClick={onOpenRefinement} title="Refine with AI">
-            <Sparkles size={12} color="#FF0000" />
-            <span>Refine</span>
-          </button>
-          <button className={`yts-tool-btn ${copied ? 'copied' : ''}`} onClick={handleCopy} title="Copy description">
-            {copied ? <Check size={12} color="#10B981" /> : <Copy size={12} />}
-            <span>{copied ? 'Copied' : 'Copy'}</span>
-          </button>
-          <button className="yts-tool-btn" onClick={handleDownload} disabled={downloading} title="Download kit">
-            <Download size={12} />
-            <span>Kit</span>
-          </button>
-        </div>
-      </div>
-
+    <UnifiedCardShell
+      platformId="youtubeshorts"
+      platformName="YouTube Shorts"
+      brandColor="#FF0000"
+      status="Ready"
+      edited={post.edited}
+      charCount={charCount}
+      charLimit={charLimit}
+      shareUrl={shareUrl}
+      copied={copied}
+      downloading={downloading}
+      isEditing={isEditing}
+      onRefine={onOpenRefinement}
+      onCopy={handleCopy}
+      onDownload={handleDownload}
+    >
       {/* Authentic 1:1 YouTube Shorts Vertical 9:16 Frame */}
       <div className={`yts-post-box ${isEditing ? 'editing' : ''}`}>
         <div className="yts-phone-screen">
@@ -235,42 +228,10 @@ export function YouTubeShortsCard({ platformId, post, campaignId, imageFiles, vi
         </div>
       </div>
 
-      {/* Bottom Control Toolbar */}
-      <div className="yts-footer-bar">
-        <span className="yts-footer-chars">
-          {charCount} chars
-        </span>
-        {isEditing && <span className="yts-footer-hint">⌘↵ save · Esc cancel</span>}
-        {!isEditing && shareUrl && post.content && (
-          <a href={shareUrl} target="_blank" rel="noopener noreferrer" className="yts-footer-share">
-            Upload Short →
-          </a>
-        )}
-      </div>
-
       <style>{`
-        .yts-card-wrapper {
-          display: flex; flex-direction: column; width: 100%; max-width: 360px; margin: 0 auto; gap: 8px;
-        }
-        .yts-control-bar {
-          display: flex; align-items: center; justify-content: space-between; padding: 8px 12px;
-          background: #ffffff; border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.03);
-        }
-        .yts-control-platform { display: flex; align-items: center; gap: 6px; }
-        .yts-control-title { font-size: 12px; font-weight: 800; color: #FF0000; text-transform: uppercase; letter-spacing: 0.04em; }
-        .yts-ready-badge { font-size: 11px; font-weight: 600; color: var(--color-success); }
-        .yts-control-actions { display: flex; align-items: center; gap: 6px; }
-        .yts-tool-btn {
-          display: flex; align-items: center; gap: 4px; padding: 4px 8px; background: #F8F9FA; border: 1px solid #E9ECEF;
-          border-radius: 6px; font-size: 11px; font-weight: 600; color: #495057; cursor: pointer; transition: all 120ms ease;
-        }
-        .yts-tool-btn:hover { background: #E9ECEF; color: #212529; }
-
         .yts-post-box {
-          background: #000000; border: 1px solid #222222; border-radius: 20px; padding: 6px;
-          box-shadow: 0 4px 16px rgba(0,0,0,0.2); transition: border-color 150ms ease;
+          background: #000000; padding: 6px; display: flex; flex-direction: column; transition: background 150ms ease;
         }
-        .yts-post-box.editing { border-color: #FF0000; box-shadow: 0 0 0 2px rgba(255, 0, 0, 0.3); }
 
         .yts-phone-screen {
           position: relative; width: 100%; aspect-ratio: 9 / 16; border-radius: 16px; overflow: hidden; background: #111111;
@@ -314,13 +275,7 @@ export function YouTubeShortsCard({ platformId, post, campaignId, imageFiles, vi
           font-size: 13px; line-height: 1.4; color: #ffffff; background: rgba(0,0,0,0.7); border: 1.5px solid #FF0000;
           border-radius: 6px; padding: 6px; outline: none; resize: vertical; min-height: 70px; box-sizing: border-box;
         }
-
-        .yts-footer-bar { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #ffffff; border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.03); }
-        .yts-footer-chars { font-size: 11.5px; color: #777777; font-family: var(--font-mono); font-weight: 500; white-space: nowrap; }
-        .yts-footer-hint { font-size: 11px; color: #777777; white-space: nowrap; }
-        .yts-footer-share { font-size: 12.5px; font-weight: 700; color: #FF0000; text-decoration: none; }
-        .yts-footer-share:hover { text-decoration: underline; }
       `}</style>
-    </div>
+    </UnifiedCardShell>
   )
 }

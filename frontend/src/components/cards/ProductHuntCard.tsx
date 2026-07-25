@@ -1,12 +1,13 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import {
-  Copy, Download, MessageSquare, Check, Triangle, Sparkles
+  MessageSquare, Triangle
 } from 'lucide-react'
 import { PLATFORM_MAP } from '@@config/platforms'
 import { useAppStore } from '../../store/app'
 import { PlatformIcon } from '../PlatformIcon'
 import { generateClientZip, sanitize } from '../../lib/downloadKit'
 import type { CardProps } from './types'
+import { UnifiedCardShell } from './UnifiedCardShell'
 
 function FormattedContent({ content, linkColor }: { content: string; linkColor?: string }) {
   const color = linkColor || '#DA552F'
@@ -139,31 +140,22 @@ export function ProductHuntCard({ platformId, post, campaignId, imageFiles, vide
   const charCount = post.content.length
 
   return (
-    <div className="ph-card-wrapper">
-      {/* Top Control Toolbar */}
-      <div className="ph-control-bar">
-        <div className="ph-control-platform">
-          <PlatformIcon id="producthunt" size={15} color="#DA552F" />
-          <span className="ph-control-title">Product Hunt</span>
-          <span className="ph-ready-badge">• Ready</span>
-          {post.edited && <span className="pc-edited">edited</span>}
-        </div>
-        <div className="ph-control-actions">
-          <button className="ph-tool-btn" onClick={onOpenRefinement} title="Refine with AI">
-            <Sparkles size={12} color="#DA552F" />
-            <span>Refine</span>
-          </button>
-          <button className={`ph-tool-btn ${copied ? 'copied' : ''}`} onClick={handleCopy} title="Copy post">
-            {copied ? <Check size={12} color="#10B981" /> : <Copy size={12} />}
-            <span>{copied ? 'Copied' : 'Copy'}</span>
-          </button>
-          <button className="ph-tool-btn" onClick={handleDownload} disabled={downloading} title="Download kit">
-            <Download size={12} />
-            <span>Kit</span>
-          </button>
-        </div>
-      </div>
-
+    <UnifiedCardShell
+      platformId="producthunt"
+      platformName="Product Hunt"
+      brandColor="#DA552F"
+      status="Ready"
+      edited={post.edited}
+      charCount={charCount}
+      charLimit={charLimit}
+      shareUrl={shareUrl}
+      copied={copied}
+      downloading={downloading}
+      isEditing={isEditing}
+      onRefine={onOpenRefinement}
+      onCopy={handleCopy}
+      onDownload={handleDownload}
+    >
       {/* Authentic 1:1 Product Hunt Post Box */}
       <div className={`ph-post-box ${isEditing ? 'editing' : ''}`}>
         {/* Top Product Hero Row */}
@@ -239,42 +231,11 @@ export function ProductHuntCard({ platformId, post, campaignId, imageFiles, vide
         </div>
       </div>
 
-      {/* Bottom Control Toolbar */}
-      <div className="ph-footer-bar">
-        <span className="ph-footer-chars">
-          {charCount}/{charLimit} chars
-        </span>
-        {isEditing && <span className="ph-footer-hint">⌘↵ save · Esc cancel</span>}
-        {!isEditing && shareUrl && post.content && (
-          <a href={shareUrl} target="_blank" rel="noopener noreferrer" className="ph-footer-share">
-            Launch on Product Hunt →
-          </a>
-        )}
-      </div>
-
       <style>{`
-        .ph-card-wrapper {
-          display: flex; flex-direction: column; width: 100%; max-width: 500px; margin: 0 auto; gap: 8px;
-        }
-        .ph-control-bar {
-          display: flex; align-items: center; justify-content: space-between; padding: 8px 12px;
-          background: #ffffff; border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.03);
-        }
-        .ph-control-platform { display: flex; align-items: center; gap: 6px; }
-        .ph-control-title { font-size: 12px; font-weight: 800; color: #DA552F; text-transform: uppercase; letter-spacing: 0.04em; }
-        .ph-ready-badge { font-size: 11px; font-weight: 600; color: var(--color-success); }
-        .ph-control-actions { display: flex; align-items: center; gap: 6px; }
-        .ph-tool-btn {
-          display: flex; align-items: center; gap: 4px; padding: 4px 10px; background: #F8F9FA; border: 1px solid #E9ECEF;
-          border-radius: 6px; font-size: 11px; font-weight: 600; color: #495057; cursor: pointer; transition: all 120ms ease;
-        }
-        .ph-tool-btn:hover { background: #E9ECEF; color: #212529; }
-
         .ph-post-box {
-          background: #ffffff; border: 1px solid #e8e8e8; border-radius: 12px; padding: 16px;
-          display: flex; flex-direction: column; gap: 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.04); transition: border-color 150ms ease;
+          background: #ffffff; padding: 16px; display: flex; flex-direction: column; gap: 14px; transition: background 150ms ease;
         }
-        .ph-post-box.editing { border-color: #DA552F; box-shadow: 0 0 0 2px rgba(218, 85, 47, 0.2); }
+        .ph-post-box.editing { background: #F8FAFC; }
 
         .ph-product-row { display: flex; align-items: flex-start; gap: 14px; }
         .ph-logo-box {
@@ -320,13 +281,7 @@ export function ProductHuntCard({ platformId, post, campaignId, imageFiles, vide
         .ph-avatar-img { width: 100%; height: 100%; object-fit: cover; }
         .ph-user-name { font-size: 12px; color: #4b587c; font-weight: 500; }
         .ph-comment-pill { display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; color: #4b587c; cursor: pointer; }
-
-        .ph-footer-bar { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #ffffff; border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.03); }
-        .ph-footer-chars { font-size: 11.5px; color: #666666; font-family: var(--font-mono); font-weight: 500; white-space: nowrap; }
-        .ph-footer-hint { font-size: 11px; color: #666666; white-space: nowrap; }
-        .ph-footer-share { font-size: 12.5px; font-weight: 700; color: #DA552F; text-decoration: none; }
-        .ph-footer-share:hover { text-decoration: underline; }
       `}</style>
-    </div>
+    </UnifiedCardShell>
   )
 }

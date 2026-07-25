@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import {
-  Copy, Download, MessageSquare, Check, Sparkles, Smile, CornerUpLeft, MoreHorizontal
+  MessageSquare, Check, Smile, CornerUpLeft, MoreHorizontal
 } from 'lucide-react'
 import { PLATFORM_MAP } from '@@config/platforms'
 import { useAppStore } from '../../store/app'
-import { PlatformIcon } from '../PlatformIcon'
 import { generateClientZip, sanitize } from '../../lib/downloadKit'
 import type { CardProps } from './types'
+import { UnifiedCardShell } from './UnifiedCardShell'
 
 function FormattedContent({ content, linkColor }: { content: string; linkColor?: string }) {
   const color = linkColor || '#1264A3'
@@ -123,31 +123,22 @@ export function SlackCard({ platformId, post, campaignId, imageFiles, videoFile,
   const charCount = post.content.length
 
   return (
-    <div className="slk-card-wrapper">
-      {/* Top Control Toolbar */}
-      <div className="slk-control-bar">
-        <div className="slk-control-platform">
-          <PlatformIcon id="slack" size={15} color="#4A154B" />
-          <span className="slk-control-title">Slack</span>
-          <span className="slk-ready-badge">• Ready</span>
-          {post.edited && <span className="pc-edited">edited</span>}
-        </div>
-        <div className="slk-control-actions">
-          <button className="slk-tool-btn" onClick={onOpenRefinement} title="Refine with AI">
-            <Sparkles size={12} color="#4A154B" />
-            <span>Refine</span>
-          </button>
-          <button className={`slk-tool-btn ${copied ? 'copied' : ''}`} onClick={handleCopy} title="Copy message">
-            {copied ? <Check size={12} color="#10B981" /> : <Copy size={12} />}
-            <span>{copied ? 'Copied' : 'Copy'}</span>
-          </button>
-          <button className="slk-tool-btn" onClick={handleDownload} disabled={downloading} title="Download kit">
-            <Download size={12} />
-            <span>Kit</span>
-          </button>
-        </div>
-      </div>
-
+    <UnifiedCardShell
+      platformId="slack"
+      platformName="Slack"
+      brandColor="#4A154B"
+      status="Ready"
+      edited={post.edited}
+      charCount={charCount}
+      charLimit={charLimit}
+      shareUrl={shareUrl}
+      copied={copied}
+      downloading={downloading}
+      isEditing={isEditing}
+      onRefine={onOpenRefinement}
+      onCopy={handleCopy}
+      onDownload={handleDownload}
+    >
       {/* Authentic 1:1 Slack Message Container */}
       <div className={`slk-post-box ${isEditing ? 'editing' : ''}`}>
         {/* Floating Action Toolbar on Hover */}
@@ -209,42 +200,11 @@ export function SlackCard({ platformId, post, campaignId, imageFiles, videoFile,
         </div>
       </div>
 
-      {/* Bottom Control Toolbar */}
-      <div className="slk-footer-bar">
-        <span className="slk-footer-chars">
-          {charCount}/{charLimit} chars
-        </span>
-        {isEditing && <span className="slk-footer-hint">⌘↵ save · Esc cancel</span>}
-        {!isEditing && shareUrl && post.content && (
-          <a href={shareUrl} target="_blank" rel="noopener noreferrer" className="slk-footer-share">
-            Send to Slack →
-          </a>
-        )}
-      </div>
-
       <style>{`
-        .slk-card-wrapper {
-          display: flex; flex-direction: column; width: 100%; max-width: 520px; margin: 0 auto; gap: 8px;
-        }
-        .slk-control-bar {
-          display: flex; align-items: center; justify-content: space-between; padding: 8px 12px;
-          background: #ffffff; border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.03);
-        }
-        .slk-control-platform { display: flex; align-items: center; gap: 6px; }
-        .slk-control-title { font-size: 12px; font-weight: 800; color: #4A154B; text-transform: uppercase; letter-spacing: 0.04em; }
-        .slk-ready-badge { font-size: 11px; font-weight: 600; color: var(--color-success); }
-        .slk-control-actions { display: flex; align-items: center; gap: 6px; }
-        .slk-tool-btn {
-          display: flex; align-items: center; gap: 4px; padding: 4px 10px; background: #F8F9FA; border: 1px solid #E9ECEF;
-          border-radius: 6px; font-size: 11px; font-weight: 600; color: #495057; cursor: pointer; transition: all 120ms ease;
-        }
-        .slk-tool-btn:hover { background: #E9ECEF; color: #212529; }
-
         .slk-post-box {
-          position: relative; background: #ffffff; border: 1px solid #dddddd; border-radius: 10px; padding: 14px;
-          display: flex; flex-direction: column; box-shadow: 0 2px 10px rgba(0,0,0,0.03); transition: border-color 150ms ease;
+          position: relative; background: #ffffff; padding: 14px; display: flex; flex-direction: column; transition: background 150ms ease;
         }
-        .slk-post-box.editing { border-color: #4A154B; box-shadow: 0 0 0 2px rgba(74, 21, 75, 0.2); }
+        .slk-post-box.editing { background: #F8FAFC; }
 
         .slk-hover-bar {
           position: absolute; top: -12px; right: 14px; background: #ffffff; border: 1px solid #e0e0e0;
@@ -290,13 +250,7 @@ export function SlackCard({ platformId, post, campaignId, imageFiles, videoFile,
         .slk-reaction-pill:hover { background: #ffffff; border-color: #1264A3; }
         .slk-reaction-pill.active { background: #e8f5fa; border-color: #1264A3; color: #1264A3; }
         .slk-pill-count { font-weight: 700; }
-
-        .slk-footer-bar { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #ffffff; border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.03); }
-        .slk-footer-chars { font-size: 11.5px; color: #616061; font-family: var(--font-mono); font-weight: 500; white-space: nowrap; }
-        .slk-footer-hint { font-size: 11px; color: #616061; white-space: nowrap; }
-        .slk-footer-share { font-size: 12.5px; font-weight: 700; color: #4A154B; text-decoration: none; }
-        .slk-footer-share:hover { text-decoration: underline; }
       `}</style>
-    </div>
+    </UnifiedCardShell>
   )
 }

@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import {
-  Copy, Download, Check, Sparkles, Smile, CornerUpLeft, MoreHorizontal
+  Smile, CornerUpLeft, MoreHorizontal
 } from 'lucide-react'
 import { PLATFORM_MAP } from '@@config/platforms'
 import { useAppStore } from '../../store/app'
-import { PlatformIcon } from '../PlatformIcon'
 import { generateClientZip, sanitize } from '../../lib/downloadKit'
 import type { CardProps } from './types'
+import { UnifiedCardShell } from './UnifiedCardShell'
 
 function FormattedContent({ content, linkColor }: { content: string; linkColor?: string }) {
   const color = linkColor || '#0067D5'
@@ -141,31 +141,22 @@ export function DiscordCard({ platformId, post, campaignId, imageFiles, videoFil
   const charCount = post.content.length
 
   return (
-    <div className="dis-card-wrapper">
-      {/* Top Control Toolbar */}
-      <div className="dis-control-bar">
-        <div className="dis-control-platform">
-          <PlatformIcon id="discord" size={15} color="#5865F2" />
-          <span className="dis-control-title">Discord</span>
-          <span className="dis-ready-badge">• Ready</span>
-          {post.edited && <span className="pc-edited">edited</span>}
-        </div>
-        <div className="dis-control-actions">
-          <button className="dis-tool-btn" onClick={onOpenRefinement} title="Refine with AI">
-            <Sparkles size={12} color="#5865F2" />
-            <span>Refine</span>
-          </button>
-          <button className={`dis-tool-btn ${copied ? 'copied' : ''}`} onClick={handleCopy} title="Copy message">
-            {copied ? <Check size={12} color="#10B981" /> : <Copy size={12} />}
-            <span>{copied ? 'Copied' : 'Copy'}</span>
-          </button>
-          <button className="dis-tool-btn" onClick={handleDownload} disabled={downloading} title="Download kit">
-            <Download size={12} />
-            <span>Kit</span>
-          </button>
-        </div>
-      </div>
-
+    <UnifiedCardShell
+      platformId="discord"
+      platformName="Discord"
+      brandColor="#5865F2"
+      status="Ready"
+      edited={post.edited}
+      charCount={charCount}
+      charLimit={charLimit}
+      shareUrl={shareUrl}
+      copied={copied}
+      downloading={downloading}
+      isEditing={isEditing}
+      onRefine={onOpenRefinement}
+      onCopy={handleCopy}
+      onDownload={handleDownload}
+    >
       {/* Authentic 1:1 Discord Light Message Container (#ffffff) */}
       <div className={`dis-post-box ${isEditing ? 'editing' : ''}`}>
         {/* Floating Action Toolbar on Hover */}
@@ -243,42 +234,11 @@ export function DiscordCard({ platformId, post, campaignId, imageFiles, videoFil
         </div>
       </div>
 
-      {/* Bottom Control Toolbar */}
-      <div className="dis-footer-bar">
-        <span className="dis-footer-chars">
-          {charCount}/{charLimit} chars
-        </span>
-        {isEditing && <span className="dis-footer-hint">⌘↵ save · Esc cancel</span>}
-        {!isEditing && shareUrl && post.content && (
-          <a href={shareUrl} target="_blank" rel="noopener noreferrer" className="dis-footer-share">
-            Send to Discord →
-          </a>
-        )}
-      </div>
-
       <style>{`
-        .dis-card-wrapper {
-          display: flex; flex-direction: column; width: 100%; max-width: 520px; margin: 0 auto; gap: 8px;
-        }
-        .dis-control-bar {
-          display: flex; align-items: center; justify-content: space-between; padding: 8px 12px;
-          background: #ffffff; border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.03);
-        }
-        .dis-control-platform { display: flex; align-items: center; gap: 6px; }
-        .dis-control-title { font-size: 12px; font-weight: 800; color: #5865F2; text-transform: uppercase; letter-spacing: 0.04em; }
-        .dis-ready-badge { font-size: 11px; font-weight: 600; color: var(--color-success); }
-        .dis-control-actions { display: flex; align-items: center; gap: 6px; }
-        .dis-tool-btn {
-          display: flex; align-items: center; gap: 4px; padding: 4px 10px; background: #F8F9FA; border: 1px solid #E9ECEF;
-          border-radius: 6px; font-size: 11px; font-weight: 600; color: #495057; cursor: pointer; transition: all 120ms ease;
-        }
-        .dis-tool-btn:hover { background: #E9ECEF; color: #212529; }
-
         .dis-post-box {
-          position: relative; background: #ffffff; border: 1px solid #e3e5e8; border-radius: 12px; padding: 14px;
-          display: flex; flex-direction: column; box-shadow: 0 2px 10px rgba(0,0,0,0.04); transition: border-color 150ms ease;
+          position: relative; background: #ffffff; padding: 14px; display: flex; flex-direction: column; transition: background 150ms ease;
         }
-        .dis-post-box.editing { border-color: #5865F2; box-shadow: 0 0 0 2px rgba(88, 101, 242, 0.2); }
+        .dis-post-box.editing { background: #F8FAFC; }
 
         .dis-hover-bar {
           position: absolute; top: -12px; right: 14px; background: #ffffff; border: 1px solid #e3e5e8;
@@ -334,13 +294,7 @@ export function DiscordCard({ platformId, post, campaignId, imageFiles, videoFil
         .dis-reaction-pill:hover { background: #e3e5e8; border-color: #c4c9ce; }
         .dis-reaction-pill.active { background: rgba(88, 101, 242, 0.12); border-color: #5865F2; color: #5865F2; }
         .dis-pill-count { font-weight: 600; }
-
-        .dis-footer-bar { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #ffffff; border: 1px solid var(--color-border); border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.03); }
-        .dis-footer-chars { font-size: 11.5px; color: #666666; font-family: var(--font-mono); font-weight: 500; white-space: nowrap; }
-        .dis-footer-hint { font-size: 11px; color: #666666; white-space: nowrap; }
-        .dis-footer-share { font-size: 12.5px; font-weight: 700; color: #5865F2; text-decoration: none; }
-        .dis-footer-share:hover { text-decoration: underline; }
       `}</style>
-    </div>
+    </UnifiedCardShell>
   )
 }
