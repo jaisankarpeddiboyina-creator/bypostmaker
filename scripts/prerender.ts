@@ -118,11 +118,12 @@ async function main() {
       }
 
       // Make sure React actually mounted real content, not just the
-      // empty shell — a blank #root means something failed silently.
+      // empty shell — a blank #root or one stuck on the loading spinner
+      // means the page is still initializing.
       await page.waitForFunction(
         () => {
           const root = document.getElementById('root')
-          return !!root && root.childElementCount > 0
+          return !!root && root.childElementCount > 0 && !root.innerHTML.includes('Loading PostMaker...')
         },
         { timeout: PAGE_TIMEOUT_MS }
       )

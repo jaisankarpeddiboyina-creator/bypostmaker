@@ -521,6 +521,9 @@ export default function LandingPage() {
             <PostMakerLogo variant="full" size={24} />
           </div>
           <div className="footer-links">
+            <a href="/tools">Post Generators</a>
+            <a href="/vs">Compare</a>
+            <a href="/for">Use Cases</a>
             <a href="/privacy">Privacy</a>
             <a href="/terms">Terms</a>
             <a href="/refund">Refund Policy</a>

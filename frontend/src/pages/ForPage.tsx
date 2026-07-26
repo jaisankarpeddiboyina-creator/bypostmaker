@@ -4,6 +4,39 @@ import { ArrowLeft, AlertCircle, Users, CheckCircle2 } from 'lucide-react'
 import { forPages } from '../../../config/forPages'
 import { useDocumentMetadata } from '../lib/seo'
 
+function getRelatedTools(audienceSlug: string) {
+  switch (audienceSlug) {
+    case 'content-creators':
+      return [
+        { name: 'Instagram Caption Generator', path: '/tools/instagram' },
+        { name: 'TikTok Script Generator', path: '/tools/tiktok' },
+        { name: 'YouTube Video Description Generator', path: '/tools/youtube' },
+      ]
+    case 'small-businesses':
+      return [
+        { name: 'Facebook Post Generator', path: '/tools/facebook' },
+        { name: 'LinkedIn Post Generator', path: '/tools/linkedin' },
+      ]
+    case 'social-media-managers':
+      return [
+        { name: 'LinkedIn Post Generator', path: '/tools/linkedin' },
+        { name: 'Twitter/X Post Maker', path: '/tools/twitter' },
+      ]
+    case 'ecommerce-brands':
+      return [
+        { name: 'Pinterest Pin Description Generator', path: '/tools/pinterest' },
+        { name: 'Instagram Caption Generator', path: '/tools/instagram' },
+      ]
+    case 'marketing-agencies':
+      return [
+        { name: 'LinkedIn Post Generator', path: '/tools/linkedin' },
+        { name: 'Threads Post Maker', path: '/tools/threads' },
+      ]
+    default:
+      return []
+  }
+}
+
 export default function ForPage() {
   const { slug } = useParams<{ slug: string }>()
   const navigate = useNavigate()
@@ -78,6 +111,20 @@ export default function ForPage() {
                 <h3 className="for-benefit-title">{benefit.title}</h3>
                 <p className="for-benefit-desc">{benefit.description}</p>
               </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Cross-linking platform tools */}
+        <section className="for-tools-linking">
+          <h2 className="for-section-title">Try Our Platform Post Generators</h2>
+          <p className="for-tools-linking-desc">Need content optimized for specific platforms? Try our free AI generators:</p>
+          <div className="for-tools-links-grid">
+            {getRelatedTools(entry.slug).map(tool => (
+              <Link key={tool.path} to={tool.path} className="for-tool-link-card">
+                <strong>{tool.name} →</strong>
+                <span>Optimized character limits, hooks, and spacing</span>
+              </Link>
             ))}
           </div>
         </section>
@@ -224,4 +271,16 @@ const forStyles = `
     text-align: center; padding: 48px; color: var(--color-text-muted);
     display: flex; flex-direction: column; align-items: center; gap: 12px;
   }
+
+  .for-tools-linking { margin-bottom: 48px; }
+  .for-tools-linking-desc { font-size: 15px; color: var(--color-text-secondary); margin-bottom: 16px; }
+  .for-tools-links-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+  .for-tool-link-card {
+    background: var(--color-surface); border: 1px solid var(--color-border);
+    border-radius: var(--radius); padding: 16px; text-decoration: none;
+    display: flex; flex-direction: column; gap: 4px; transition: border-color var(--transition);
+  }
+  .for-tool-link-card:hover { border-color: var(--color-primary-start); }
+  .for-tool-link-card strong { font-size: 14px; color: var(--color-text-primary); }
+  .for-tool-link-card span { font-size: 12px; color: var(--color-text-muted); }
 `

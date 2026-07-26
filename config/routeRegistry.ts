@@ -44,6 +44,15 @@ export const ROUTE_REGISTRY: RouteEntry[] = [
     title: 'PostMaker For Every Team — Find Your Use Case',
     description: 'See how PostMaker fits your specific workflow.',
     indexable: true
+  },
+  // Platform list page. Same reasoning as '/vs' and '/for' above — no
+  // '/tools/*' wildcard entry; concrete /tools/:slug pages come from
+  // config/platformPages.ts.
+  {
+    pattern: '/tools',
+    title: 'AI Social Media Post Generators & Formatting Tools | PostMaker',
+    description: 'Create platform-native, scroll-stopping social posts. Select a platform to get started.',
+    indexable: true
   }
 ]
 
