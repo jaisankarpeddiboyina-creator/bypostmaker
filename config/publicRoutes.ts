@@ -17,6 +17,7 @@
 import { blogPosts } from './blog'
 import { vsPages } from './vsPages'
 import { forPages } from './forPages'
+import { platformPages } from './platformPages'
 
 export interface PublicRoute {
   /** Concrete path, e.g. '/blog/my-post'. Never a pattern/wildcard. */
@@ -34,6 +35,7 @@ const STATIC_PUBLIC_PATHS = [
   '/blog',
   '/vs',
   '/for',
+  '/tools',
   '/privacy',
   '/terms',
   '/refund',
@@ -81,6 +83,11 @@ export function getPublicRoutes(): PublicRoute[] {
 
   for (const entry of forPages) {
     const path = `/for/${entry.slug}`
+    routes.push({ path, snapshotAssetPath: snapshotAssetPathForRoute(path) })
+  }
+
+  for (const entry of platformPages) {
+    const path = `/tools/${entry.slug}`
     routes.push({ path, snapshotAssetPath: snapshotAssetPathForRoute(path) })
   }
 

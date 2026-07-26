@@ -24,6 +24,7 @@ const BlogPage = lazy(() => import('./pages/BlogPage'))
 const VsPage = lazy(() => import('./pages/VsPage'))
 const ForPage = lazy(() => import('./pages/ForPage'))
 const BrandKitPage = lazy(() => import('./pages/BrandKitPage'))
+const PlatformPage = lazy(() => import('./pages/PlatformPage'))
 
 const SentryRoutes = Sentry.withSentryReactRouterV6Routing(Routes)
 
@@ -208,6 +209,8 @@ export default function App() {
           <Route path="/vs/:slug" element={<VsPage />} />
           <Route path="/for" element={<ForPage />} />
           <Route path="/for/:slug" element={<ForPage />} />
+          <Route path="/tools" element={<PlatformPage />} />
+          <Route path="/tools/:slug" element={<PlatformPage />} />
 
           {/* Auth routes */}
           <Route path="/login" element={<AuthPage mode="login" />} />
