@@ -145,26 +145,6 @@ class HeadInjector {
       }
     }
 
-    // 5. FAQPage schema for audience (for) pages
-    if (path.startsWith('/for/')) {
-      const slug = path.substring(5)
-      const entry = forPages.find(p => p.slug === slug)
-      if (entry) {
-        const faqSchema = {
-          '@context': 'https://schema.org',
-          '@type': 'FAQPage',
-          'mainEntity': entry.benefits.slice(0, 3).map(b => ({
-            '@type': 'Question',
-            'name': b.title,
-            'acceptedAnswer': {
-              '@type': 'Answer',
-              'text': b.description
-            }
-          }))
-        }
-        this.schemas.push(JSON.stringify(faqSchema))
-      }
-    }
 
     // 6. FAQPage schema for platform (tools) pages
     if (path.startsWith('/tools/')) {
