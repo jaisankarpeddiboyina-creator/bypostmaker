@@ -1,12 +1,17 @@
-// frontend/src/pages/VsPage.tsx
+import { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { ArrowLeft, Check, Minus, AlertCircle, Scale } from 'lucide-react'
+import { ArrowLeft, Check, Minus, AlertCircle, Scale, ChevronDown, ChevronUp, HelpCircle } from 'lucide-react'
 import { vsPages } from '../../../config/vsPages'
 import { useDocumentMetadata } from '../lib/seo'
 
 export default function VsPage() {
   const { slug } = useParams<{ slug: string }>()
   const navigate = useNavigate()
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null)
+
+  const toggleFaq = (index: number) => {
+    setOpenFaqIndex(openFaqIndex === index ? null : index)
+  }
 
   const entry = slug ? vsPages.find(p => p.slug === slug) : null
 
@@ -103,6 +108,36 @@ export default function VsPage() {
         <section className="vs-verdict">
           <h2 className="vs-section-title">The verdict</h2>
           <p>{entry.verdict}</p>
+        </section>
+
+        <section className="vs-faq-section">
+          <h2 className="vs-section-title">Frequently Asked Questions</h2>
+          <div className="vs-faq-list">
+            {[
+              {
+                question: `What is the difference between PostMaker and ${entry.competitorName}?`,
+                answer: `${entry.intro} ${entry.verdict}`
+              },
+              {
+                question: `Which is better: PostMaker or ${entry.competitorName}?`,
+                answer: entry.verdict
+              }
+            ].map((faq, idx) => {
+              const isOpen = openFaqIndex === idx
+              return (
+                <div className={`vs-faq-item ${isOpen ? 'active' : ''}`} key={`faq-${idx}`}>
+                  <button className="vs-faq-trigger" onClick={() => toggleFaq(idx)}>
+                    <HelpCircle size={18} className="faq-icon" />
+                    <span>{faq.question}</span>
+                    {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  </button>
+                  <div className="vs-faq-content" style={{ display: isOpen ? 'block' : 'none' }}>
+                    <p>{faq.answer}</p>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </section>
 
         <footer className="vs-footer-cta">
@@ -248,6 +283,28 @@ const vsStyles = `
     border-radius: var(--radius-card); padding: 24px; margin-bottom: 40px;
   }
   .vs-verdict p { font-size: 15px; line-height: 1.7; color: var(--color-text-secondary); }
+
+  .vs-faq-section { margin-bottom: 40px; }
+  .vs-faq-list { display: flex; flex-direction: column; gap: 16px; }
+  .vs-faq-item {
+    background: var(--color-surface); border: 1px solid var(--color-border);
+    border-radius: var(--radius-card); overflow: hidden;
+    box-shadow: var(--shadow-card); transition: all var(--transition);
+  }
+  .vs-faq-item.active { border-color: var(--color-primary-start); }
+  .vs-faq-trigger {
+    width: 100%; display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; padding: 20px 24px; background: none; border: none;
+    color: var(--color-text-primary); font-weight: 600; text-align: left;
+    cursor: pointer; transition: background var(--transition);
+  }
+  .vs-faq-trigger:hover { background: rgba(255, 255, 255, 0.02); }
+  .vs-faq-trigger span { flex: 1; font-size: 15px; }
+  .faq-icon { color: var(--color-primary-start); }
+  .vs-faq-content {
+    padding: 0 24px 20px 58px; color: var(--color-text-secondary);
+    font-size: 14px; line-height: 1.6;
+  }
 
   .vs-footer-cta {
     margin-top: 64px; padding: 36px;

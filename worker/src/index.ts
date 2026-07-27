@@ -22,6 +22,7 @@ import { runCronJobs, runDataRetention } from './services/cron'
 import { blogPosts } from '../../config/blog'
 import { vsPages } from '../../config/vsPages'
 import { forPages } from '../../config/forPages'
+import { platformPages } from '../../config/platformPages'
 import { faqEntries } from '../../config/faq'
 import { findMatchingRoute, ROUTE_REGISTRY } from '../../config/routeRegistry'
 import { snapshotAssetPathForRoute, SNAPSHOT_MANIFEST_ASSET_PATH } from '../../config/publicRoutes'
@@ -144,20 +145,21 @@ class HeadInjector {
       }
     }
 
-    // 5. FAQPage schema for audience (for) pages
-    if (path.startsWith('/for/')) {
-      const slug = path.substring(5)
-      const entry = forPages.find(p => p.slug === slug)
+
+    // 6. FAQPage schema for platform (tools) pages
+    if (path.startsWith('/tools/')) {
+      const slug = path.substring(7)
+      const entry = platformPages.find(p => p.slug === slug)
       if (entry) {
         const faqSchema = {
           '@context': 'https://schema.org',
           '@type': 'FAQPage',
-          'mainEntity': entry.benefits.slice(0, 3).map(b => ({
+          'mainEntity': entry.faqs.slice(0, 3).map(f => ({
             '@type': 'Question',
-            'name': b.title,
+            'name': f.question,
             'acceptedAnswer': {
               '@type': 'Answer',
-              'text': b.description
+              'text': f.answer
             }
           }))
         }
@@ -328,6 +330,16 @@ async function handleSitemap(request: Request, env: Env): Promise<Response> {
   </url>`
     }
 
+    // Add platform/tools pages (concrete slugs — see config/platformPages.ts)
+    for (const entry of platformPages) {
+      xml += `
+  <url>
+    <loc>${domain}/tools/${entry.slug}</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>`
+    }
+
     xml += '\n</urlset>'
 
     return new Response(xml, {
@@ -396,6 +408,18 @@ async function handleStaticPageSEO(request: Request, env: Env): Promise<Response
       } else {
         title = 'Page Not Found | PostMaker'
         description = 'The page you are looking for does not exist or has been moved.'
+        is404 = true
+      }
+    } else if (path.startsWith('/tools/')) {
+      const slug = path.substring(7)
+      const entry = platformPages.find(p => p.slug === slug)
+      if (entry) {
+        title = entry.title
+        description = entry.description
+        ogImage = entry.ogImage || `${domain}/og-image.png`
+      } else {
+        title = 'Tool Not Found | PostMaker'
+        description = 'The tool you are looking for does not exist or has been moved.'
         is404 = true
       }
     } else {
@@ -570,6 +594,7 @@ export default {
          // Exact/subpath match only — NOT startsWith('/for'), which would
          // also incorrectly match the existing /forgot-password route.
          path === '/for' || path.startsWith('/for/') ||
+         path === '/tools' || path.startsWith('/tools/') ||
          findMatchingRoute(path) ||
          path === '/' ||
          path === '/privacy' ||

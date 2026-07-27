@@ -76,6 +76,69 @@ When writing prompts, always include three components:
 ## Tailoring for Different Platforms
 
 PostMaker handles the formatting details for you automatically, adjusting line breaks, hashtags, and formatting styles to fit each platform's best practices.`
+  },
+  {
+    slug: 'ai-content-calendar-strategy-for-solopreneurs',
+    title: 'Building a Content Calendar That Actually Runs Itself',
+    description: 'A practical framework for solo creators and small teams to plan a month of multi-platform content in under an hour, using AI to fill the gaps.',
+    date: '2026-07-15',
+    readingTime: '5 min read',
+    author: 'PostMaker Team',
+    tags: ['Content Strategy', 'Productivity', 'Social Media'],
+    content: `# Building a Content Calendar That Actually Runs Itself
+Most content calendars fail for one reason: they assume you have unlimited time to write, reformat, and schedule for every platform separately. For solo creators and small teams, that math never works out.
+## Start With Pillars, Not Posts
+Instead of planning individual posts, define 3-4 recurring content pillars — themes you can return to every week without running out of ideas. For example: behind-the-scenes, customer wins, industry tips, and product updates.
+## Batch the Idea, Not the Execution
+Write down one core idea per pillar for the week. You don't need to write the LinkedIn version, the Twitter version, and the Instagram caption separately — that's the part that should be automated.
+## Let AI Handle the Platform-Specific Work
+Once you have a core idea, the time-consuming part is reformatting: adjusting tone, length, hashtags, and structure for each platform's norms. This is exactly the gap AI tools are built to close.
+## A Simple Weekly Rhythm
+1. **Monday**: Jot down 3-4 core ideas across your pillars.
+2. **Tuesday**: Generate platform-specific versions for each idea.
+3. **Wed-Fri**: Schedule and let the week run on autopilot.
+A calendar that "runs itself" isn't magic — it's just moving the repetitive reformatting work off your plate so you can focus on the ideas.`
+  },
+  {
+    slug: 'repurposing-long-form-content-into-social-posts',
+    title: 'How to Turn One Blog Post Into a Week of Social Content',
+    description: 'A step-by-step approach to repurposing long-form content into platform-native posts, so every article you write works harder for you.',
+    date: '2026-07-18',
+    readingTime: '4 min read',
+    author: 'PostMaker Team',
+    tags: ['Content Strategy', 'Repurposing', 'Growth'],
+    content: `# How to Turn One Blog Post Into a Week of Social Content
+Writing a long-form article takes hours. Letting it live only on your blog wastes most of that effort. A single well-researched post can fuel a full week of social content if you break it apart correctly.
+## Extract the Core Claims First
+Before touching social copy, list the 3-5 strongest standalone claims or insights from your article. Each one is a potential post on its own.
+## Match Each Claim to a Platform's Strength
+- **Twitter/X**: Turn a claim into a short, punchy thread with a hook in the first line.
+- **LinkedIn**: Expand a claim into a short narrative with a personal or professional angle.
+- **Instagram**: Turn a claim into a visual quote card or carousel-friendly caption.
+## Don't Just Copy-Paste Excerpts
+A paragraph that reads well in an article often reads awkwardly dropped into a tweet or caption — the pacing and context are different. Rewriting for the platform, not just shortening, is what makes repurposed content perform.
+## Make It a Habit, Not a One-Off
+Every time you publish long-form content, immediately extract 5-7 social posts from it before moving on. Over a few months, this alone can double your content output without writing anything new from scratch.`
+  },
+  {
+    slug: 'ai-vs-manual-time-saved-social-media-management',
+    title: 'AI vs. Manual: How Much Time Are You Really Saving?',
+    description: 'A breakdown of where the real time costs are in manual social media management, and how much of that AI tools can realistically eliminate.',
+    date: '2026-07-22',
+    readingTime: '4 min read',
+    author: 'PostMaker Team',
+    tags: ['AI Prompting', 'Productivity', 'Social Media'],
+    content: `# AI vs. Manual: How Much Time Are You Really Saving?
+"AI saves you time" is easy to say and hard to quantify. To know if it's actually worth changing your workflow, it helps to break down exactly where the time goes today.
+## Where Manual Posting Actually Costs Time
+For most creators, writing the core idea takes the least time. The real cost is in the repetitive parts: reformatting for each platform, adjusting tone, trimming length, adding the right hashtags, and switching between apps to schedule everything.
+## What AI Actually Removes
+AI tools built for multi-platform posting don't replace your ideas — they remove the reformatting step. Instead of manually rewriting one idea five different ways, you write it once and get platform-tailored versions instantly.
+## A Rough Time Comparison
+- **Manual**: ~10-15 minutes per platform to adapt and format a single idea, multiplied by however many platforms you post to.
+- **AI-assisted**: ~2-3 minutes to review and lightly edit AI-generated, platform-specific versions of the same idea.
+## The Real Question to Ask
+It's not "does AI write better posts than me" — it's "how many hours per week am I spending on reformatting instead of ideas." For most solo creators posting across 3+ platforms, that number is the one worth fixing first.`
   }
 ]
 
