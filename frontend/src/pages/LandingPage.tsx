@@ -83,6 +83,10 @@ const DEMO_PRESETS = [
   },
 ]
 
+const BREAKPOINT_MOBILE = '768px'
+const BREAKPOINT_MOBILE_XS = '480px'
+const BREAKPOINT_TABLET = '1024px'
+
 type PlatformTab = 'linkedin' | 'twitter' | 'instagram' | 'reddit' | 'tiktok' | 'youtube'
 
 export default function LandingPage() {
@@ -615,9 +619,12 @@ export default function LandingPage() {
           max-width: 1240px;
           margin: 0 auto;
           display: grid;
-          grid-template-columns: 1.1fr 1fr;
+          grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
           gap: 48px;
           align-items: center;
+        }
+        .hero-content, .hero-interactive-card {
+          min-width: 0;
         }
         .hero-badge {
           display: inline-flex;
@@ -1224,12 +1231,12 @@ export default function LandingPage() {
         .footer-copy { font-size: 12px; color: var(--color-text-muted); }
 
         /* Responsive Breakpoints */
-        @media (max-width: 1024px) {
-          .hero-inner-grid { grid-template-columns: 1fr; gap: 40px; }
+        @media (max-width: ${BREAKPOINT_TABLET}) {
+          .hero-inner-grid { grid-template-columns: minmax(0, 1fr); gap: 40px; }
           .features-grid, .why-grid { grid-template-columns: 1fr 1fr; }
           .pricing-grid { grid-template-columns: 1fr 1fr; }
         }
-        @media (max-width: 768px) {
+        @media (max-width: ${BREAKPOINT_MOBILE}) {
           .landing-nav-links { display: none; }
           .mobile-menu-toggle { display: flex; }
           .steps { flex-direction: column; gap: 16px; }
@@ -1237,6 +1244,22 @@ export default function LandingPage() {
           .features-grid, .why-grid, .pricing-grid { grid-template-columns: 1fr; gap: 16px; }
           .hero-cta-row { flex-direction: column; align-items: stretch; gap: 12px; }
           .hero-btn-primary { justify-content: center; width: 100%; }
+          
+          /* Studio Card Mobile Optimizations */
+          .hero-interactive-card { padding: 16px; }
+          .output-box-header { flex-wrap: wrap; gap: 8px; }
+          .studio-card-footer { flex-direction: column; align-items: stretch; gap: 12px; }
+          .studio-footer-note { justify-content: center; }
+          .studio-card-footer .btn { justify-content: center; width: 100%; }
+        }
+        @media (max-width: ${BREAKPOINT_MOBILE_XS}) {
+          .landing-nav-inner {
+            padding: 0 16px;
+            gap: 16px;
+          }
+          .landing-nav-cta .btn {
+            display: none;
+          }
         }
       `}</style>
     </div>
