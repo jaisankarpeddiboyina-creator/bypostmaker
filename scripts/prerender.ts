@@ -165,6 +165,8 @@ async function main() {
     console.error('FATAL: zero routes rendered successfully.')
     process.exit(1)
   }
+
+  process.exit(0)
 }
 
 main().catch(err => {
