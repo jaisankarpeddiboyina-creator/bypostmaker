@@ -22,7 +22,7 @@ export async function handleAdmin(
 
   // ── GET /api/admin/stats ──────────────────────────────────
   if (path === '/api/admin/stats') {
-    const [users, subs, campaigns, usage, topPlatformsResult] = await Promise.all([
+    const [users, subs, campaigns, health, usage, topPlatformsResult] = await Promise.all([
       env.DB.prepare(`SELECT
         COUNT(*) as total,
         SUM(CASE WHEN plan = 'free' THEN 1 ELSE 0 END) as free,
@@ -44,6 +44,12 @@ export async function handleAdmin(
         COUNT(*) as total,
         SUM(CASE WHEN created_at > unixepoch() - 86400 THEN 1 ELSE 0 END) as today
         FROM campaigns WHERE status = 'completed'`).first(),
+      env.DB.prepare(`SELECT
+        COUNT(*) as total_attempts,
+        SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as successful,
+        SUM(CASE WHEN status = 'error' THEN 1 ELSE 0 END) as failed,
+        SUM(CASE WHEN created_at > unixepoch() - 86400 AND status = 'error' THEN 1 ELSE 0 END) as failed_today
+        FROM campaigns`).first(),
       env.DB.prepare(`SELECT COALESCE(SUM(generations), 0) as total
         FROM usage WHERE period_start > unixepoch() - 2592000`).first(),
       env.DB.prepare(`SELECT json_each.value as platform_id, COUNT(*) as count 
@@ -54,12 +60,79 @@ export async function handleAdmin(
         LIMIT 10`).all(),
     ])
 
+    const totalAttempts = Number((health as Record<string, unknown> | null)?.total_attempts ?? 0)
+    const failedCount = Number((health as Record<string, unknown> | null)?.failed ?? 0)
+
     return json({
       users,
       subscriptions: subs,
       campaigns,
+      health: {
+        totalAttempts,
+        successful: Number((health as Record<string, unknown> | null)?.successful ?? 0),
+        failed: failedCount,
+        failedToday: Number((health as Record<string, unknown> | null)?.failed_today ?? 0),
+        errorRatePct: totalAttempts > 0 ? Math.round((failedCount / totalAttempts) * 10000) / 100 : 0,
+        status: 'healthy',
+      },
       usage,
       topPlatforms: topPlatformsResult?.results ?? [],
+    })
+  }
+
+  // ── GET /api/admin/users/export ───────────────────────────
+  if (path === '/api/admin/users/export') {
+    const search = url.searchParams.get('search') ?? ''
+    const plan = url.searchParams.get('plan') ?? 'all'
+    const role = url.searchParams.get('role') ?? 'all'
+    const status = url.searchParams.get('status') ?? 'all'
+
+    const conditions: string[] = []
+    const binds: unknown[] = []
+
+    if (search) {
+      conditions.push('(email LIKE ? OR name LIKE ?)')
+      binds.push(`%${search}%`, `%${search}%`)
+    }
+    if (plan !== 'all') {
+      conditions.push('plan = ?')
+      binds.push(plan)
+    }
+    if (role !== 'all') {
+      conditions.push('role = ?')
+      binds.push(role)
+    }
+    if (status !== 'all') {
+      conditions.push('disabled = ?')
+      binds.push(status === 'disabled' ? 1 : 0)
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
+
+    const { results } = await env.DB.prepare(
+      `SELECT id, email, name, plan, role, disabled, currency, created_at
+       FROM users ${whereClause} ORDER BY created_at DESC LIMIT 5000`
+    ).bind(...binds).all()
+
+    const headers = ['User ID', 'Email', 'Name', 'Plan', 'Role', 'Status', 'Currency', 'Created At']
+    const rows = (results as Array<Record<string, unknown>>).map(u => [
+      u.id,
+      `"${String(u.email ?? '').replace(/"/g, '""')}"`,
+      `"${String(u.name ?? '').replace(/"/g, '""')}"`,
+      u.plan,
+      u.role,
+      u.disabled ? 'Disabled' : 'Active',
+      u.currency ?? 'usd',
+      new Date(Number(u.created_at ?? 0) * 1000).toISOString(),
+    ])
+
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n')
+
+    return new Response(csvContent, {
+      headers: {
+        'Content-Type': 'text/csv; charset=utf-8',
+        'Content-Disposition': `attachment; filename="postmaker-users-${Date.now()}.csv"`,
+      },
     })
   }
 
@@ -67,23 +140,42 @@ export async function handleAdmin(
   if (path === '/api/admin/users') {
     const page = parseInt(url.searchParams.get('page') ?? '1')
     const search = url.searchParams.get('search') ?? ''
+    const plan = url.searchParams.get('plan') ?? 'all'
+    const role = url.searchParams.get('role') ?? 'all'
+    const status = url.searchParams.get('status') ?? 'all'
     const limit = 50
     const offset = (page - 1) * limit
 
-    const { results } = search
-      ? await env.DB.prepare(
-          `SELECT id, email, name, plan, role, disabled, currency, created_at
-           FROM users WHERE email LIKE ? OR name LIKE ?
-           ORDER BY created_at DESC LIMIT ? OFFSET ?`
-        ).bind(`%${search}%`, `%${search}%`, limit, offset).all()
-      : await env.DB.prepare(
-          `SELECT id, email, name, plan, role, disabled, currency, created_at
-           FROM users ORDER BY created_at DESC LIMIT ? OFFSET ?`
-        ).bind(limit, offset).all()
+    const conditions: string[] = []
+    const binds: unknown[] = []
+
+    if (search) {
+      conditions.push('(email LIKE ? OR name LIKE ?)')
+      binds.push(`%${search}%`, `%${search}%`)
+    }
+    if (plan !== 'all') {
+      conditions.push('plan = ?')
+      binds.push(plan)
+    }
+    if (role !== 'all') {
+      conditions.push('role = ?')
+      binds.push(role)
+    }
+    if (status !== 'all') {
+      conditions.push('disabled = ?')
+      binds.push(status === 'disabled' ? 1 : 0)
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
+
+    const { results } = await env.DB.prepare(
+      `SELECT id, email, name, plan, role, disabled, currency, created_at
+       FROM users ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`
+    ).bind(...binds, limit, offset).all()
 
     const count = await env.DB.prepare(
-      `SELECT COUNT(*) as total FROM users ${search ? 'WHERE email LIKE ? OR name LIKE ?' : ''}`
-    ).bind(...(search ? [`%${search}%`, `%${search}%`] : [])).first<{ total: number }>()
+      `SELECT COUNT(*) as total FROM users ${whereClause}`
+    ).bind(...binds).first<{ total: number }>()
 
     return json({ users: results, total: count?.total ?? 0, page, limit })
   }
@@ -124,6 +216,38 @@ export async function handleAdmin(
       `SELECT * FROM promo_codes ORDER BY created_at DESC`
     ).all()
     return json({ promos: results })
+  }
+
+  // ── POST /api/admin/promos/bulk ───────────────────────────
+  if (path === '/api/admin/promos/bulk' && request.method === 'POST') {
+    const body = await request.json() as {
+      prefix?: string; count?: number; discount_pct?: number; max_uses?: number; description?: string
+    }
+
+    const prefix = (body.prefix || 'PROMO').toUpperCase().replace(/[^A-Z0-9]/g, '')
+    const count = Math.min(Math.max(body.count || 5, 1), 100)
+    const discount_pct = body.discount_pct || 20
+    const max_uses = body.max_uses ?? null
+    const description = body.description ?? `Bulk generated campaign ${prefix}`
+
+    const generatedCodes: string[] = []
+    const statements = []
+
+    for (let i = 0; i < count; i++) {
+      const randStr = Math.random().toString(36).substring(2, 6).toUpperCase()
+      const code = `${prefix}-${randStr}`
+      generatedCodes.push(code)
+      statements.push(
+        env.DB.prepare(
+          `INSERT INTO promo_codes (code, description, discount_pct, max_uses, valid_until)
+           VALUES (?, ?, ?, ?, ?)`
+        ).bind(code, description, discount_pct, max_uses, null)
+      )
+    }
+
+    await env.DB.batch(statements)
+
+    return json({ ok: true, count: generatedCodes.length, codes: generatedCodes })
   }
 
   // ── POST /api/admin/promos ────────────────────────────────
