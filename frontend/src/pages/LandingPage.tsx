@@ -182,13 +182,12 @@ export default function LandingPage() {
             </div>
 
             <h1 className="hero-title">
-              Write once.<br />
-              Generate <span className="hero-accent">everywhere.</span>
+              AI Social Media Post Generator.<br />
+              Write once. Generate <span className="hero-accent">everywhere.</span>
             </h1>
 
             <p className="hero-sub">
-              Describe your idea once. PostMaker automatically adapts tone, length,
-              and formatting for 30+ social networks and packages everything into an organized download kit.
+              The multi-platform AI content generator for creators & teams. Describe your idea once — PostMaker automatically adapts tone, character counts, and formatting for 30+ social networks into an organized content kit.
             </p>
 
             <div className="hero-cta-row">

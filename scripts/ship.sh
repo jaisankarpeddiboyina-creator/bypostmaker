@@ -18,7 +18,7 @@ echo "────────────────────────�
   || die "Run this script from the repository root (where wrangler.toml lives)."
 
 # ── Step 1: Clean working tree ──────────────────────────────────────────────
-step "1/7  Checking for uncommitted changes"
+step "1/8  Checking for uncommitted changes"
 if ! git diff --quiet || ! git diff --cached --quiet; then
   echo ""
   git status --short
@@ -27,7 +27,7 @@ fi
 ok "Working tree is clean."
 
 # ── Step 2: Allowed branch guard ───────────────────────────────────────────
-step "2/7  Confirming branch"
+step "2/8  Confirming branch"
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
 if [[ "$BRANCH" != "staging" && "$BRANCH" != "main" ]]; then
   die "You are on branch '${BRANCH}'. ship.sh only runs on 'staging' or 'main'."
@@ -35,7 +35,7 @@ fi
 ok "On branch: ${BRANCH}"
 
 # ── Step 3: Fast-forward pull only ─────────────────────────────────────────
-step "3/7  Pulling latest ${BRANCH} (fast-forward only)"
+step "3/8  Pulling latest ${BRANCH} (fast-forward only)"
 git fetch origin "${BRANCH}" 2>&1
 
 # Check if remote is ahead
@@ -58,7 +58,7 @@ else
 fi
 
 # ── Step 4: npm ci (root + worker + frontend) ──────────────────────────────
-step "4/7  npm ci (root, worker/, frontend/)"
+step "4/8  npm ci (root, worker/, frontend/)"
 echo "  → root..."
 npm ci --silent 2>&1 || die "npm ci failed in root. Fix package-lock.json and retry."
 echo "  → worker/..."
@@ -68,7 +68,7 @@ npm ci --silent --prefix frontend 2>&1 || die "npm ci failed in frontend/. Fix f
 ok "All npm ci installs succeeded."
 
 # ── Step 5: Type check ─────────────────────────────────────────────────────
-step "5/7  Type check (worker + frontend)"
+step "5/8  Type check (worker + frontend)"
 TYPE_CHECK_OUTPUT=$(npm run type-check 2>&1) || {
   echo ""
   echo "$TYPE_CHECK_OUTPUT"
@@ -76,8 +76,8 @@ TYPE_CHECK_OUTPUT=$(npm run type-check 2>&1) || {
 }
 ok "Type check passed."
 
-# ── Step 6: Build ──────────────────────────────────────────────────────────
-step "6/7  Building frontend"
+# ── Step 6: Build & Prerender ──────────────────────────────────────────────
+step "6/8  Building frontend"
 BUILD_OUTPUT=$(npm run build 2>&1) || {
   echo ""
   echo "$BUILD_OUTPUT"
@@ -85,8 +85,16 @@ BUILD_OUTPUT=$(npm run build 2>&1) || {
 }
 ok "Build succeeded."
 
-# ── Step 7: Push ───────────────────────────────────────────────────────────
-step "7/7  Pushing ${BRANCH} to origin"
+step "7/8  Prerendering public routes"
+PRERENDER_OUTPUT=$(npm run prerender 2>&1) || {
+  echo ""
+  echo "$PRERENDER_OUTPUT"
+  die "Prerender failed (see above). Fix prerender errors before shipping."
+}
+ok "Prerender succeeded."
+
+# ── Step 8: Push ───────────────────────────────────────────────────────────
+step "8/8  Pushing ${BRANCH} to origin"
 COMMIT=$(git rev-parse --short HEAD)
 git push origin "${BRANCH}" 2>&1 || die "git push failed. Check your network and remote access."
 

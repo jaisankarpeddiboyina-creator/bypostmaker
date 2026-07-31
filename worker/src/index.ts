@@ -361,8 +361,8 @@ async function handleStaticPageSEO(request: Request, env: Env): Promise<Response
   const canonicalUrl = `${domain}${path}`
 
   // 1. Resolve metadata for the route (defaults + registry override + existing fallbacks)
-  let title = 'PostMaker — AI Social Media Content Generator (One Prompt, Every Platform)'
-  let description = 'Write one prompt. PostMaker generates platform-perfect posts for all 30+ social platforms and packages them into a ready-to-post content kit.'
+  let title = 'PostMaker — Free AI Social Media Post Generator (1 Prompt, 30+ Platforms)'
+  let description = 'Generate platform-perfect AI posts for LinkedIn, X/Twitter, Instagram, TikTok, Reddit, & 30+ social networks in seconds. Download your ready-to-post content kit.'
   let ogImage = `${domain}/og-image.png`
   let is404 = false
 
