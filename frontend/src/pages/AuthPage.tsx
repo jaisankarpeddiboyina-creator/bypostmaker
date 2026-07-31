@@ -4,6 +4,7 @@ import { Sparkles, Loader2, ArrowLeft, Mail, Lock, User as UserIcon, AlertCircle
 import { useAppStore } from '../store/app'
 import { api } from '../lib/api'
 import { trackSignUp, trackLogin } from '../lib/analytics'
+import { BREAKPOINT_MOBILE_XS } from '../config/breakpoints'
 
 interface AuthPageProps {
   mode: 'login' | 'signup' | 'forgot'
@@ -557,9 +558,16 @@ export default function AuthPage({ mode }: AuthPageProps) {
         @keyframes spin {
           to { transform: rotate(360deg); }
         }
-        @media (max-width: 480px) {
+        @media (max-width: ${BREAKPOINT_MOBILE_XS}) {
           .rules-list {
             grid-template-columns: 1fr;
+          }
+          .auth-card {
+            padding: var(--space-5);
+          }
+          .auth-back-link {
+            padding: 8px 12px;
+            margin: -8px -12px;
           }
         }
       `}</style>
