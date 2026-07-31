@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
 import {
-  LayoutDashboard, PlusCircle, Bookmark, History, CreditCard, Settings, Zap, X
+  LayoutDashboard, PlusCircle, Bookmark, History, CreditCard, Settings, Zap, X, Shield
 } from 'lucide-react'
 import { useAppStore } from '../store/app'
 
@@ -23,7 +23,8 @@ export function Sidebar({ isOpen, onClose, onUpgradeClick }: SidebarProps) {
     { label: 'Brand Kit', path: '/app/brand-kit', icon: Bookmark },
     { label: 'My Generations', path: '/app/history', icon: History },
     { label: 'Billing', path: '/app/billing', icon: CreditCard },
-    { label: 'Settings', path: '/app/settings', icon: Settings }
+    { label: 'Settings', path: '/app/settings', icon: Settings },
+    ...(user?.role === 'admin' ? [{ label: 'Admin Panel', path: '/admin', icon: Shield }] : [])
   ]
 
   return (
