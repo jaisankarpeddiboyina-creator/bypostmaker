@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { Lock, Loader2, ArrowLeft, AlertCircle, CheckCircle } from 'lucide-react'
 import { useAppStore } from '../store/app'
 import { api } from '../lib/api'
+import { BREAKPOINT_MOBILE_XS } from '../config/breakpoints'
 
 export default function ResetPasswordPage() {
   const { addToast } = useAppStore()
@@ -371,9 +372,16 @@ export default function ResetPasswordPage() {
         @keyframes spin {
           to { transform: rotate(360deg); }
         }
-        @media (max-width: 480px) {
+        @media (max-width: ${BREAKPOINT_MOBILE_XS}) {
           .rules-list {
             grid-template-columns: 1fr;
+          }
+          .reset-card {
+            padding: var(--space-5);
+          }
+          .reset-back-link {
+            padding: 8px 12px;
+            margin: -8px -12px;
           }
         }
       `}</style>

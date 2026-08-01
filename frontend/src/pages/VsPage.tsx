@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { ArrowLeft, Check, Minus, AlertCircle, Scale, ChevronDown, ChevronUp, HelpCircle } from 'lucide-react'
 import { vsPages } from '../../../config/vsPages'
 import { useDocumentMetadata } from '../lib/seo'
+import { BREAKPOINT_MOBILE } from '../config/breakpoints'
 
 export default function VsPage() {
   const { slug } = useParams<{ slug: string }>()
@@ -76,11 +77,14 @@ export default function VsPage() {
             {entry.features.map(row => (
               <div className="vs-table-row" key={row.feature}>
                 <div className="vs-table-cell vs-table-feature">{row.feature}</div>
-                <div className={`vs-table-cell ${row.postmakerWins ? 'vs-cell-win' : ''}`}>
+                <div 
+                  className={`vs-table-cell ${row.postmakerWins ? 'vs-cell-win' : ''}`}
+                  data-label="PostMaker"
+                >
                   {row.postmakerWins ? <Check size={14} className="vs-cell-icon" /> : <Minus size={14} className="vs-cell-icon vs-cell-icon-neutral" />}
                   {row.postmaker}
                 </div>
-                <div className="vs-table-cell">{row.competitor}</div>
+                <div className="vs-table-cell" data-label={entry.competitorName}>{row.competitor}</div>
               </div>
             ))}
           </div>
@@ -343,9 +347,35 @@ const vsStyles = `
     display: flex; flex-direction: column; align-items: center; gap: 12px;
   }
 
-  @media (max-width: 640px) {
-    .vs-columns { grid-template-columns: 1fr; }
-    .vs-table-row { grid-template-columns: 1fr; }
-    .vs-table-cell { border-bottom: 1px solid var(--color-border); }
+  @media (max-width: ${BREAKPOINT_MOBILE}) {
+    .vs-table-head {
+      display: none;
+    }
+    .vs-table-row {
+      grid-template-columns: 1fr;
+      padding: 16px;
+      gap: 12px;
+    }
+    .vs-table-cell {
+      padding: 0;
+      border: none;
+    }
+    .vs-table-cell.vs-table-feature {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--color-text-primary);
+      margin-bottom: 4px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 8px;
+    }
+    .vs-table-cell[data-label]::before {
+      content: attr(data-label) ": ";
+      font-weight: 700;
+      color: var(--color-primary-start);
+      margin-right: 8px;
+    }
+    .vs-columns {
+      grid-template-columns: 1fr;
+    }
   }
 `

@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { ArrowLeft, Calendar, Clock, User, Tag, BookOpen, AlertCircle } from 'lucide-react'
 import { blogPosts } from '../../../config/blog'
 import { useDocumentMetadata } from '../lib/seo'
+import { BREAKPOINT_MOBILE } from '../config/breakpoints'
 
 // Lightweight Markdown-to-HTML parser.
 // Handles headings, bold, italic, inline code, blockquotes, links, lists, paragraphs.
@@ -490,5 +491,38 @@ const blogStyles = `
     flex-direction: column;
     align-items: center;
     gap: 12px;
+  }
+
+  @media (max-width: ${BREAKPOINT_MOBILE}) {
+    .blog-container.detail-view {
+      margin: 32px auto 60px;
+      padding: 0 16px;
+    }
+    .blog-post-h1 {
+      font-size: 24px;
+      margin-top: 24px;
+    }
+    .blog-post-h2 {
+      font-size: 20px;
+      margin-top: 20px;
+    }
+    .blog-article-content {
+      font-size: 16px;
+      line-height: 1.7;
+    }
+    .blog-footer-cta {
+      margin-top: 40px;
+      padding: var(--space-5);
+    }
+    .blog-container.list-view {
+      margin: 32px auto 60px;
+      padding: 0 16px;
+    }
+    .blog-list-header {
+      margin-bottom: 32px;
+    }
+    .blog-card {
+      padding: 20px;
+    }
   }
 `

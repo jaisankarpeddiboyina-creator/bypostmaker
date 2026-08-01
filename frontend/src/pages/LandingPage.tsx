@@ -83,9 +83,7 @@ const DEMO_PRESETS = [
   },
 ]
 
-const BREAKPOINT_MOBILE = '768px'
-const BREAKPOINT_MOBILE_XS = '480px'
-const BREAKPOINT_TABLET = '1024px'
+import { BREAKPOINT_MOBILE, BREAKPOINT_MOBILE_XS, BREAKPOINT_TABLET } from '../config/breakpoints'
 
 type PlatformTab = 'linkedin' | 'twitter' | 'instagram' | 'reddit' | 'tiktok' | 'youtube'
 

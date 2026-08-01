@@ -1,5 +1,6 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
+import { BREAKPOINT_MOBILE } from '../config/breakpoints'
 
 const COMPANY = 'PostMaker'
 const DOMAIN  = 'bypostamaker.com'
@@ -376,6 +377,24 @@ export default function LegalPage({ page }: { page: 'privacy' | 'terms' | 'refun
         .legal-footer-links a { font-size: 14px; color: var(--text-3); text-decoration: none; transition: color var(--transition); }
         .legal-footer-links a:hover { color: var(--accent); }
         .legal-footer-links a.active { color: var(--accent); text-decoration: underline; text-underline-offset: 4px; font-weight: 500; }
+        
+        @media (max-width: ${BREAKPOINT_MOBILE}) {
+          .legal-body {
+            padding: 32px 16px 60px;
+          }
+          .legal-title {
+            font-size: clamp(22px, 6vw, 28px);
+            margin-bottom: 24px;
+          }
+          .legal-footer-links {
+            gap: 16px;
+            margin-top: 40px;
+            padding-top: 20px;
+          }
+          .legal-footer-links a {
+            padding: var(--space-2) 0;
+          }
+        }
       `}</style>
     </div>
   )
