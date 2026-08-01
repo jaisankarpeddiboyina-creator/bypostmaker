@@ -27,6 +27,7 @@ import { api } from '../lib/api'
 import { useAppStore } from '../store/app'
 import { PLATFORMS, PLATFORM_MAP } from '@@config/platforms'
 import { PlatformIcon } from '../components/PlatformIcon'
+import { BREAKPOINT_MOBILE } from '../config/breakpoints'
 
 interface PlatformLinkItem {
   platform_id: string
@@ -2150,6 +2151,12 @@ export default function BrandKitPage() {
           }
           .platform-picker-grid {
             grid-template-columns: 1fr 1fr;
+          }
+        }
+
+        @media (max-width: ${BREAKPOINT_MOBILE}) {
+          .tab-btn {
+            padding: var(--space-3) var(--space-4);
           }
         }
       `}</style>

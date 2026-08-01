@@ -392,3 +392,31 @@ code, .mono {
   contain-intrinsic-size: 1px 440px;
 }
 
+/* ── Reusable Apple-grade Responsive Stacked Grid Helpers ── */
+@media (max-width: 768px) {
+  .responsive-stacked-grid {
+    grid-template-columns: 1fr !important;
+    padding: 16px !important;
+    gap: 12px !important;
+  }
+  .responsive-stacked-grid-header {
+    display: none !important;
+  }
+  .responsive-stacked-grid [data-label]::before {
+    content: attr(data-label) ": ";
+    font-weight: 700;
+    color: var(--color-primary-start);
+    margin-right: 8px;
+    min-width: 100px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: inline-block;
+  }
+  /* Hide stacked empty cells on mobile (e.g. inactive promo actions) */
+  .responsive-stacked-grid [data-label]:empty {
+    display: none !important;
+  }
+}
+
+

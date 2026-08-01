@@ -20,6 +20,7 @@ import { useAppStore } from '../store/app'
 import { PLATFORM_MAP } from '@@config/platforms'
 import { PlatformIcon } from '../components/PlatformIcon'
 import { PostCard } from '../components/PostCard'
+import { BREAKPOINT_MOBILE } from '../config/breakpoints'
 
 interface HistoryCampaign {
   id: string
@@ -914,6 +915,13 @@ export default function HistoryPage() {
           }
           .hub-search-box {
             max-width: 100%;
+          }
+        }
+
+        @media (max-width: ${BREAKPOINT_MOBILE}) {
+          .gen-stepper-group .btn-icon {
+            width: 44px;
+            height: 44px;
           }
         }
       `}</style>
