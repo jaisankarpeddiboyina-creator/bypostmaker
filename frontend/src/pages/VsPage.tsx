@@ -330,7 +330,7 @@ const vsStyles = `
   }
   .vs-list-sub { font-size: 16px; color: var(--color-text-secondary); max-width: 520px; line-height: 1.6; }
 
-  .vs-cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; }
+  .vs-cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 24px; }
   .vs-card {
     background: var(--color-surface); border: 1px solid var(--color-border);
     border-radius: var(--radius-card); padding: 28px; display: flex;
