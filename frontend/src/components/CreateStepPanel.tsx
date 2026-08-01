@@ -8,6 +8,7 @@ import { useAppStore } from '../store/app'
 import { api } from '../lib/api'
 import { PlatformIcon } from './PlatformIcon'
 import { MAX_IMAGE_SIZE_BYTES } from '../../../config/limits'
+import { BREAKPOINT_MOBILE } from '../config/breakpoints'
 
 const VIDEO_MAX_MB = 100
 
@@ -773,6 +774,7 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
           display: flex;
           align-items: center;
           gap: 6px;
+          flex-wrap: wrap;
         }
 
         .tone-pill-btn {
@@ -1311,6 +1313,13 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
           .studio-platform-grid {
             grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
             gap: 8px;
+          }
+        }
+
+        @media (max-width: ${BREAKPOINT_MOBILE}) {
+          .cat-tab-btn {
+            padding: 10px 16px;
+            font-size: 13px;
           }
         }
       `}</style>

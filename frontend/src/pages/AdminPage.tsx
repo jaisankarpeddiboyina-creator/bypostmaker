@@ -5,6 +5,7 @@ import {
   BarChart2, Download, Activity, Sparkles, Copy, Check, Filter
 } from 'lucide-react'
 import { useAppStore } from '../store/app'
+import { BREAKPOINT_MOBILE } from '../config/breakpoints'
 
 interface Stats {
   users: { total: number; free: number; starter: number; pro: number; business: number; beta: number; disabled: number; new_today: number; new_week: number }
@@ -413,21 +414,21 @@ export default function AdminPage() {
             </div>
 
             <div className="admin-table">
-              <div className="admin-table-header">
+              <div className="admin-table-header responsive-stacked-grid-header">
                 <span>User</span><span>Plan</span><span>Role</span><span>Status</span><span>Actions</span>
               </div>
               {users.map(u => (
-                <div key={u.id} className="admin-table-row">
+                <div key={u.id} className="admin-table-row responsive-stacked-grid">
                   <div>
                     <div style={{ fontSize: 13, color: 'var(--text-1)', fontWeight: 600 }}>{u.name}</div>
                     <div style={{ fontSize: 11, color: 'var(--text-3)' }}>{u.email}</div>
                   </div>
-                  <span className={`badge badge-${u.plan}`}>{u.plan}</span>
-                  <span style={{ fontSize: 12, color: 'var(--text-2)', textTransform: 'capitalize' }}>{u.role}</span>
-                  <span style={{ fontSize: 12, color: u.disabled ? 'var(--error)' : 'var(--success)' }}>
+                  <span className={`badge badge-${u.plan}`} data-label="Plan">{u.plan}</span>
+                  <span style={{ fontSize: 12, color: 'var(--text-2)', textTransform: 'capitalize' }} data-label="Role">{u.role}</span>
+                  <span style={{ fontSize: 12, color: u.disabled ? 'var(--error)' : 'var(--success)' }} data-label="Status">
                     {u.disabled ? 'Disabled' : 'Active'}
                   </span>
-                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'center' }} data-label="Actions">
                     <select className="admin-select"
                       value={u.role}
                       onChange={e => updateUser(u.id, { role: e.target.value })}>
@@ -497,18 +498,15 @@ export default function AdminPage() {
                 <h3 style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)', marginBottom: 12 }}>
                   Create Single Promo Code
                 </h3>
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <div className="promo-create-form">
                   <input className="promo-input" placeholder="CODE" value={newPromo.code}
                     onChange={e => setNewPromo(p => ({ ...p, code: e.target.value.toUpperCase() }))} />
                   <input className="promo-input" placeholder="Description" value={newPromo.description}
-                    onChange={e => setNewPromo(p => ({ ...p, description: e.target.value }))}
-                    style={{ flex: 2 }} />
+                    onChange={e => setNewPromo(p => ({ ...p, description: e.target.value }))} />
                   <input className="promo-input" type="number" placeholder="Discount %" value={newPromo.discount_pct}
-                    onChange={e => setNewPromo(p => ({ ...p, discount_pct: parseInt(e.target.value) || 0 }))}
-                    style={{ width: 100 }} />
+                    onChange={e => setNewPromo(p => ({ ...p, discount_pct: parseInt(e.target.value) || 0 }))} />
                   <input className="promo-input" type="number" placeholder="Max uses (∞)" value={newPromo.max_uses}
-                    onChange={e => setNewPromo(p => ({ ...p, max_uses: e.target.value }))}
-                    style={{ width: 120 }} />
+                    onChange={e => setNewPromo(p => ({ ...p, max_uses: e.target.value }))} />
                   <button className="btn btn-primary btn-sm" onClick={createPromo}>Create Code</button>
                 </div>
               </div>
@@ -565,23 +563,25 @@ export default function AdminPage() {
             )}
 
             <div className="admin-table">
-              <div className="admin-table-header">
+              <div className="admin-table-header responsive-stacked-grid-header">
                 <span>Code</span><span>Description</span><span>Discount</span><span>Uses</span><span>Status</span><span></span>
               </div>
               {promos.map(p => (
-                <div key={p.code} className="admin-table-row">
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700, color: 'var(--color-primary-start)' }}>{p.code}</span>
-                  <span style={{ fontSize: 13, color: 'var(--text-2)' }}>{p.description}</span>
-                  <span style={{ fontSize: 13, color: 'var(--color-primary-start)', fontWeight: 600 }}>{p.discount_pct}% off</span>
-                  <span style={{ fontSize: 12, color: 'var(--text-3)' }}>
+                <div key={p.code} className="admin-table-row responsive-stacked-grid">
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700, color: 'var(--color-primary-start)' }} data-label="Code">{p.code}</span>
+                  <span style={{ fontSize: 13, color: 'var(--text-2)' }} data-label="Description">{p.description}</span>
+                  <span style={{ fontSize: 13, color: 'var(--color-primary-start)', fontWeight: 600 }} data-label="Discount">{p.discount_pct}% off</span>
+                  <span style={{ fontSize: 12, color: 'var(--text-3)' }} data-label="Uses">
                     {p.uses}{p.max_uses ? `/${p.max_uses}` : ''}
                   </span>
-                  <span style={{ fontSize: 12, color: p.active ? 'var(--success)' : 'var(--text-4)' }}>
+                  <span style={{ fontSize: 12, color: p.active ? 'var(--success)' : 'var(--text-4)' }} data-label="Status">
                     {p.active ? 'Active' : 'Inactive'}
                   </span>
-                  {p.active === 1 && (
-                    <button className="btn-icon-xs" onClick={() => deactivatePromo(p.code)} title="Deactivate">✕</button>
-                  )}
+                  <div data-label="Actions">
+                    {p.active === 1 && (
+                      <button className="btn-icon-xs" onClick={() => deactivatePromo(p.code)} title="Deactivate">✕</button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -651,6 +651,40 @@ export default function AdminPage() {
         .admin-users { display: flex; flex-direction: column; gap: 12px; }
         .btn-icon-xs { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: #CBD5E1; border-radius: 4px; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
         .btn-icon-xs:hover { background: rgba(255,255,255,0.15); color: #F8FAFC; }
+
+        .promo-create-form {
+          display: grid;
+          grid-template-columns: 1fr 2fr 1fr 1fr auto;
+          gap: 12px;
+          align-items: end;
+        }
+
+        @media (max-width: ${BREAKPOINT_MOBILE}) {
+          .admin-page { padding: 16px 12px; }
+          .admin-tabs {
+            overflow-x: auto;
+            white-space: nowrap;
+            flex-wrap: nowrap;
+            -webkit-overflow-scrolling: touch;
+          }
+          .admin-tab {
+            flex-shrink: 0;
+          }
+          .stat-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+          .promo-create-form {
+            grid-template-columns: 1fr;
+            gap: 12px;
+          }
+          .promo-create-form .promo-input {
+            width: 100% !important;
+          }
+          .admin-table-row > div, .admin-table-row > span {
+            display: flex;
+            align-items: center;
+          }
+        }
       `}</style>
     </div>
   )
