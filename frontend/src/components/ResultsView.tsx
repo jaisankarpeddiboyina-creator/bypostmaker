@@ -4,7 +4,6 @@ import { useAppStore } from '../store/app'
 import { PostCard } from './PostCard'
 import { RefinementChat } from './RefinementChat'
 import { PLATFORM_MAP } from '@@config/platforms'
-import { generateClientZip } from '../lib/downloadKit'
 
 export function ResultsView() {
   const {
@@ -17,59 +16,27 @@ export function ResultsView() {
     setActivePlatformId,
     selectedPlatforms,
     addToast,
+    openExport,
   } = useAppStore()
-
-  const [downloadProgress, setDownloadProgress] = useState<string | null>(null)
 
   const postsList = campaign ? Object.values(campaign.posts) : []
   const completedPosts = postsList.filter(p => p.status === 'done')
   const totalPosts = selectedPlatforms.length || postsList.length
 
-  const handleDownloadAll = async () => {
+  const handleDownloadAll = () => {
     if (!campaign?.id) return
-
-    let totalResizes = 0
-    for (const post of postsList) {
-      const platform = PLATFORM_MAP[post.platformId]
-      if (!platform) continue
-      if (imageFiles.length > 0 && platform.imageDimensions.length > 0) {
-        const imagesToProcess = imageFiles.slice(0, platform.maxImages)
-        totalResizes += imagesToProcess.length * platform.imageDimensions.length
-      }
-    }
-
-    if (totalResizes > 60) {
-      addToast('Capping resizes at 60 operations to prevent memory issues.', 'info')
-    }
-
-    setDownloadProgress('Starting generation...')
-    try {
-      const zipBlob = await generateClientZip(
-        campaign.id,
-        campaign.prompt,
-        postsList,
-        imageFiles,
-        videoFile,
-        (msg) => setDownloadProgress(msg)
-      )
-
-      const url = URL.createObjectURL(zipBlob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = 'postmaker_kit.zip'
-      a.click()
-
-      setTimeout(() => {
-        URL.revokeObjectURL(url)
-      }, 1000)
-
-      addToast('Download started', 'success')
-    } catch (err: any) {
-      console.error('ZIP generation failed:', err)
-      addToast(err?.message || 'Failed to generate download kit.', 'error')
-    } finally {
-      setDownloadProgress(null)
-    }
+    openExport({
+      campaignId: campaign.id,
+      prompt: campaign.prompt,
+      posts: postsList.map(post => ({
+        platformId: post.platformId,
+        content: post.content,
+        extraFields: post.extraFields
+      })),
+      imageFiles,
+      videoFile,
+      defaultFilename: 'postmaker_kit'
+    })
   }
 
   const [filterGroup, setFilterGroup] = useState<string>('all')
@@ -129,19 +96,9 @@ export function ResultsView() {
               type="button"
               className="btn btn-primary btn-sm download-kit-btn"
               onClick={handleDownloadAll}
-              disabled={!!downloadProgress}
             >
-              {downloadProgress ? (
-                <>
-                  <Loader2 size={13} className="spin" />
-                  <span>{downloadProgress}</span>
-                </>
-              ) : (
-                <>
-                  <Download size={13} />
-                  <span>Download Full Kit ({completedPosts.length})</span>
-                </>
-              )}
+              <Download size={13} />
+              <span>Download Full Kit ({completedPosts.length})</span>
             </button>
           )}
         </div>

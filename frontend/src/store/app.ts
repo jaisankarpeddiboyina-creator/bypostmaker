@@ -42,6 +42,19 @@ export interface Campaign {
   videoFile: File | null
 }
 
+export interface ExportPayload {
+  campaignId: string
+  prompt: string
+  posts: {
+    platformId: string
+    content: string
+    extraFields?: any
+  }[]
+  imageFiles: File[]
+  videoFile: File | null
+  defaultFilename: string
+}
+
 export interface Toast {
   id: string
   message: string
@@ -97,6 +110,12 @@ interface AppStore {
 
   viewMode: 'create' | 'results'
   setViewMode: (v: 'create' | 'results') => void
+
+  showExportModal: boolean
+  setShowExportModal: (v: boolean) => void
+  exportPayload: ExportPayload | null
+  openExport: (payload: ExportPayload) => void
+  closeExport: () => void
 }
 
 export const useAppStore = create<AppStore>((set, get) => ({
@@ -187,4 +206,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   viewMode: 'create',
   setViewMode: (v) => set({ viewMode: v }),
+
+  showExportModal: false,
+  setShowExportModal: (v) => set({ showExportModal: v }),
+  exportPayload: null,
+  openExport: (payload) => set({ exportPayload: payload, showExportModal: true }),
+  closeExport: () => set({ exportPayload: null, showExportModal: false }),
 }))
