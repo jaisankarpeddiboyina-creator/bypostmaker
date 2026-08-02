@@ -286,6 +286,8 @@ export function sanitizeFilename(filename: string): string {
   if (cleaned.length > 100) {
     cleaned = cleaned.substring(0, 100);
   }
+  // Strip any trailing extension (e.g. .pdf, .zip, etc.)
+  cleaned = cleaned.replace(/\.[a-zA-Z0-9]{2,4}$/, '');
   return cleaned;
 }
 
