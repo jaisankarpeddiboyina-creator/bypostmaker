@@ -36,11 +36,49 @@ export interface Env {
   DOMAIN: string
   ENVIRONMENT: 'development' | 'staging' | 'production'
   GROQ_LIMITER?: DurableObjectNamespace
+  TEXT_PROVIDER?: string
+  AI_MAX_OUTPUT_TOKENS?: string
+  AI_MAX_PLATFORMS_PER_BATCH?: string
+  AI_AVG_TOKENS_PER_PLATFORM?: string
   // Test-only mock flags — hard-gated to non-production in analyzeImage() / generate.ts
   STAGE1_MOCK_FAIL?: string
   STAGE1_MOCK_SUCCESS?: string
   STAGE2_MOCK_FAIL_GROUP?: string
   STAGE2_MOCK_SUCCESS?: string
+}
+
+export interface ModelCapabilities {
+  maxOutputTokens: number
+  maxPlatformsPerBatch: number
+  avgTokensPerPlatform: number
+}
+
+export function parseEnvInt(val: string | undefined, fallback: number): number {
+  if (!val) return fallback
+  const parsed = parseInt(val, 10)
+  return isNaN(parsed) || parsed <= 0 ? fallback : parsed
+}
+
+export function getModelCapabilities(env: Env): ModelCapabilities {
+  return {
+    maxOutputTokens: parseEnvInt(env.AI_MAX_OUTPUT_TOKENS, 4096),
+    maxPlatformsPerBatch: parseEnvInt(env.AI_MAX_PLATFORMS_PER_BATCH, 10),
+    avgTokensPerPlatform: parseEnvInt(env.AI_AVG_TOKENS_PER_PLATFORM, 250),
+  }
+}
+
+export function getLanguageTokenMultiplier(language: string): number {
+  const l = (language || '').toLowerCase().trim()
+  if (l === 'hindi' || l === 'hi' || l === 'chinese' || l === 'zh' || l === 'japanese' || l === 'ja' || l === 'korean' || l === 'ko') {
+    return 3.0
+  }
+  if (l === 'arabic' || l === 'ar') {
+    return 2.4
+  }
+  if (l === 'russian' || l === 'ru' || l === 'greek' || l === 'el') {
+    return 1.8
+  }
+  return 1.0
 }
 
 // ── AILink Instance Factory ───────────────────────────────────
@@ -277,11 +315,12 @@ export function createStreamingClient(env: Env) {
   const geminiProvider = createGoogleGenerativeAI({ apiKey: env.GEMINI_API_KEY })
 
   const streamGenerate = ai.wrap(
-    async ({ systemPrompt, userPrompt, useGroq = true, image }: {
+    async ({ systemPrompt, userPrompt, useGroq = true, image, maxTokens }: {
       systemPrompt: string
       userPrompt: string
       useGroq?: boolean
       image?: { buffer: ArrayBuffer; contentType: string }
+      maxTokens?: number
     }) => {
       const model = useGroq && !image
         ? groqProvider(env.GROQ_MODEL)
@@ -304,14 +343,6 @@ export function createStreamingClient(env: Env) {
         })
       }
 
-      // Stage 2 timeout: 10 seconds per Groq group call.
-      // Reasoning: Stage 2 is text-only (Groq llama-3.3-70b-versatile).
-      // Typical response time: 1–4s for 100–300 tokens. 10s is 2.5–10× headroom.
-      // Combined ceiling with Stage 1's 15s cap: 15 + 10 = 25s max total, safely
-      // under Cloudflare's ~30s wall-clock limit with a 5s buffer for I/O.
-      // The image path (legacy retry fallback) is a Gemini call and gets the same
-      // 10s limit — Gemini is faster for single-platform retries than multi-platform
-      // generation, so this is still sufficient.
       const abortController = new AbortController()
       const timeoutId = setTimeout(() => abortController.abort(), 10_000)
 
@@ -319,7 +350,7 @@ export function createStreamingClient(env: Env) {
         model,
         system: systemPrompt,
         messages,
-        maxOutputTokens: 4096,
+        maxOutputTokens: maxTokens ?? 4096,
         abortSignal: abortController.signal,
       })
 
@@ -419,22 +450,32 @@ export function buildImageContext(imageDescription: string | null): string {
 }
 
 export function parseGroupResponse(text: string, platformIds: string[]): Record<string, string> {
+  const result: Record<string, string> = {}
+
+  // Stage 1: Standard JSON parse
   try {
     const clean = text.replace(/```json|```/g, '').trim()
     const parsed = JSON.parse(clean)
-    const result: Record<string, string> = {}
-    for (const id of platformIds) {
-      if (parsed[id] && typeof parsed[id] === 'string') {
-        result[id] = parsed[id].trim()
+    if (typeof parsed === 'object' && parsed !== null) {
+      for (const id of platformIds) {
+        if (parsed[id] && typeof parsed[id] === 'string') {
+          result[id] = parsed[id].trim()
+        }
       }
     }
-    return result
   } catch {
-    const result: Record<string, string> = {}
-    for (const id of platformIds) {
-      const match = text.match(new RegExp(`"${id}"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"`, 's'))
-      if (match) result[id] = match[1].replace(/\\n/g, '\n').replace(/\\"/g, '"')
-    }
-    return result
+    // Standard JSON.parse failed (e.g. malformed trailing syntax) — proceed to Stage 2
   }
+
+  // Stage 2: Fail-soft regex key-value extractor (for any platform IDs missed by JSON.parse)
+  for (const id of platformIds) {
+    if (!result[id]) {
+      const match = text.match(new RegExp(`"${id}"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"`, 's'))
+      if (match && match[1]) {
+        result[id] = match[1].replace(/\\n/g, '\n').replace(/\\"/g, '"').trim()
+      }
+    }
+  }
+
+  return result
 }

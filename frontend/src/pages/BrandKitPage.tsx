@@ -1022,12 +1022,17 @@ export default function BrandKitPage() {
                     className="form-control mono-font"
                     rows={5}
                     value={brandGuidelines}
+                    maxLength={2000}
                     onChange={(e) => {
                       setBrandGuidelines(e.target.value)
                       setIsDirty(true)
                     }}
                     placeholder="Write or paste any custom style rules, editorial guidelines, capitalization rules, or brand instructions here..."
                   />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px', fontSize: '12px', color: 'var(--color-text-secondary)' }}>
+                    <span>Brand guidelines are capped at 1,500 characters in AI prompts to maintain optimal context quality.</span>
+                    <span>{brandGuidelines.length} / 2000</span>
+                  </div>
                 </div>
               </div>
             </div>

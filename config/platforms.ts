@@ -5,6 +5,7 @@
 // ============================================================
 
 export type PlatformTier = 'free' | 'starter' | 'pro' | 'business'
+export type ExecutionBatch = 'social' | 'community_longform' | 'media_design_messaging'
 export type PlatformGroup =
   | 'shortform'
   | 'professional'
@@ -14,6 +15,47 @@ export type PlatformGroup =
   | 'audio'
   | 'design'
   | 'messaging'
+
+export const PLATFORM_BATCH_MAP: Record<string, ExecutionBatch> = {
+  // Bucket 1: Social & Shortform (11)
+  twitter: 'social',
+  threads: 'social',
+  bluesky: 'social',
+  mastodon: 'social',
+  snapchat: 'social',
+  lemon8: 'social',
+  linkedin: 'social',
+  facebook: 'social',
+  instagram: 'social',
+  tiktok: 'social',
+  youtubeshorts: 'social',
+
+  // Bucket 2: Community, Dev & Longform (13)
+  reddit: 'community_longform',
+  hackernews: 'community_longform',
+  producthunt: 'community_longform',
+  indiehackers: 'community_longform',
+  betalist: 'community_longform',
+  discord: 'community_longform',
+  devto: 'community_longform',
+  hashnode: 'community_longform',
+  github: 'community_longform',
+  stackoverflow: 'community_longform',
+  medium: 'community_longform',
+  substack: 'community_longform',
+  quora: 'community_longform',
+
+  // Bucket 3: Media, Design, Audio & Messaging (9)
+  youtube: 'media_design_messaging',
+  pinterest: 'media_design_messaging',
+  twitch: 'media_design_messaging',
+  clubhouse: 'media_design_messaging',
+  dribbble: 'media_design_messaging',
+  behance: 'media_design_messaging',
+  telegram: 'media_design_messaging',
+  slack: 'media_design_messaging',
+  whatsapp: 'media_design_messaging',
+}
 
 export interface ImageDimension {
   width: number
