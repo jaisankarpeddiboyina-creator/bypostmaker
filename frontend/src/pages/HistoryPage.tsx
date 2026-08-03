@@ -14,7 +14,6 @@ import {
   Search,
   Filter
 } from 'lucide-react'
-import { generateClientZip } from '../lib/downloadKit'
 import { api } from '../lib/api'
 import { useAppStore } from '../store/app'
 import { PLATFORM_MAP } from '@@config/platforms'
@@ -41,7 +40,7 @@ interface HistoryCampaign {
 }
 
 export default function HistoryPage() {
-  const { addToast, setPrompt, setSelectedPlatforms } = useAppStore()
+  const { addToast, setPrompt, setSelectedPlatforms, openExport } = useAppStore()
   const navigate = useNavigate()
 
   const [campaigns, setCampaigns] = useState<HistoryCampaign[]>([])
@@ -85,41 +84,21 @@ export default function HistoryPage() {
     navigate('/app')
   }
 
-  const handleDownloadKit = async (campaign: HistoryCampaign) => {
-    if (downloading) return
-    setDownloading(true)
-    try {
-      const postsList = campaign.posts.map(post => ({
-        platformId: post.platform_id,
-        content: post.content,
-        edited: Boolean(post.edited)
-      }))
+  const handleDownloadKit = (campaign: HistoryCampaign) => {
+    const postsList = campaign.posts.map(post => ({
+      platformId: post.platform_id,
+      content: post.content,
+      edited: Boolean(post.edited)
+    }))
 
-      const zipBlob = await generateClientZip(
-        campaign.id,
-        campaign.prompt,
-        postsList,
-        [],
-        null,
-        () => {}
-      )
-      const url = URL.createObjectURL(zipBlob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `postmaker_${campaign.id}.zip`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      setTimeout(() => {
-        URL.revokeObjectURL(url)
-      }, 1000)
-      addToast('Kit download started', 'success')
-    } catch (error) {
-      console.error('Download failed:', error)
-      addToast('Failed to download kit', 'error')
-    } finally {
-      setDownloading(false)
-    }
+    openExport({
+      campaignId: campaign.id,
+      prompt: campaign.prompt,
+      posts: postsList,
+      imageFiles: [],
+      videoFile: null,
+      defaultFilename: `postmaker_${campaign.id}`
+    })
   }
 
   const formatDate = (unix: number) => {
