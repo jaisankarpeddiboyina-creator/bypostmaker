@@ -210,6 +210,96 @@ export async function handleAdmin(
     return json({ ok: true })
   }
 
+  // ── GET /api/admin/tasks ──────────────────────────────────
+  if (path === '/api/admin/tasks') {
+    const tasksData = [
+      // Phase 1 — Launch Gate (10)
+      { id: 'P1-01', title: 'Stabilize core product', phase: 'Phase 1 — Launch', type: 'Core', priority: 'High', status: 'Not Started', path: 'docs/tasks/phases/phase-1-launch/core/P1-01-stabilize-core-product.md' },
+      { id: 'P1-02', title: 'Improve UI/UX polish', phase: 'Phase 1 — Launch', type: 'Core', priority: 'High', status: 'Not Started', path: 'docs/tasks/phases/phase-1-launch/core/P1-02-improve-ui-ux-polish.md' },
+      { id: 'P1-03', title: 'Performance optimization pass', phase: 'Phase 1 — Launch', type: 'Core', priority: 'Medium', status: 'Not Started', path: 'docs/tasks/phases/phase-1-launch/core/P1-03-performance-optimization-pass.md' },
+      { id: 'P1-04', title: 'Complete Razorpay international payments', phase: 'Phase 1 — Launch', type: 'Core', priority: 'High', status: 'Not Started', path: 'docs/tasks/phases/phase-1-launch/core/P1-04-complete-razorpay-international-payments.md' },
+      { id: 'P1-05', title: 'Build subscription flow', phase: 'Phase 1 — Launch', type: 'Core', priority: 'High', status: 'Not Started', path: 'docs/tasks/phases/phase-1-launch/core/P1-05-build-subscription-flow.md' },
+      { id: 'P1-06', title: 'Improve AI provider reliability & routing', phase: 'Phase 1 — Launch', type: 'Core', priority: 'High', status: 'Not Started', path: 'docs/tasks/phases/phase-1-launch/core/P1-06-improve-ai-provider-reliability-routing.md' },
+      { id: 'P1-07', title: 'Support higher AI rate limits', phase: 'Phase 1 — Launch', type: 'Core', priority: 'Medium', status: 'Completed', path: 'docs/tasks/phases/phase-1-launch/core/P1-07-support-higher-ai-rate-limits.md', commitHash: 'd2ef3f2' },
+      { id: 'P1-08', title: 'Implement bulk generation', phase: 'Phase 1 — Launch', type: 'Core', priority: 'Medium', status: 'Not Started', path: 'docs/tasks/phases/phase-1-launch/core/P1-08-implement-bulk-generation.md' },
+      { id: 'P1-09', title: 'Strengthen fallback architecture', phase: 'Phase 1 — Launch', type: 'Core', priority: 'High', status: 'Not Started', path: 'docs/tasks/phases/phase-1-launch/core/P1-09-strengthen-fallback-architecture.md' },
+      { id: 'P1-10', title: 'Set up production monitoring & logging', phase: 'Phase 1 — Launch', type: 'Core', priority: 'Medium', status: 'Not Started', path: 'docs/tasks/phases/phase-1-launch/core/P1-10-set-up-production-monitoring-logging.md' },
+
+      // Phase 2 — Creator Experience (17)
+      { id: 'P2-01', title: 'Assets library storage backend', phase: 'Phase 2 — Creator Experience', type: 'Core', priority: 'High', status: 'Not Started', path: 'docs/tasks/phases/phase-2-creator-experience/core/P2-01-assets-library-storage-backend.md' },
+      { id: 'P2-02', title: 'Assets library upload support', phase: 'Phase 2 — Creator Experience', type: 'Core', priority: 'High', status: 'Not Started', path: 'docs/tasks/phases/phase-2-creator-experience/core/P2-02-assets-library-upload-support.md' },
+      { id: 'P2-03', title: 'Assets library local/open-source media', phase: 'Phase 2 — Creator Experience', type: 'Core', priority: 'Medium', status: 'Not Started', path: 'docs/tasks/phases/phase-2-creator-experience/core/P2-03-assets-library-local-open-source-media.md' },
+      { id: 'P2-04', title: 'Assets library automatic categorization', phase: 'Phase 2 — Creator Experience', type: 'Core', priority: 'Medium', status: 'Not Started', path: 'docs/tasks/phases/phase-2-creator-experience/core/P2-04-assets-library-automatic-categorization.md' },
+      { id: 'P2-05', title: 'Tools marketplace shell & plug-in framework', phase: 'Phase 2 — Creator Experience', type: 'Core', priority: 'High', status: 'Not Started', path: 'docs/tasks/phases/phase-2-creator-experience/core/P2-05-tools-marketplace-shell-plug-in-framework.md' },
+      { id: 'P2-06', title: 'Tools marketplace select tool list', phase: 'Phase 2 — Creator Experience', type: 'Core', priority: 'High', status: 'Not Started', path: 'docs/tasks/phases/phase-2-creator-experience/core/P2-06-tools-marketplace-select-tool-list.md' },
+      { id: 'P2-14', title: 'Platform workspace per-platform editor', phase: 'Phase 2 — Creator Experience', type: 'Core', priority: 'High', status: 'Not Started', path: 'docs/tasks/phases/phase-2-creator-experience/core/P2-14-platform-workspace-per-platform-editor.md' },
+      { id: 'P2-15', title: 'Platform workspace AI-assisted editing', phase: 'Phase 2 — Creator Experience', type: 'Core', priority: 'High', status: 'Not Started', path: 'docs/tasks/phases/phase-2-creator-experience/core/P2-15-platform-workspace-ai-assisted-editing.md' },
+      { id: 'P2-16', title: 'Platform workspace platform previews', phase: 'Phase 2 — Creator Experience', type: 'Core', priority: 'High', status: 'Not Started', path: 'docs/tasks/phases/phase-2-creator-experience/core/P2-16-platform-workspace-platform-previews.md' },
+      { id: 'P2-17', title: 'Shareable platform cards', phase: 'Phase 2 — Creator Experience', type: 'Core', priority: 'Medium', status: 'Not Started', path: 'docs/tasks/phases/phase-2-creator-experience/core/P2-17-shareable-platform-cards.md' },
+      { id: 'P2-07', title: 'Tool: Thumbnail generator', phase: 'Phase 2 — Creator Experience', type: 'Optional', priority: 'Medium', status: 'Not Selected', path: 'docs/tasks/phases/phase-2-creator-experience/optional-tools-pool/P2-07-tool-thumbnail-generator.md' },
+      { id: 'P2-08', title: 'Tool: Banner creator', phase: 'Phase 2 — Creator Experience', type: 'Optional', priority: 'Medium', status: 'Not Selected', path: 'docs/tasks/phases/phase-2-creator-experience/optional-tools-pool/P2-08-tool-banner-creator.md' },
+      { id: 'P2-09', title: 'Tool: Logo generator', phase: 'Phase 2 — Creator Experience', type: 'Optional', priority: 'Low', status: 'Not Selected', path: 'docs/tasks/phases/phase-2-creator-experience/optional-tools-pool/P2-09-tool-logo-generator.md' },
+      { id: 'P2-10', title: 'Tool: Background remover', phase: 'Phase 2 — Creator Experience', type: 'Optional', priority: 'Medium', status: 'Not Selected', path: 'docs/tasks/phases/phase-2-creator-experience/optional-tools-pool/P2-10-tool-background-remover.md' },
+      { id: 'P2-11', title: 'Tool: Object remover', phase: 'Phase 2 — Creator Experience', type: 'Optional', priority: 'Low', status: 'Not Selected', path: 'docs/tasks/phases/phase-2-creator-experience/optional-tools-pool/P2-11-tool-object-remover.md' },
+      { id: 'P2-12', title: 'Tool: Upscaler', phase: 'Phase 2 — Creator Experience', type: 'Optional', priority: 'Low', status: 'Not Selected', path: 'docs/tasks/phases/phase-2-creator-experience/optional-tools-pool/P2-12-tool-upscaler.md' },
+      { id: 'P2-13', title: 'Tool: Voice tools', phase: 'Phase 2 — Creator Experience', type: 'Optional', priority: 'Low', status: 'Not Selected', path: 'docs/tasks/phases/phase-2-creator-experience/optional-tools-pool/P2-13-tool-voice-tools.md' },
+
+      // Phase 3 — Automation (4)
+      { id: 'P3-01', title: 'Content scheduling calendar UI', phase: 'Phase 3 — Automation', type: 'Core', priority: 'High', status: 'Not Started', path: 'docs/tasks/phases/phase-3-automation/core/P3-01-content-scheduling-calendar-ui.md' },
+      { id: 'P3-02', title: 'Content scheduling draft storage', phase: 'Phase 3 — Automation', type: 'Core', priority: 'High', status: 'Not Started', path: 'docs/tasks/phases/phase-3-automation/core/P3-02-content-scheduling-draft-storage.md' },
+      { id: 'P3-03', title: 'Auto-publishing engine', phase: 'Phase 3 — Automation', type: 'Core', priority: 'High', status: 'Not Started', path: 'docs/tasks/phases/phase-3-automation/core/P3-03-auto-publishing-engine.md' },
+      { id: 'P3-04', title: 'Email notifications', phase: 'Phase 3 — Automation', type: 'Core', priority: 'Medium', status: 'Not Started', path: 'docs/tasks/phases/phase-3-automation/core/P3-04-email-notifications.md' },
+
+      // Phase 4 — Business (7)
+      { id: 'P4-01', title: 'Analytics performance dashboard', phase: 'Phase 4 — Business', type: 'Core', priority: 'High', status: 'Not Started', path: 'docs/tasks/phases/phase-4-business/core/P4-01-analytics-performance-dashboard.md' },
+      { id: 'P4-02', title: 'Analytics growth tracking', phase: 'Phase 4 — Business', type: 'Core', priority: 'Medium', status: 'Not Started', path: 'docs/tasks/phases/phase-4-business/core/P4-02-analytics-growth-tracking.md' },
+      { id: 'P4-03', title: 'Analytics campaign analytics', phase: 'Phase 4 — Business', type: 'Core', priority: 'Medium', status: 'Not Started', path: 'docs/tasks/phases/phase-4-business/core/P4-03-analytics-campaign-analytics.md' },
+      { id: 'P4-04', title: 'Team workspaces', phase: 'Phase 4 — Business', type: 'Core', priority: 'High', status: 'Not Started', path: 'docs/tasks/phases/phase-4-business/core/P4-04-team-workspaces.md' },
+      { id: 'P4-05', title: 'Client management module', phase: 'Phase 4 — Business', type: 'Core', priority: 'High', status: 'Not Started', path: 'docs/tasks/phases/phase-4-business/core/P4-05-client-management-module.md' },
+      { id: 'P4-06', title: 'Client approval workflow', phase: 'Phase 4 — Business', type: 'Core', priority: 'High', status: 'Not Started', path: 'docs/tasks/phases/phase-4-business/core/P4-06-client-approval-workflow.md' },
+      { id: 'P4-07', title: 'Agency workspace features', phase: 'Phase 4 — Business', type: 'Core', priority: 'High', status: 'Not Started', path: 'docs/tasks/phases/phase-4-business/core/P4-07-agency-workspace-features.md' },
+
+      // Phase 5 — Scale (5)
+      { id: 'P5-01', title: 'AI image generation module', phase: 'Phase 5 — Scale', type: 'Core', priority: 'High', status: 'Not Started', path: 'docs/tasks/phases/phase-5-scale/core/P5-01-ai-image-generation-module.md' },
+      { id: 'P5-02', title: 'AI video generation module', phase: 'Phase 5 — Scale', type: 'Core', priority: 'Medium', status: 'Not Started', path: 'docs/tasks/phases/phase-5-scale/core/P5-02-ai-video-generation-module.md' },
+      { id: 'P5-03', title: 'Enterprise features', phase: 'Phase 5 — Scale', type: 'Core', priority: 'High', status: 'Not Started', path: 'docs/tasks/phases/phase-5-scale/core/P5-03-enterprise-features.md' },
+      { id: 'P5-04', title: 'Campaign management', phase: 'Phase 5 — Scale', type: 'Core', priority: 'Medium', status: 'Not Started', path: 'docs/tasks/phases/phase-5-scale/core/P5-04-campaign-management.md' },
+      { id: 'P5-05', title: 'Scale infrastructure for 1,000 users', phase: 'Phase 5 — Scale', type: 'Core', priority: 'High', status: 'Not Started', path: 'docs/tasks/phases/phase-5-scale/core/P5-05-scale-infrastructure-for-1-000-users.md' },
+    ]
+
+    const total = tasksData.length
+    const completed = tasksData.filter(t => t.status === 'Completed').length
+    const inProgress = tasksData.filter(t => t.status === 'In Progress').length
+    const blocked = tasksData.filter(t => t.status === 'Blocked').length
+    const pending = total - completed - inProgress - blocked
+
+    const phaseBreakdown = [
+      { name: 'Phase 1 — Launch', total: 10, completed: 1, percent: 10 },
+      { name: 'Phase 2 — Creator Experience', total: 17, completed: 0, percent: 0 },
+      { name: 'Phase 3 — Automation', total: 4, completed: 0, percent: 0 },
+      { name: 'Phase 4 — Business', total: 7, completed: 0, percent: 0 },
+      { name: 'Phase 5 — Scale', total: 5, completed: 0, percent: 0 },
+    ]
+
+    return json({
+      tasks: tasksData,
+      stats: {
+        total,
+        completed,
+        inProgress,
+        blocked,
+        pending,
+        completionPct: Math.round((completed / total) * 1000) / 10,
+      },
+      phaseBreakdown,
+      activeSprint: {
+        phase: 'Phase 1 — Launch Gate',
+        nextTask: 'P1-01: Stabilize core product',
+        nextTaskPath: 'docs/tasks/phases/phase-1-launch/core/P1-01-stabilize-core-product.md'
+      }
+    })
+  }
+
   // ── GET /api/admin/promos ─────────────────────────────────
   if (path === '/api/admin/promos') {
     const { results } = await env.DB.prepare(

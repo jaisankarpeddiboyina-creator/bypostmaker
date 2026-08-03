@@ -2,10 +2,40 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Users, TrendingUp, Tag, Shield, Search, ChevronLeft, ChevronRight,
-  BarChart2, Download, Activity, Sparkles, Copy, Check, Filter
+  BarChart2, Download, Activity, Sparkles, Copy, Check, Filter,
+  CheckSquare, ListTodo, BookOpen, Terminal, ArrowRight, FileText
 } from 'lucide-react'
 import { useAppStore } from '../store/app'
 import { BREAKPOINT_MOBILE } from '../config/breakpoints'
+
+interface TaskItem {
+  id: string
+  title: string
+  phase: string
+  type: string
+  priority: string
+  status: string
+  path: string
+  commitHash?: string
+}
+
+interface TaskDataResponse {
+  tasks: TaskItem[]
+  stats: {
+    total: number
+    completed: number
+    inProgress: number
+    blocked: number
+    pending: number
+    completionPct: number
+  }
+  phaseBreakdown: Array<{ name: string; total: number; completed: number; percent: number }>
+  activeSprint: {
+    phase: string
+    nextTask: string
+    nextTaskPath: string
+  }
+}
 
 interface Stats {
   users: { total: number; free: number; starter: number; pro: number; business: number; beta: number; disabled: number; new_today: number; new_week: number }
@@ -40,7 +70,7 @@ const PLATFORM_NAMES: Record<string, string> = {
 export default function AdminPage() {
   const { user, addToast } = useAppStore()
   const navigate = useNavigate()
-  const [tab, setTab] = useState<'stats'|'users'|'promos'>('stats')
+  const [tab, setTab] = useState<'stats'|'users'|'promos'|'tasks'>('stats')
   const [stats, setStats] = useState<Stats | null>(null)
   const [users, setUsers] = useState<AdminUser[]>([])
   const [userTotal, setUserTotal] = useState(0)
@@ -60,6 +90,11 @@ export default function AdminPage() {
   const [copiedBulk, setCopiedBulk] = useState(false)
   const [lastGeneratedBulkCodes, setLastGeneratedBulkCodes] = useState<string[]>([])
 
+  // Tasks State
+  const [taskData, setTaskData] = useState<TaskDataResponse | null>(null)
+  const [taskSearch, setTaskSearch] = useState('')
+  const [taskStatusFilter, setTaskStatusFilter] = useState('all')
+
   const [loading, setLoading] = useState(false)
   const [exportingCsv, setExportingCsv] = useState(false)
 
@@ -68,7 +103,22 @@ export default function AdminPage() {
     if (tab === 'stats') loadStats()
     if (tab === 'users') loadUsers(1, search, planFilter, roleFilter, statusFilter)
     if (tab === 'promos') loadPromos()
+    if (tab === 'tasks') loadTasks()
   }, [tab, user])
+
+  const loadTasks = async () => {
+    try {
+      const res = await fetch('/api/admin/tasks', { credentials: 'include' })
+      if (!res.ok) {
+        addToast('Failed to load tasks', 'error')
+        return
+      }
+      const data = await res.json() as TaskDataResponse
+      setTaskData(data)
+    } catch {
+      addToast('Failed to load task dashboard', 'error')
+    }
+  }
 
   const loadStats = async () => {
     try {
@@ -215,9 +265,9 @@ export default function AdminPage() {
             <h1 className="admin-title">Admin Operations</h1>
           </div>
           <div className="admin-tabs">
-            {(['stats','users','promos'] as const).map(t => (
+            {(['stats','users','promos','tasks'] as const).map(t => (
               <button key={t} className={`admin-tab ${tab === t ? 'active' : ''}`} onClick={() => setTab(t)}>
-                {t.charAt(0).toUpperCase() + t.slice(1)}
+                {t === 'tasks' ? 'Roadmap Tasks' : t.charAt(0).toUpperCase() + t.slice(1)}
               </button>
             ))}
           </div>
@@ -587,6 +637,158 @@ export default function AdminPage() {
             </div>
           </div>
         )}
+
+        {/* Tasks Roadmap & Execution Dashboard */}
+        {tab === 'tasks' && taskData && (
+          <div className="admin-tasks-dashboard">
+            {/* Active Sprint Banner */}
+            <div className="task-sprint-banner glass-card">
+              <div className="sprint-banner-info">
+                <span className="sprint-badge">Active Sprint Focus</span>
+                <h3 className="sprint-title">{taskData.activeSprint.phase}</h3>
+                <p className="sprint-subtext">
+                  Next Actionable Task: <strong style={{ color: 'var(--color-primary-start)' }}>{taskData.activeSprint.nextTask}</strong>
+                </p>
+              </div>
+              <div className="sprint-stats-box">
+                <span className="sprint-stat-val">{taskData.stats.completed} / {taskData.stats.total}</span>
+                <span className="sprint-stat-lbl">Tasks Completed ({taskData.stats.completionPct}%)</span>
+              </div>
+            </div>
+
+            {/* High Level Metrics */}
+            <div className="health-metrics-row">
+              <div className="health-card">
+                <span className="health-label">Total Roadmap Tasks</span>
+                <span className="health-value">{taskData.stats.total}</span>
+              </div>
+              <div className="health-card">
+                <span className="health-label">Completed</span>
+                <span className="health-value text-success">{taskData.stats.completed}</span>
+              </div>
+              <div className="health-card">
+                <span className="health-label">In Progress</span>
+                <span className="health-value text-primary">{taskData.stats.inProgress}</span>
+              </div>
+              <div className="health-card">
+                <span className="health-label">Pending</span>
+                <span className="health-value">{taskData.stats.pending}</span>
+              </div>
+            </div>
+
+            {/* Phase Breakdown Progress */}
+            <div className="stat-group">
+              <h3 className="stat-group-title"><BarChart2 size={14} /> Phase-by-Phase Roadmap Progress</h3>
+              <div className="phase-progress-grid">
+                {taskData.phaseBreakdown.map(ph => (
+                  <div key={ph.name} className="phase-progress-card">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 13, fontWeight: 700 }}>
+                      <span style={{ color: '#F8FAFC' }}>{ph.name}</span>
+                      <span style={{ color: 'var(--color-primary-start)' }}>{ph.completed}/{ph.total} ({ph.percent}%)</span>
+                    </div>
+                    <div className="phase-progress-bar-bg">
+                      <div className="phase-progress-bar-fill" style={{ width: `${Math.max(ph.percent, ph.completed > 0 ? 5 : 0)}%` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Interactive Task Filter & Table */}
+            <div className="admin-filter-bar glass-card">
+              <div className="admin-search-field">
+                <Search size={14} className="search-icon" />
+                <input
+                  placeholder="Search tasks by ID or title…"
+                  value={taskSearch}
+                  onChange={e => setTaskSearch(e.target.value)}
+                />
+              </div>
+
+              <div className="filter-dropdowns">
+                <div className="filter-item">
+                  <Filter size={12} />
+                  <select
+                    className="admin-select"
+                    value={taskStatusFilter}
+                    onChange={e => setTaskStatusFilter(e.target.value)}
+                  >
+                    <option value="all">All Statuses</option>
+                    <option value="Completed">Completed</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Not Started">Not Started</option>
+                    <option value="Not Selected">Not Selected</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="admin-table">
+              <div className="admin-table-header responsive-stacked-grid-header">
+                <span>Task ID & Title</span><span>Phase</span><span>Priority</span><span>Status</span><span>Details</span>
+              </div>
+              {taskData.tasks
+                .filter(t => {
+                  const matchesQuery = t.id.toLowerCase().includes(taskSearch.toLowerCase()) || t.title.toLowerCase().includes(taskSearch.toLowerCase())
+                  const matchesStatus = taskStatusFilter === 'all' || t.status.toLowerCase() === taskStatusFilter.toLowerCase()
+                  return matchesQuery && matchesStatus
+                })
+                .map(t => (
+                  <div key={t.id} className="admin-table-row responsive-stacked-grid">
+                    <div>
+                      <div style={{ fontSize: 13, color: '#F8FAFC', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ color: 'var(--color-primary-start)', fontFamily: 'var(--font-mono)' }}>{t.id}</span>
+                        <span>{t.title}</span>
+                      </div>
+                      <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2, fontFamily: 'var(--font-mono)' }}>{t.path}</div>
+                    </div>
+                    <span style={{ fontSize: 12, color: 'var(--text-2)' }} data-label="Phase">{t.phase.replace('Phase ', 'P')}</span>
+                    <span style={{ fontSize: 12, color: t.priority === 'High' ? 'var(--color-primary-start)' : 'var(--text-3)', fontWeight: 600 }} data-label="Priority">{t.priority}</span>
+                    <span className={`badge ${t.status === 'Completed' ? 'badge-completed' : ''}`} data-label="Status">
+                      {t.status === 'Completed' ? '✓ Completed' : t.status}
+                    </span>
+                    <div data-label="Commit / Info">
+                      {t.commitHash ? (
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--color-primary-start)' }}>Commit {t.commitHash}</span>
+                      ) : (
+                        <span style={{ fontSize: 11, color: 'var(--text-4)' }}>{t.type}</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+            </div>
+
+            {/* Operational Protocol Card */}
+            <div className="task-protocol-card glass-card">
+              <h3 style={{ fontSize: 14, fontWeight: 700, color: '#F8FAFC', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Terminal size={15} color="var(--color-primary-start)" />
+                <span>How Team Members & AI Agents Maintain Task Status</span>
+              </h3>
+              <div className="protocol-grid">
+                <div className="protocol-col">
+                  <h4 style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-primary-start)', marginBottom: 6 }}>
+                    👥 Human Developers & Team
+                  </h4>
+                  <ul style={{ fontSize: 12.5, color: 'var(--text-2)', paddingLeft: 16, lineHeight: 1.6 }}>
+                    <li>Open task file in <code className="mono">docs/tasks/phases/</code> and set <code className="mono">**Status:** Completed</code>.</li>
+                    <li>Run <code className="mono">npm run tasks</code> in CLI anytime for a 1-second real-time terminal progress overview.</li>
+                    <li>Review this live Admin Dashboard tab to track roadmap progress.</li>
+                  </ul>
+                </div>
+                <div className="protocol-col">
+                  <h4 style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-primary-start)', marginBottom: 6 }}>
+                    🤖 AI Agents & Documentation Skill
+                  </h4>
+                  <ul style={{ fontSize: 12.5, color: 'var(--text-2)', paddingLeft: 16, lineHeight: 1.6 }}>
+                    <li>Invoking <code className="mono">/postmaker-docs-skill</code> automatically scans task frontmatter metadata.</li>
+                    <li>AI agents mark completed tasks, update <code className="mono">docs/tasks/README.md</code>, and record verification links.</li>
+                    <li>Changes automatically sync to this Admin UI upon commit & deployment.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <style>{`
@@ -658,6 +860,28 @@ export default function AdminPage() {
           gap: 12px;
           align-items: end;
         }
+
+        /* Tasks Dashboard Styles */
+        .admin-tasks-dashboard { display: flex; flex-direction: column; gap: 16px; }
+        .task-sprint-banner { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; background: linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(15, 28, 48, 0.6)); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: var(--radius-lg); flex-wrap: wrap; gap: 16px; }
+        .sprint-badge { display: inline-block; font-size: 11px; font-weight: 700; color: var(--color-primary-start); text-transform: uppercase; letter-spacing: 0.08em; padding: 2px 8px; background: rgba(56, 189, 248, 0.15); border-radius: 4px; margin-bottom: 4px; }
+        .sprint-title { font-family: var(--font-display); font-size: 20px; font-weight: 800; color: #F8FAFC; margin-bottom: 4px; }
+        .sprint-subtext { font-size: 13px; color: #94A3B8; }
+        .sprint-stats-box { text-align: right; display: flex; flex-direction: column; gap: 2px; }
+        .sprint-stat-val { font-family: var(--font-display); font-size: 24px; font-weight: 800; color: #34D399; }
+        .sprint-stat-lbl { font-size: 11px; color: #94A3B8; font-weight: 600; }
+
+        .phase-progress-grid { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+        .phase-progress-card { padding: 10px 14px; background: rgba(0, 0, 0, 0.25); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: var(--radius); }
+        .phase-progress-bar-bg { width: 100%; height: 6px; background: rgba(255, 255, 255, 0.1); border-radius: 3px; overflow: hidden; }
+        .phase-progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--color-primary-start), #34D399); border-radius: 3px; transition: width 0.3s ease; }
+
+        .badge-completed { background: rgba(52, 211, 153, 0.15); color: #34D399; border: 1px solid rgba(52, 211, 153, 0.3); }
+
+        .task-protocol-card { padding: 20px; background: rgba(15, 28, 48, 0.6); border: 1px solid var(--color-border); border-radius: var(--radius-lg); margin-top: 8px; }
+        .protocol-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-top: 8px; }
+        .protocol-col { background: rgba(0, 0, 0, 0.25); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: var(--radius); padding: 14px; }
+        code.mono { font-family: var(--font-mono); font-size: 11.5px; color: var(--color-primary-start); background: rgba(56, 189, 248, 0.1); padding: 2px 6px; border-radius: 4px; }
 
         @media (max-width: ${BREAKPOINT_MOBILE}) {
           .admin-page { padding: 16px 12px; }
