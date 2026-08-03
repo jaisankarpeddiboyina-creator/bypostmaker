@@ -419,4 +419,12 @@ code, .mono {
   }
 }
 
+/* ── Text Truncation Utility ────────────────────────────── */
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+}
+
 

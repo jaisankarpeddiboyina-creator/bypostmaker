@@ -1,8 +1,9 @@
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
-  LayoutDashboard, PlusCircle, Bookmark, History, CreditCard, Settings, Zap, X, Shield
+  LayoutDashboard, PlusCircle, Bookmark, History, CreditCard, Settings, Zap, X, Shield, LogOut
 } from 'lucide-react'
 import { useAppStore } from '../store/app'
+import { api } from '../lib/api'
 
 interface SidebarProps {
   isOpen?: boolean
@@ -12,10 +13,23 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen, onClose, onUpgradeClick }: SidebarProps) {
   const location = useLocation()
+  const navigate = useNavigate()
   const path = location.pathname
-  const { user } = useAppStore()
+  const { user, setUser, setUsage, addToast } = useAppStore()
 
   const userPlan = user?.plan ?? 'free'
+
+  const handleLogout = async () => {
+    try {
+      await api.auth.logout()
+      setUser(null)
+      setUsage(null)
+      addToast('Signed out successfully.', 'info')
+      navigate('/')
+    } catch (err: any) {
+      addToast(err?.message || 'Failed to sign out', 'error')
+    }
+  }
 
   const navItems = [
     { label: 'Dashboard', path: '/app', icon: LayoutDashboard },
@@ -109,15 +123,26 @@ export function Sidebar({ isOpen, onClose, onUpgradeClick }: SidebarProps) {
             </div>
           )}
 
-          {/* User Card */}
+          {/* User Profile & Logout Card */}
           <div className="user-profile-card">
             <div className="avatar-circle">
               {user?.email?.charAt(0).toUpperCase() ?? 'U'}
             </div>
             <div className="user-info-text">
-              <span className="user-email-name truncate">{user?.email ?? 'Creator'}</span>
+              <span className="user-email-name truncate" title={user?.email ?? 'Creator'}>
+                {user?.email ?? 'Creator'}
+              </span>
               <span className="user-tier-badge">{userPlan.toUpperCase()} Plan</span>
             </div>
+            <button
+              type="button"
+              className="user-logout-btn"
+              onClick={handleLogout}
+              title="Sign Out"
+              aria-label="Sign Out"
+            >
+              <LogOut size={16} />
+            </button>
           </div>
         </div>
 
@@ -276,7 +301,12 @@ export function Sidebar({ isOpen, onClose, onUpgradeClick }: SidebarProps) {
             display: flex;
             align-items: center;
             gap: 10px;
-            padding: 6px 4px;
+            padding: 8px 10px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: var(--radius);
+            min-width: 0;
+            width: 100%;
           }
 
           .avatar-circle {
@@ -291,23 +321,50 @@ export function Sidebar({ isOpen, onClose, onUpgradeClick }: SidebarProps) {
             font-size: 13px;
             font-weight: 700;
             border: 1px solid rgba(255, 255, 255, 0.15);
+            flex-shrink: 0;
           }
 
           .user-info-text {
             display: flex;
             flex-direction: column;
             min-width: 0;
+            flex: 1;
+            overflow: hidden;
           }
 
           .user-email-name {
             font-size: 12.5px;
             font-weight: 700;
             color: #F8FAFC;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: block;
+            width: 100%;
           }
 
           .user-tier-badge {
             font-size: 11px;
             color: #94A3B8;
+          }
+
+          .user-logout-btn {
+            background: transparent;
+            border: none;
+            color: #94A3B8;
+            padding: 6px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all var(--transition);
+          }
+
+          .user-logout-btn:hover {
+            color: #F43F5E;
+            background: rgba(244, 63, 94, 0.15);
           }
 
           .sidebar-mobile-backdrop {
@@ -338,3 +395,4 @@ export function Sidebar({ isOpen, onClose, onUpgradeClick }: SidebarProps) {
     </>
   )
 }
+
