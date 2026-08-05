@@ -69,12 +69,33 @@ function CardFallback() {
   )
 }
 
+if (typeof window !== 'undefined' && window.URL && !((window.URL as any).__postmakerPatched)) {
+  const originalCreate = window.URL.createObjectURL
+  window.URL.createObjectURL = function (obj: any) {
+    if (obj && obj.__urlOverride) {
+      return obj.__urlOverride
+    }
+    return originalCreate(obj)
+  }
+  ;(window.URL as any).__postmakerPatched = true
+}
+
 function PostCardBase(props: CardProps) {
   const CardComponent = cardMap[props.platformId] || StandardCardLazy
 
+  const imageFiles = props.imageFiles.length > 0
+    ? props.imageFiles
+    : (props.imageUrls || []).map(url => {
+        const blob = new Blob([], { type: 'image/jpeg' }) as any
+        blob.__urlOverride = url
+        blob.name = 'image.jpg'
+        blob.lastModified = Date.now()
+        return blob as File
+      })
+
   return (
     <Suspense fallback={<CardFallback />}>
-      <CardComponent {...props} />
+      <CardComponent {...props} imageFiles={imageFiles} />
     </Suspense>
   )
 }
@@ -89,6 +110,7 @@ export const PostCard = memo(PostCardBase, (prev, next) => {
     prev.post.errorMessage === next.post.errorMessage &&
     prev.campaignId === next.campaignId &&
     prev.imageFiles.length === next.imageFiles.length &&
-    prev.videoFile === next.videoFile
+    prev.videoFile === next.videoFile &&
+    (prev.imageUrls || []).join(',') === (next.imageUrls || []).join(',')
   )
 })
