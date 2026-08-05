@@ -748,8 +748,8 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
           justify-content: space-between;
           gap: 12px;
           padding: 8px 14px;
-          background: rgba(0, 0, 0, 0.40);
-          border-top: 1px solid rgba(255, 255, 255, 0.06);
+          background: rgba(255, 255, 255, 0.25);
+          border-top: 1px solid var(--color-border);
           flex-wrap: wrap;
         }
 
@@ -766,7 +766,7 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
           gap: 4px;
           font-size: 11px;
           font-weight: 700;
-          color: #64748B;
+          color: var(--color-text-muted);
           white-space: nowrap;
         }
 
@@ -782,23 +782,23 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
           font-weight: 600;
           padding: 3px 9px;
           border-radius: 99px;
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          color: #94A3B8;
+          background: rgba(255, 255, 255, 0.20);
+          border: 1px solid rgba(255, 255, 255, 0.40);
+          color: var(--color-text-secondary);
           cursor: pointer;
           white-space: nowrap;
           transition: all var(--transition);
         }
 
         .tone-pill-btn:hover {
-          color: #F8FAFC;
-          background: rgba(255, 255, 255, 0.10);
+          color: var(--color-text-primary);
+          background: rgba(255, 255, 255, 0.35);
         }
 
         .tone-pill-btn.active {
-          background: rgba(56, 189, 248, 0.15);
+          background: rgba(255, 75, 145, 0.10);
           color: var(--color-primary-start);
-          border-color: rgba(56, 189, 248, 0.30);
+          border-color: rgba(255, 75, 145, 0.30);
         }
 
         .brand-kit-toggle-group {
@@ -813,16 +813,16 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
           gap: 8px;
           padding: 4px 10px;
           border-radius: 99px;
-          background: rgba(255, 255, 255, 0.04);
-          border: 1px solid rgba(255, 255, 255, 0.08);
+          background: rgba(255, 255, 255, 0.20);
+          border: 1px solid rgba(255, 255, 255, 0.40);
           cursor: pointer;
           user-select: none;
           transition: all var(--transition);
         }
 
         .brand-kit-toggle-switch:hover {
-          background: rgba(255, 255, 255, 0.08);
-          border-color: rgba(255, 255, 255, 0.15);
+          background: rgba(255, 255, 255, 0.35);
+          border-color: rgba(255, 255, 255, 0.50);
         }
 
         .brand-kit-toggle-switch.active {
@@ -842,7 +842,7 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
           width: 28px;
           height: 16px;
           border-radius: 99px;
-          background: rgba(255, 255, 255, 0.15);
+          background: rgba(0, 0, 0, 0.10);
           position: relative;
           transition: background 0.2s ease;
           flex-shrink: 0;
@@ -861,12 +861,12 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
           top: 2px;
           left: 2px;
           transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-          box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+          box-shadow: 0 1px 3px rgba(0,0,0,0.15);
         }
 
         .brand-kit-toggle-switch.active .switch-thumb {
           transform: translateX(12px);
-          background: #000000;
+          background: #FFFFFF;
         }
 
         .switch-label-text {
@@ -950,13 +950,13 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
           height: 72px;
           border-radius: var(--radius-sm);
           overflow: hidden;
-          background: #000000;
+          background: #0F172A;
           border: 1px solid var(--color-border);
           flex-shrink: 0;
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
 
         .gallery-thumb-card img {
@@ -967,14 +967,14 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
 
         .gallery-thumb-card.video-card {
           background: var(--color-nav-active-bg);
-          border-color: rgba(56, 189, 248, 0.4);
+          border-color: rgba(255, 75, 145, 0.3);
         }
 
         .thumb-order-tag {
           position: absolute;
           top: 2px;
           left: 2px;
-          background: rgba(0, 0, 0, 0.85);
+          background: rgba(0, 0, 0, 0.7);
           color: white;
           font-size: 9.5px;
           font-weight: 700;
@@ -990,7 +990,7 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
           width: 20px;
           height: 20px;
           border-radius: 50%;
-          background: rgba(0, 0, 0, 0.85);
+          background: rgba(0, 0, 0, 0.7);
           color: white;
           border: none;
           display: flex;
@@ -1010,7 +1010,7 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
           height: 72px;
           border-radius: var(--radius-sm);
           border: 1.5px dashed var(--color-border-input);
-          background: rgba(255, 255, 255, 0.04);
+          background: rgba(255, 255, 255, 0.20);
           color: var(--color-primary-start);
           display: flex;
           flex-direction: column;
@@ -1042,7 +1042,7 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
 
         .dropzone-strip.dragover, .dropzone-strip:hover {
           border-color: var(--color-primary-start);
-          background: rgba(56, 189, 248, 0.06);
+          background: rgba(255, 75, 145, 0.04);
         }
 
         .dropzone-strip-left {
@@ -1065,7 +1065,7 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
           font-size: 12px;
           font-weight: 600;
           color: var(--color-primary-start);
-          background: rgba(255, 255, 255, 0.06);
+          background: rgba(255, 255, 255, 0.20);
           border: 1px solid var(--color-border);
           padding: 4px 10px;
           border-radius: var(--radius-pill);
@@ -1106,8 +1106,8 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
           gap: 3px;
           font-size: 11px;
           font-weight: 600;
-          color: #64748B;
-          background: rgba(255, 255, 255, 0.05);
+          color: var(--color-text-muted);
+          background: rgba(255, 255, 255, 0.20);
           padding: 2px 6px;
           border-radius: 4px;
         }
@@ -1165,7 +1165,7 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
           gap: 6px;
           padding: 6px 12px;
           border-radius: var(--radius-pill);
-          background: rgba(255, 255, 255, 0.05);
+          background: rgba(255, 255, 255, 0.20);
           border: 1px solid var(--color-border);
           color: var(--color-text-secondary);
           font-size: 12.5px;
@@ -1178,14 +1178,14 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
         .cat-tab-btn.active {
           background: var(--color-nav-active-bg);
           color: var(--color-primary-start);
-          border-color: rgba(56, 189, 248, 0.4);
+          border-color: rgba(255, 75, 145, 0.3);
         }
 
         .tab-count-chip {
           font-size: 10px;
           padding: 1px 6px;
           border-radius: 99px;
-          background: rgba(255, 255, 255, 0.10);
+          background: rgba(255, 255, 255, 0.35);
         }
 
         .studio-platform-grid {
@@ -1202,8 +1202,8 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
           padding: 10px 14px;
           min-height: 44px;
           border-radius: var(--radius-md);
-          border: 1px solid rgba(255, 255, 255, 0.12);
-          background: rgba(255, 255, 255, 0.04);
+          border: 1px solid rgba(255, 255, 255, 0.40);
+          background: rgba(255, 255, 255, 0.20);
           backdrop-filter: blur(14px);
           cursor: pointer;
           transition: all var(--transition);
@@ -1211,23 +1211,23 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
         }
 
         .studio-platform-pill:hover:not(.locked) {
-          border-color: rgba(14, 165, 233, 0.50);
-          background: rgba(255, 255, 255, 0.10);
-          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 4px 16px rgba(14, 165, 233, 0.15);
+          border-color: rgba(255, 75, 145, 0.30);
+          background: rgba(255, 255, 255, 0.40);
+          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.50), 0 4px 16px rgba(255, 75, 145, 0.08);
           transform: translateY(-2px);
         }
 
         /* Clean Selected State: Illuminated Sky Blue Rain Glow */
         .studio-platform-pill.selected {
-          border-color: rgba(14, 165, 233, 0.60);
-          background: rgba(14, 165, 233, 0.16);
-          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.30), 0 6px 20px rgba(14, 165, 233, 0.20);
+          border-color: rgba(255, 75, 145, 0.50);
+          background: rgba(255, 75, 145, 0.08);
+          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.60), 0 6px 20px rgba(255, 75, 145, 0.15);
         }
 
         .studio-platform-pill.locked {
           opacity: 0.4;
           cursor: not-allowed;
-          background: rgba(255, 255, 255, 0.02);
+          background: rgba(255, 255, 255, 0.10);
         }
 
         .pill-left {
@@ -1244,6 +1244,7 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
+          display: block;
         }
 
         .pill-right { flex-shrink: 0; }

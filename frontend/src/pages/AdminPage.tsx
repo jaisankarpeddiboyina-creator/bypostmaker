@@ -593,59 +593,59 @@ export default function AdminPage() {
         .admin-page { height: 100%; overflow-y: auto; padding: 32px 24px; }
         .admin-inner { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
         .admin-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
-        .admin-title { font-family: var(--font-display); font-size: 24px; font-weight: 700; color: #F8FAFC; letter-spacing: -0.03em; }
-        .admin-tabs { display: flex; background: rgba(0,0,0,0.3); border: 1px solid var(--color-border); border-radius: var(--radius); padding: 3px; gap: 2px; }
-        .admin-tab { padding: 6px 16px; border-radius: 7px; border: none; background: transparent; color: #94A3B8; font-size: 13px; cursor: pointer; font-family: var(--font-body); transition: all var(--transition); }
-        .admin-tab.active { background: rgba(56, 189, 248, 0.15); color: #F8FAFC; font-weight: 700; }
-        .stat-group { background: rgba(15, 28, 48, 0.6); backdrop-filter: blur(20px); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 20px; }
-        .stat-group-title { font-size: 12px; font-weight: 700; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 16px; display: flex; align-items: center; gap: 6px; }
+        .admin-title { font-family: var(--font-display); font-size: 24px; font-weight: 700; color: var(--color-text-primary); letter-spacing: -0.03em; }
+        .admin-tabs { display: flex; background: rgba(255,255,255,0.25); border: 1px solid var(--color-border); border-radius: var(--radius); padding: 3px; gap: 2px; }
+        .admin-tab { padding: 6px 16px; border-radius: 7px; border: none; background: transparent; color: var(--color-text-secondary); font-size: 13px; cursor: pointer; font-family: var(--font-body); transition: all var(--transition); }
+        .admin-tab.active { background: var(--color-nav-active-bg); color: var(--color-nav-active-text); font-weight: 700; }
+        .stat-group { background: var(--color-surface); backdrop-filter: blur(20px); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 20px; }
+        .stat-group-title { font-size: 12px; font-weight: 700; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 16px; display: flex; align-items: center; gap: 6px; }
         .stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; }
-        .stat-card { padding: 14px; background: rgba(0, 0, 0, 0.25); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: var(--radius); }
-        .stat-value { font-family: var(--font-display); font-size: 22px; font-weight: 800; color: #F8FAFC; }
-        .stat-label { font-size: 11px; color: #94A3B8; margin-top: 4px; font-weight: 600; }
+        .stat-card { padding: 14px; background: rgba(255,255,255,0.20); border: 1px solid var(--color-border); border-radius: var(--radius); }
+        .stat-value { font-family: var(--font-display); font-size: 22px; font-weight: 800; color: var(--color-text-primary); }
+        .stat-label { font-size: 11px; color: var(--color-text-secondary); margin-top: 4px; font-weight: 600; }
         .admin-stats { display: flex; flex-direction: column; gap: 16px; }
 
         /* Health Metrics */
         .health-metrics-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
-        .health-card { padding: 14px; background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(56, 189, 248, 0.20); border-radius: var(--radius); display: flex; flex-direction: column; gap: 4px; }
-        .health-label { font-size: 11px; color: #94A3B8; font-weight: 600; }
-        .health-value { font-family: var(--font-display); font-size: 20px; font-weight: 800; color: #F8FAFC; }
-        .health-status-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #34D399; margin-top: 2px; }
-        .status-dot-green { width: 8px; height: 8px; border-radius: 50%; background: #34D399; box-shadow: 0 0 8px rgba(52, 211, 153, 0.8); }
+        .health-card { padding: 14px; background: var(--color-surface-inset); border: 1px solid var(--color-nav-border); border-radius: var(--radius); display: flex; flex-direction: column; gap: 4px; }
+        .health-label { font-size: 11px; color: var(--color-text-secondary); font-weight: 600; }
+        .health-value { font-family: var(--font-display); font-size: 20px; font-weight: 800; color: var(--color-text-primary); }
+        .health-status-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--color-success); margin-top: 2px; }
+        .status-dot-green { width: 8px; height: 8px; border-radius: 50%; background: var(--color-success); box-shadow: 0 0 8px var(--color-success-border); }
 
         .platform-list { display: flex; flex-direction: column; gap: 8px; }
-        .platform-row { display: flex; align-items: center; padding: 12px 16px; background: rgba(0,0,0,0.25); border: 1px solid var(--color-border); border-radius: var(--radius); gap: 16px; transition: transform var(--transition), border-color var(--transition); }
+        .platform-row { display: flex; align-items: center; padding: 12px 16px; background: rgba(255,255,255,0.20); border: 1px solid var(--color-border); border-radius: var(--radius); gap: 16px; transition: transform var(--transition), border-color var(--transition); }
         .platform-row:hover { transform: translateX(4px); border-color: var(--color-primary-start); }
         .platform-rank { font-family: var(--font-display); font-size: 14px; font-weight: 800; color: var(--color-primary-start); width: 28px; }
-        .platform-name { font-size: 14px; font-weight: 600; color: #F8FAFC; flex: 1; }
-        .platform-count { font-size: 13px; color: #94A3B8; }
-        .platform-count-value { font-weight: 700; color: #F8FAFC; }
+        .platform-name { font-size: 14px; font-weight: 600; color: var(--color-text-primary); flex: 1; }
+        .platform-count { font-size: 13px; color: var(--color-text-secondary); }
+        .platform-count-value { font-weight: 700; color: var(--color-text-primary); }
 
         /* Filter & Export Bar */
-        .admin-filter-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px; background: rgba(15, 28, 48, 0.6); flex-wrap: wrap; }
-        .admin-search-field { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 200px; background: rgba(0, 0, 0, 0.35); border: 1px solid var(--color-border); border-radius: var(--radius); padding: 6px 12px; }
+        .admin-filter-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px; background: var(--color-surface); flex-wrap: wrap; }
+        .admin-search-field { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 200px; background: var(--color-surface-inset); border: 1px solid var(--color-border); border-radius: var(--radius); padding: 6px 12px; }
         .search-icon { color: #64748B; }
-        .admin-search-field input { flex: 1; background: none; border: none; outline: none; color: #F8FAFC; font-size: 13px; font-family: var(--font-body); }
+        .admin-search-field input { flex: 1; background: none; border: none; outline: none; color: var(--color-text-primary); font-size: 13px; font-family: var(--font-body); }
         .filter-dropdowns { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-        .filter-item { display: flex; align-items: center; gap: 4px; background: rgba(0,0,0,0.3); border: 1px solid var(--color-border); border-radius: var(--radius); padding: 2px 6px; color: #94A3B8; font-size: 12px; }
+        .filter-item { display: flex; align-items: center; gap: 4px; background: rgba(255,255,255,0.25); border: 1px solid var(--color-border); border-radius: var(--radius); padding: 2px 6px; color: var(--color-text-secondary); font-size: 12px; }
 
-        .admin-table { background: rgba(15, 28, 48, 0.6); border: 1px solid var(--color-border); border-radius: var(--radius-lg); overflow: hidden; }
-        .admin-table-header { display: grid; grid-template-columns: 2.2fr 1fr 1fr 1fr 2.2fr; gap: 12px; padding: 10px 16px; background: rgba(0,0,0,0.3); border-bottom: 1px solid var(--color-border); font-size: 11px; font-weight: 700; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.06em; }
-        .admin-table-row { display: grid; grid-template-columns: 2.2fr 1fr 1fr 1fr 2.2fr; gap: 12px; padding: 12px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); align-items: center; }
+        .admin-table { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); overflow: hidden; }
+        .admin-table-header { display: grid; grid-template-columns: 2.2fr 1fr 1fr 1fr 2.2fr; gap: 12px; padding: 10px 16px; background: rgba(255,255,255,0.25); border-bottom: 1px solid var(--color-border); font-size: 11px; font-weight: 700; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.06em; }
+        .admin-table-row { display: grid; grid-template-columns: 2.2fr 1fr 1fr 1fr 2.2fr; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--color-border); align-items: center; }
         .admin-table-row:last-child { border-bottom: none; }
-        .admin-select { background: rgba(0,0,0,0.4); border: 1px solid var(--color-border); color: #CBD5E1; border-radius: 6px; padding: 4px 8px; font-size: 12px; font-family: var(--font-body); cursor: pointer; }
+        .admin-select { background: rgba(255,255,255,0.3); border: 1px solid var(--color-border); color: var(--color-text-secondary); border-radius: 6px; padding: 4px 8px; font-size: 12px; font-family: var(--font-body); cursor: pointer; }
         .admin-select:focus { border-color: var(--color-primary-start); }
 
         /* Promo Mode Toggle */
-        .promo-mode-toggle { display: flex; gap: 4px; padding: 4px; background: rgba(0,0,0,0.3); width: fit-content; }
-        .promo-mode-btn { display: flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: var(--radius); border: none; background: transparent; color: #94A3B8; font-size: 12.5px; font-weight: 600; cursor: pointer; transition: all var(--transition); }
-        .promo-mode-btn.active { background: rgba(56, 189, 248, 0.15); color: #F8FAFC; font-weight: 700; }
+        .promo-mode-toggle { display: flex; gap: 4px; padding: 4px; background: rgba(255,255,255,0.25); width: fit-content; }
+        .promo-mode-btn { display: flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: var(--radius); border: none; background: transparent; color: var(--color-text-secondary); font-size: 12.5px; font-weight: 600; cursor: pointer; transition: all var(--transition); }
+        .promo-mode-btn.active { background: var(--color-nav-active-bg); color: var(--color-nav-active-text); font-weight: 700; }
 
-        .promo-create { background: rgba(15, 28, 48, 0.6); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 20px; }
-        .promo-input { background: rgba(0,0,0,0.35); border: 1px solid var(--color-border); border-radius: var(--radius); padding: 8px 12px; color: #F8FAFC; font-family: var(--font-body); font-size: 13px; outline: none; transition: border-color var(--transition); }
+        .promo-create { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 20px; }
+        .promo-input { background: var(--color-surface-inset); border: 1px solid var(--color-border); border-radius: var(--radius); padding: 8px 12px; color: var(--color-text-primary); font-family: var(--font-body); font-size: 13px; outline: none; transition: border-color var(--transition); }
         .promo-input:focus { border-color: var(--color-primary-start); }
         .bulk-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 8px; }
-        .bulk-label { display: block; font-size: 11px; font-weight: 600; color: #94A3B8; margin-bottom: 4px; }
+        .bulk-label { display: block; font-size: 11px; font-weight: 600; color: var(--color-text-secondary); margin-bottom: 4px; }
         
         .admin-promos { display: flex; flex-direction: column; gap: 16px; }
         .admin-users { display: flex; flex-direction: column; gap: 12px; }

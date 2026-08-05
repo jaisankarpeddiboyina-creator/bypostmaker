@@ -346,8 +346,8 @@ export function GenerationSummaryRail({ onGenerateClick }: GenerationSummaryRail
           align-items: center;
           justify-content: space-between;
           padding: 10px 12px;
-          background: rgba(234, 179, 8, 0.08);
-          border: 1px solid rgba(234, 179, 8, 0.25);
+          background: var(--color-warning-bg);
+          border: 1px solid var(--color-warning-border);
           border-radius: var(--radius);
           font-size: 12px;
         }
@@ -357,16 +357,16 @@ export function GenerationSummaryRail({ onGenerateClick }: GenerationSummaryRail
           align-items: center;
           gap: 6px;
           font-weight: 600;
-          color: #B45309;
+          color: var(--color-warning);
         }
 
         .credits-icon {
-          color: #F59E0B;
+          color: var(--color-warning);
         }
 
         .credits-value {
           font-weight: 700;
-          color: #B45309;
+          color: var(--color-warning);
         }
 
         .summary-cta-btn {
