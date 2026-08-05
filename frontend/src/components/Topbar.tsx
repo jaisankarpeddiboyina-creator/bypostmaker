@@ -116,10 +116,10 @@ export function Topbar({ onMenuClick }: TopbarProps) {
       <style>{`
         .app-topbar {
           height: var(--topbar-height);
-          background: rgba(10, 20, 36, 0.85);
+          background: var(--color-nav-bg);
           backdrop-filter: blur(30px);
           -webkit-backdrop-filter: blur(30px);
-          border-bottom: 1px solid var(--color-border);
+          border-bottom: 1px solid var(--color-nav-border);
           border-radius: 0;
           display: flex;
           align-items: center;
@@ -140,14 +140,14 @@ export function Topbar({ onMenuClick }: TopbarProps) {
           background: none;
           border: none;
           cursor: pointer;
-          color: #94A3B8;
+          color: var(--color-nav-item-text);
           padding: 6px;
           border-radius: var(--radius-sm);
         }
 
         .mobile-menu-toggle:hover {
-          color: #F8FAFC;
-          background: rgba(255, 255, 255, 0.08);
+          color: var(--color-text-primary);
+          background: rgba(255, 255, 255, 0.25);
         }
 
         .topbar-breadcrumb {
@@ -159,18 +159,18 @@ export function Topbar({ onMenuClick }: TopbarProps) {
         .crumb-section {
           font-size: 13px;
           font-weight: 600;
-          color: #64748B;
+          color: var(--color-text-muted);
         }
 
         .crumb-arrow {
-          color: #475569;
+          color: var(--color-text-placeholder);
         }
 
         .crumb-page {
           font-family: var(--font-display);
           font-size: 16px;
           font-weight: 700;
-          color: #F8FAFC;
+          color: var(--color-text-primary);
           letter-spacing: -0.02em;
         }
 
@@ -183,30 +183,30 @@ export function Topbar({ onMenuClick }: TopbarProps) {
           border-radius: var(--radius-pill);
           font-size: 11.5px;
           font-weight: 600;
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(255, 255, 255, 0.08);
+          background: rgba(255, 255, 255, 0.20);
+          border: 1px solid rgba(255, 255, 255, 0.40);
         }
 
         .status-pill.idle {
-          color: #94A3B8;
+          color: var(--color-text-secondary);
         }
 
         .status-pill.generating {
           color: var(--color-primary-start);
-          border-color: rgba(56, 189, 248, 0.30);
-          background: rgba(56, 189, 248, 0.10);
+          border-color: rgba(255, 75, 145, 0.30);
+          background: rgba(255, 75, 145, 0.05);
         }
 
         .status-dot {
           width: 6px;
           height: 6px;
           border-radius: 50%;
-          background: #64748B;
+          background: var(--color-text-placeholder);
         }
 
         .status-pill.idle .status-dot {
-          background: #34D399;
-          box-shadow: 0 0 8px rgba(52, 211, 153, 0.6);
+          background: var(--color-success);
+          box-shadow: 0 0 8px var(--color-success-border);
         }
 
         .status-pill.generating .status-dot {
@@ -225,8 +225,8 @@ export function Topbar({ onMenuClick }: TopbarProps) {
           align-items: center;
           gap: 2px;
           padding: 3px;
-          background: rgba(0, 0, 0, 0.40);
-          border: 1px solid rgba(255, 255, 255, 0.08);
+          background: rgba(255, 255, 255, 0.25);
+          border: 1px solid rgba(255, 255, 255, 0.40);
           border-radius: var(--radius-pill);
           margin-left: 8px;
         }
@@ -239,7 +239,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
           border-radius: var(--radius-pill);
           border: none;
           background: transparent;
-          color: #94A3B8;
+          color: var(--color-text-secondary);
           font-family: var(--font-body);
           font-size: 12px;
           font-weight: 600;
@@ -248,12 +248,12 @@ export function Topbar({ onMenuClick }: TopbarProps) {
         }
 
         .view-toggle-item:hover {
-          color: #F8FAFC;
+          color: var(--color-text-primary);
         }
 
         .view-toggle-item.active {
-          background: rgba(255, 255, 255, 0.12);
-          color: #F8FAFC;
+          background: rgba(255, 255, 255, 0.50);
+          color: var(--color-text-primary);
         }
 
         .topbar-right {
@@ -268,11 +268,11 @@ export function Topbar({ onMenuClick }: TopbarProps) {
           gap: 3px;
           padding: 4px 8px;
           border-radius: var(--radius-sm);
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(255, 255, 255, 0.08);
+          background: rgba(255, 255, 255, 0.20);
+          border: 1px solid rgba(255, 255, 255, 0.40);
           font-size: 11px;
           font-weight: 700;
-          color: #64748B;
+          color: var(--color-text-muted);
         }
 
         .topbar-usage-badge {
@@ -280,13 +280,13 @@ export function Topbar({ onMenuClick }: TopbarProps) {
           align-items: center;
           gap: 8px;
           padding: 4px 12px;
-          background: rgba(56, 189, 248, 0.08);
-          border: 1px solid rgba(56, 189, 248, 0.25);
+          background: rgba(255, 75, 145, 0.04);
+          border: 1px solid rgba(255, 75, 145, 0.20);
           border-radius: var(--radius-pill);
           font-family: var(--font-body);
           font-size: 12px;
           font-weight: 700;
-          color: #F8FAFC;
+          color: var(--color-text-primary);
         }
 
         .plan-label {
@@ -297,11 +297,11 @@ export function Topbar({ onMenuClick }: TopbarProps) {
         }
 
         .usage-divider {
-          color: rgba(255, 255, 255, 0.15);
+          color: rgba(0, 0, 0, 0.1);
         }
 
         .usage-count {
-          color: #F8FAFC;
+          color: var(--color-text-primary);
         }
 
         /* Responsive Breakpoints */

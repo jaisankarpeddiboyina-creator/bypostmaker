@@ -160,7 +160,7 @@ export function UpgradeModal() {
 
         <div style={{
           background: 'var(--warning-bg)',
-          border: '1px solid rgba(217, 119, 6, 0.2)',
+          border: '1px solid var(--color-warning-border)',
           borderRadius: 'var(--radius)',
           padding: '10px 14px',
           fontSize: '12px',
@@ -242,7 +242,7 @@ export function UpgradeModal() {
           .upgrade-plans { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 16px; }
           .upgrade-plan { padding: 18px; border: 1px solid var(--border); border-radius: var(--radius); position: relative; background: var(--surface); display: flex; flex-direction: column; }
           .upgrade-plan.featured { border-color: var(--accent); background: var(--accent-subtle); }
-          .upgrade-badge { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: var(--accent); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 10px; border-radius: 99px; white-space: nowrap; }
+          .upgrade-badge { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: var(--accent); color: var(--color-text-inverse); font-size: 10px; font-weight: 700; padding: 2px 10px; border-radius: 99px; white-space: nowrap; }
           .up-name { font-size: 12px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
           .up-price { font-family: var(--font-display); font-size: 30px; font-weight: 800; color: var(--text-1); display: flex; align-items: baseline; gap: 4px; }
           .up-original { font-size: 14px; color: var(--text-4); text-decoration: line-through; font-family: var(--font-body); font-weight: 400; }

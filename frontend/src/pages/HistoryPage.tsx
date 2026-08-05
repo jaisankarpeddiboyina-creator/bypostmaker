@@ -627,10 +627,12 @@ export default function HistoryPage() {
           top: calc(100% + 6px);
           left: 0;
           right: 0;
-          background: #0E1422;
-          border: 1px solid rgba(255, 255, 255, 0.20);
+          background: var(--color-surface);
+          backdrop-filter: var(--backdrop-blur);
+          -webkit-backdrop-filter: var(--backdrop-blur);
+          border: 1px solid var(--color-border);
           border-radius: var(--radius-card);
-          box-shadow: 0 24px 60px rgba(0, 0, 0, 0.90);
+          box-shadow: var(--shadow-modal);
           z-index: 100;
           overflow: hidden;
           animation: slideIn 150ms ease forwards;
@@ -775,7 +777,7 @@ export default function HistoryPage() {
           transition: background var(--transition);
         }
         .hub-chip-extra-btn:hover {
-          background: rgba(236, 72, 153, 0.16);
+          background: rgba(255, 75, 145, 0.16);
         }
 
         .hub-filter-toolbar {

@@ -211,7 +211,7 @@ export function AuthModal() {
           position: fixed;
           inset: 0;
           z-index: 9999;
-          background: rgba(0, 0, 0, 0.75);
+          background: rgba(15, 23, 42, 0.30);
           backdrop-filter: blur(8px);
           display: grid;
           place-items: center;
@@ -227,7 +227,7 @@ export function AuthModal() {
           border: 1px solid var(--border);
           border-radius: var(--radius-lg);
           padding: 28px;
-          box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5);
+          box-shadow: var(--shadow-modal);
           display: flex;
           flex-direction: column;
           gap: 16px;
@@ -237,7 +237,7 @@ export function AuthModal() {
           position: absolute;
           top: 16px;
           right: 16px;
-          background: rgba(255, 255, 255, 0.06);
+          background: rgba(255, 255, 255, 0.20);
           border: 1px solid var(--border);
           color: var(--text-3);
           border-radius: 50%;
@@ -252,7 +252,7 @@ export function AuthModal() {
 
         .auth-modal-close-btn:hover {
           color: var(--text-1);
-          background: rgba(255, 255, 255, 0.12);
+          background: rgba(255, 255, 255, 0.50);
         }
 
         .auth-modal-header {
@@ -266,8 +266,8 @@ export function AuthModal() {
           width: 44px;
           height: 44px;
           border-radius: 50%;
-          background: rgba(0, 229, 163, 0.1);
-          border: 1px solid rgba(0, 229, 163, 0.25);
+          background: var(--color-success-bg);
+          border: 1px solid var(--color-success-border);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -293,7 +293,7 @@ export function AuthModal() {
           display: grid;
           grid-template-columns: 1fr 1fr;
           gap: 4px;
-          background: rgba(0, 0, 0, 0.3);
+          background: rgba(255, 255, 255, 0.25);
           padding: 4px;
           border-radius: var(--radius);
           border: 1px solid var(--border);
@@ -314,7 +314,7 @@ export function AuthModal() {
         .auth-tab-btn.active {
           background: var(--surface);
           color: var(--text-1);
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
         }
 
         .auth-modal-google-btn {

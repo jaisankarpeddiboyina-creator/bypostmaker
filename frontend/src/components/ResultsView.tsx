@@ -251,7 +251,7 @@ export function ResultsView() {
           color: var(--color-nav-active-text);
           font-size: 12px;
           font-weight: 600;
-          border: 1px solid rgba(236, 72, 153, 0.2);
+          border: 1px solid rgba(255, 75, 145, 0.2);
         }
 
         .platform-filter-wrapper {
@@ -290,7 +290,7 @@ export function ResultsView() {
         }
 
         .platform-filter-tab.active {
-          color: #ffffff;
+          color: var(--color-text-inverse);
           background: var(--color-primary-start);
           border-color: var(--color-primary-start);
         }
@@ -299,7 +299,7 @@ export function ResultsView() {
           font-size: 10px;
           padding: 1px 6px;
           border-radius: 99px;
-          background: rgba(0,0,0,0.1);
+          background: rgba(0, 0, 0, 0.08);
         }
 
         .results-body {
