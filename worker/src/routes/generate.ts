@@ -157,7 +157,9 @@ export async function handleGenerate(
         let totalSize = 0
 
         // Phase 1: Fetch all R2 object metadata in parallel (no sequential await-in-loop)
+        console.log(`[generate] Fetching ${imageKeys.length} R2 objects:`, imageKeys)
         const objects = await Promise.all(imageKeys.map(key => env.BUCKET.get(key)))
+        console.log(`[generate] R2 fetch results:`, objects.map((o, i) => o ? `key[${i}] size=${o.size} type=${o.httpMetadata?.contentType}` : `key[${i}] MISSING`))
 
         // Phase 2: Validate sequentially — preserves per-image fatal event semantics
         // (first failing image sends the fatal event and throws, same as before)
@@ -217,10 +219,12 @@ export async function handleGenerate(
           } else {
             msg = 'Could not analyze the images. Please try again, or remove images to generate text-only captions.'
           }
+          console.error(`[generate] Stage 1 vision FAILED: errorType=${errorType} — sending fatal event`)
           await send('fatal', { message: msg })
           throw new FatalAlreadySentError()
         }
 
+        console.log(`[generate] Stage 1 vision SUCCESS: description length=${description.length}`)
         imageDescription = description
 
         await env.DB.prepare(

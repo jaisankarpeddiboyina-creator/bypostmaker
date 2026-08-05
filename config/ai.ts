@@ -211,7 +211,8 @@ export async function analyzeImage(
     apiKey: env.GEMINI_API_KEY || token || '',
     ...(googleBaseURL ? { baseURL: googleBaseURL, headers: googleHeaders } : {}),
   })
-  const model = geminiProvider(env.VISION_MODEL || 'gemini-1.5-flash')
+  const model = geminiProvider(env.VISION_MODEL || 'gemini-2.5-flash')
+  console.log(`[analyzeImage] Calling Gemini model: ${env.VISION_MODEL || 'gemini-2.5-flash'}, images: ${imageList.length}, hasGateway: ${!!googleBaseURL}, apiKeyPrefix: ${(env.GEMINI_API_KEY || '').slice(0, 6)}`)
 
   const abortController = new AbortController()
   const timeoutId = setTimeout(() => abortController.abort(), 15_000)
@@ -249,9 +250,9 @@ Be specific — this description will be used by another AI to write platform ca
   const contentParts: any[] = [
     { type: 'text', text: promptText },
     ...imageList.map(img => ({
-      type: 'image',
-      image: img.buffer,
-      mimeType: img.contentType,
+      type: 'file',
+      data: img.buffer,
+      mediaType: img.contentType,
     }))
   ]
 
@@ -269,6 +270,7 @@ Be specific — this description will be used by another AI to write platform ca
     })
 
     const raw = result.text?.trim() ?? ''
+    console.log(`[analyzeImage] Gemini raw response (first 200 chars): ${raw.slice(0, 200)}`)
     if (!raw) {
       console.error('[analyzeImage] Gemini returned empty response')
       return { description: null, errorType: 'error' }
@@ -308,7 +310,13 @@ Be specific — this description will be used by another AI to write platform ca
       console.error('[analyzeImage] Gemini 429 rate limit hit')
       return { description: null, errorType: 'rate_limit' }
     }
-    console.error('[analyzeImage] Gemini vision call failed:', err?.message ?? err)
+    console.error('[analyzeImage] Gemini vision call FAILED — full error:', {
+      name: err?.name,
+      message: err?.message,
+      status: err?.status ?? err?.statusCode,
+      cause: err?.cause?.message ?? err?.cause,
+      responseBody: err?.responseBody ?? err?.data,
+    })
     return { description: null, errorType: 'error' }
   } finally {
     clearTimeout(timeoutId)
@@ -402,7 +410,7 @@ export function createStreamingClient(env: Env) {
         messages[0].content.push({
           type: 'image',
           image: image.buffer,
-          mimeType: image.contentType
+          mediaType: image.contentType
         })
       }
 

@@ -295,32 +295,87 @@ export function StandardCard({ platformId, post, campaignId, imageFiles, videoFi
 
 function CardSkeleton({ statusText }: { statusText?: string }) {
   return (
-    <div className="glass-panel" style={{ borderRadius: 'var(--radius-card)', padding: 14, minWidth: 280, maxWidth: 340, flexShrink: 0 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <div className="shimmer" style={{ height: 12, width: '45%' }} />
-        {statusText && <span style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{statusText}</span>}
+    <div style={{
+      width: '100%', maxWidth: 470, margin: '0 auto',
+      background: '#ffffff', border: '1px solid #E2E8F0',
+      borderRadius: 14, overflow: 'hidden',
+      boxShadow: '0 2px 10px rgba(0,0,0,0.04)',
+    }}>
+      {/* Fake header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
+        <div className="shimmer" style={{ height: 12, width: 100, background: '#E2E8F0' }} />
+        {statusText && <span style={{ fontSize: 11, color: '#94A3B8', fontWeight: 500 }}>{statusText}</span>}
       </div>
-      <div className="shimmer" style={{ height: 10, width: '100%', marginBottom: 6 }} />
-      <div className="shimmer" style={{ height: 10, width: '85%', marginBottom: 6 }} />
-      <div className="shimmer" style={{ height: 10, width: '65%' }} />
+      {/* Fake body */}
+      <div style={{ padding: '14px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 }}>
+          <div className="shimmer" style={{ width: 32, height: 32, borderRadius: '50%', background: '#E2E8F0', flexShrink: 0 }} />
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <div className="shimmer" style={{ height: 10, width: '55%', background: '#E2E8F0' }} />
+            <div className="shimmer" style={{ height: 9, width: '35%', background: '#E2E8F0' }} />
+          </div>
+        </div>
+        <div className="shimmer" style={{ height: 10, width: '100%', background: '#E2E8F0' }} />
+        <div className="shimmer" style={{ height: 10, width: '85%', background: '#E2E8F0' }} />
+        <div className="shimmer" style={{ height: 10, width: '65%', background: '#E2E8F0' }} />
+      </div>
+      {/* Fake footer */}
+      <div style={{ padding: '8px 12px', background: '#F8FAFC', borderTop: '1px solid #E2E8F0' }}>
+        <div className="shimmer" style={{ height: 9, width: 60, background: '#E2E8F0' }} />
+      </div>
+      <style>{`
+        @keyframes cardShimmer {
+          0%   { background-position: -400px 0; }
+          100% { background-position:  400px 0; }
+        }
+        .shimmer {
+          background: linear-gradient(90deg, #F1F5F9 25%, #E2E8F0 50%, #F1F5F9 75%) !important;
+          background-size: 800px 100% !important;
+          animation: cardShimmer 1.6s infinite linear !important;
+        }
+      `}</style>
     </div>
   )
 }
 
 function CardGenerating({ name, statusText }: { name: string; statusText?: string }) {
   return (
-    <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-primary-start)', borderRadius: 'var(--radius-card)', padding: 14, minWidth: 280, maxWidth: 340, flexShrink: 0, boxShadow: '0 4px 16px rgba(247,37,133,0.12)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-        <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--color-primary-start)', textTransform: 'uppercase' }}>{name}</div>
-        {statusText && <span style={{ fontSize: 11, color: 'var(--color-primary-end)', fontWeight: 600 }}>{statusText}</span>}
+    <div style={{
+      width: '100%', maxWidth: 470, margin: '0 auto',
+      background: '#ffffff', border: '1px solid #E2E8F0',
+      borderTop: '3px solid #38BDF8',
+      borderRadius: 14, overflow: 'hidden',
+      boxShadow: '0 4px 20px rgba(56,189,248,0.12)',
+    }}>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: '#F0F9FF', borderBottom: '1px solid #BAE6FD' }}>
+        <span style={{ fontSize: 12, fontWeight: 700, color: '#0284C7', letterSpacing: '0.04em' }}>{name.toUpperCase()}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: 11, color: '#0284C7', fontWeight: 600 }}>
+            {statusText || 'Generating...'}
+          </span>
+        </div>
       </div>
-      <div style={{ display: 'flex', gap: 5, padding: '4px 0 10px' }}>
-        <div className="gen-dot" style={{ background: 'var(--color-primary-start)', width: 5, height: 5, borderRadius: '50%' }} />
-        <div className="gen-dot" style={{ background: 'var(--color-primary-end)', width: 5, height: 5, borderRadius: '50%' }} />
-        <div className="gen-dot" style={{ background: 'var(--color-primary-start)', width: 5, height: 5, borderRadius: '50%' }} />
+      {/* Animated dots + shimmer body */}
+      <div style={{ padding: '14px 12px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center', height: 20 }}>
+          {[0, 1, 2].map(i => (
+            <div key={i} className="gen-dot" style={{
+              width: 8, height: 8, borderRadius: '50%',
+              background: i === 1 ? '#0284C7' : '#38BDF8',
+              animationDelay: `${i * 0.2}s`,
+            }} />
+          ))}
+          <span style={{ fontSize: 12, color: '#64748B', marginLeft: 4 }}>Writing caption…</span>
+        </div>
+        <div style={{ height: 10, width: '90%', background: '#EFF6FF', borderRadius: 4 }} />
+        <div style={{ height: 10, width: '72%', background: '#EFF6FF', borderRadius: 4 }} />
+        <div style={{ height: 10, width: '55%', background: '#EFF6FF', borderRadius: 4 }} />
       </div>
-      <div className="shimmer" style={{ height: 10, width: '90%', marginBottom: 6 }} />
-      <div className="shimmer" style={{ height: 10, width: '70%' }} />
+      {/* Footer */}
+      <div style={{ padding: '8px 12px', background: '#F0F9FF', borderTop: '1px solid #BAE6FD' }}>
+        <div style={{ height: 9, width: 50, background: '#BAE6FD', borderRadius: 4 }} />
+      </div>
     </div>
   )
 }
@@ -340,20 +395,37 @@ function CardError({ name, message, brandColor, onRetry }: {
 
   return (
     <div style={{
-      background: 'var(--color-surface)', border: '1px solid var(--color-border)',
-      borderTop: `3px solid ${brandColor ?? 'var(--color-error)'}`, borderRadius: 'var(--radius-card)',
-      padding: 14, minWidth: 280, maxWidth: 340, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 10,
+      width: '100%', maxWidth: 470, margin: '0 auto',
+      background: '#ffffff', border: '1px solid #E2E8F0',
+      borderTop: `3px solid ${brandColor ?? '#F43F5E'}`,
+      borderRadius: 14, overflow: 'hidden',
+      boxShadow: '0 2px 10px rgba(0,0,0,0.04)',
     }}>
-      <div style={{ fontSize: 12, fontWeight: 800, color: brandColor ?? 'var(--color-text-primary)', textTransform: 'uppercase' }}>{name}</div>
-      <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start', color: 'var(--color-text-secondary)', fontSize: 12, lineHeight: 1.5 }}>
-        <AlertCircle size={15} style={{ flexShrink: 0, marginTop: 1, color: 'var(--color-error)' }} />
-        <span>{message}</span>
+      <div style={{ padding: '8px 12px', background: '#FFF1F2', borderBottom: '1px solid #FECDD3', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ fontSize: 12, fontWeight: 700, color: brandColor ?? '#F43F5E', letterSpacing: '0.04em' }}>{name.toUpperCase()}</span>
+        <span style={{ fontSize: 11, color: '#F43F5E', fontWeight: 600 }}>Failed</span>
       </div>
-      {onRetry && (
-        <button onClick={handleClick} disabled={retrying} className="btn btn-ghost btn-sm" style={{ alignSelf: 'flex-start', borderColor: brandColor ?? 'var(--color-primary-start)', color: brandColor ?? 'var(--color-primary-start)' }}>
-          {retrying ? 'Retrying…' : 'Try again'}
-        </button>
-      )}
+      <div style={{ padding: '14px 12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', color: '#64748B', fontSize: 13, lineHeight: 1.5 }}>
+          <AlertCircle size={16} style={{ flexShrink: 0, marginTop: 1, color: '#F43F5E' }} />
+          <span>{message}</span>
+        </div>
+        {onRetry && (
+          <button
+            onClick={handleClick}
+            disabled={retrying}
+            style={{
+              alignSelf: 'flex-start', padding: '5px 14px', borderRadius: 20,
+              background: 'transparent', border: `1.5px solid ${brandColor ?? '#F43F5E'}`,
+              color: brandColor ?? '#F43F5E', fontSize: 12, fontWeight: 700,
+              cursor: retrying ? 'not-allowed' : 'pointer', opacity: retrying ? 0.5 : 1,
+              transition: 'all 120ms ease',
+            }}
+          >
+            {retrying ? 'Retrying…' : 'Try again'}
+          </button>
+        )}
+      </div>
     </div>
   )
 }

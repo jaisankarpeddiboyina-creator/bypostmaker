@@ -217,11 +217,12 @@ export default function AppPage() {
           case 'fatal':
             setIsGenerating(false)
             clearTimers()
-            addToast((d.message as string) ?? 'Generation failed', 'error')
+            const errorMsg = (d.message as string) ?? 'Generation failed'
+            addToast(errorMsg, 'error')
             selectedPlatforms.forEach(id => {
               const post = useAppStore.getState().campaign?.posts[id]
               if (post?.status === 'generating' || post?.status === 'pending') {
-                updatePost(id, { status: 'error', errorMessage: 'Generation failed', statusText: undefined })
+                updatePost(id, { status: 'error', errorMessage: errorMsg, statusText: undefined })
               }
             })
             break

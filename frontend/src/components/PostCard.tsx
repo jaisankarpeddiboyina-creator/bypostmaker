@@ -85,6 +85,8 @@ export const PostCard = memo(PostCardBase, (prev, next) => {
     prev.post.content === next.post.content &&
     prev.post.edited === next.post.edited &&
     prev.post.status === next.post.status &&
+    prev.post.statusText === next.post.statusText &&
+    prev.post.errorMessage === next.post.errorMessage &&
     prev.campaignId === next.campaignId &&
     prev.imageFiles.length === next.imageFiles.length &&
     prev.videoFile === next.videoFile
