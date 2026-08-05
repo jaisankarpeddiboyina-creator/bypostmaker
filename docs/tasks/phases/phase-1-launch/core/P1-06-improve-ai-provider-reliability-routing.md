@@ -5,7 +5,7 @@
 **Priority:** High
 **Owner role:** Engineering
 **Depends on:** None
-**Status:** Not Started
+**Status:** Completed
 
 ## Description
 Strengthen routing logic across AI providers for consistent uptime.
@@ -14,4 +14,5 @@ Strengthen routing logic across AI providers for consistent uptime.
 Provider failures automatically route without user-facing errors in test scenarios.
 
 ## Notes
-_(add implementation notes, blockers, or decisions here as work progresses)_
+Cloudflare AI Gateway (postmaker-gateway) fully integrated with Gemini 2.5 flash and Groq text models. Rate limits slots and tokens are dynamically checked and handled. Failed requests fallback and raise detailed descriptive messages.
+
