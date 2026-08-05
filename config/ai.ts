@@ -215,7 +215,7 @@ export async function analyzeImage(
   console.log(`[analyzeImage] Calling Gemini model: ${env.VISION_MODEL || 'gemini-2.5-flash'}, images: ${imageList.length}, hasGateway: ${!!googleBaseURL}, apiKeyPrefix: ${(env.GEMINI_API_KEY || '').slice(0, 6)}`)
 
   const abortController = new AbortController()
-  const timeoutId = setTimeout(() => abortController.abort(), 15_000)
+  const timeoutId = setTimeout(() => abortController.abort(), 30_000)
 
   const promptText = imageList.length === 1
     ? `Analyze this image and return a structured description as valid JSON only — no markdown fences, no explanation.
@@ -415,7 +415,7 @@ export function createStreamingClient(env: Env) {
       }
 
       const abortController = new AbortController()
-      const timeoutId = setTimeout(() => abortController.abort(), 10_000)
+      const timeoutId = setTimeout(() => abortController.abort(), 35_000)
 
       const stream = streamText({
         model,
