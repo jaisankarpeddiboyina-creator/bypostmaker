@@ -1,17 +1,17 @@
-# P1-06 — Improve AI provider reliability/routing
+# P1-10 — Set up production monitoring & logging
 
 **Phase:** Phase 1 — Launch
 **Type:** Core (committed)
 **Priority:** High
 **Owner role:** Engineering
-**Depends on:** None
+**Depends on:** P1-01
 **Status:** Not Started
 
 ## Description
-Strengthen routing logic across AI providers for consistent uptime.
+Centralized logging, error tracking, and uptime alerting.
 
 ## Definition of Done
-Provider failures automatically route without user-facing errors in test scenarios.
+Errors and downtime trigger alerts within an agreed time window (define in Notes).
 
 ## Notes
 _(add implementation notes, blockers, or decisions here as work progresses)_

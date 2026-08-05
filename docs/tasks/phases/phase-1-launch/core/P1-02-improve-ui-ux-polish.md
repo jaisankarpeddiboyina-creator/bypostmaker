@@ -1,17 +1,17 @@
-# P1-06 — Improve AI provider reliability/routing
+# P1-02 — Improve UI/UX polish
 
 **Phase:** Phase 1 — Launch
 **Type:** Core (committed)
 **Priority:** High
-**Owner role:** Engineering
+**Owner role:** Design
 **Depends on:** None
 **Status:** Not Started
 
 ## Description
-Strengthen routing logic across AI providers for consistent uptime.
+Pass over existing screens for visual consistency, spacing, and usability ahead of launch.
 
 ## Definition of Done
-Provider failures automatically route without user-facing errors in test scenarios.
+Key screens reviewed and polished; no inconsistent components remain in primary flows.
 
 ## Notes
 _(add implementation notes, blockers, or decisions here as work progresses)_

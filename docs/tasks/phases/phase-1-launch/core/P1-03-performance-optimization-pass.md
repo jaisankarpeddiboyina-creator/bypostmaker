@@ -1,17 +1,17 @@
-# P1-06 — Improve AI provider reliability/routing
+# P1-03 — Performance optimization pass
 
 **Phase:** Phase 1 — Launch
 **Type:** Core (committed)
 **Priority:** High
 **Owner role:** Engineering
-**Depends on:** None
+**Depends on:** P1-01
 **Status:** Not Started
 
 ## Description
-Strengthen routing logic across AI providers for consistent uptime.
+Profile and optimize load times, generation speed, and export performance.
 
 ## Definition of Done
-Provider failures automatically route without user-facing errors in test scenarios.
+Page load and generation times meet agreed benchmarks (define target ms in Notes).
 
 ## Notes
 _(add implementation notes, blockers, or decisions here as work progresses)_

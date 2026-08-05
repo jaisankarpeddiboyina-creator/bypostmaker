@@ -1,17 +1,17 @@
-# P1-01 — Stabilize core product
+# P1-05 — Build subscription flow
 
 **Phase:** Phase 1 — Launch
 **Type:** Core (committed)
 **Priority:** Critical
 **Owner role:** Engineering
-**Depends on:** None
+**Depends on:** P1-04
 **Status:** Not Started
 
 ## Description
-Audit and fix known bugs across content generation, export, and auth flows.
+Plans, billing cycle, upgrade/downgrade, and cancellation handling.
 
 ## Definition of Done
-No open critical or high severity bugs across generation, export, and auth.
+User can subscribe, change plan, and cancel; billing reflects each action correctly.
 
 ## Notes
 _(add implementation notes, blockers, or decisions here as work progresses)_

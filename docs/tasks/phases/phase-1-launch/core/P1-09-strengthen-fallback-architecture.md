@@ -1,17 +1,17 @@
-# P1-06 — Improve AI provider reliability/routing
+# P1-09 — Strengthen fallback architecture
 
 **Phase:** Phase 1 — Launch
 **Type:** Core (committed)
 **Priority:** High
 **Owner role:** Engineering
-**Depends on:** None
+**Depends on:** P1-06
 **Status:** Not Started
 
 ## Description
-Strengthen routing logic across AI providers for consistent uptime.
+Auto-fallback to a secondary AI provider on failure or timeout.
 
 ## Definition of Done
-Provider failures automatically route without user-facing errors in test scenarios.
+Simulated primary-provider outage still returns a successful generation via fallback.
 
 ## Notes
 _(add implementation notes, blockers, or decisions here as work progresses)_

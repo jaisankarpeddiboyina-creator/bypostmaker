@@ -1,17 +1,17 @@
-# P1-06 — Improve AI provider reliability/routing
+# P1-04 — Complete Razorpay international payments
 
 **Phase:** Phase 1 — Launch
 **Type:** Core (committed)
-**Priority:** High
+**Priority:** Critical
 **Owner role:** Engineering
 **Depends on:** None
 **Status:** Not Started
 
 ## Description
-Strengthen routing logic across AI providers for consistent uptime.
+Integrate Razorpay to support international cards and currencies.
 
 ## Definition of Done
-Provider failures automatically route without user-facing errors in test scenarios.
+A non-domestic test card can complete checkout end-to-end in a supported currency.
 
 ## Notes
 _(add implementation notes, blockers, or decisions here as work progresses)_
