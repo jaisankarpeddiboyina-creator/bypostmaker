@@ -88,19 +88,11 @@ export default function AppPage() {
           throw new Error('Total combined image size exceeds 30MB limit.')
         }
 
-        const { items } = await api.upload.presignBatch(
-          imageFiles.map(f => ({ contentType: f.type, contentLength: f.size }))
-        )
-
         const uploadResults = await Promise.allSettled(
-          items.map(async (item, i) => {
-            const res = await fetch(item.uploadUrl, {
-              method: 'PUT',
-              headers: { 'Content-Type': imageFiles[i].type },
-              body: imageFiles[i],
-            })
-            if (!res.ok) throw new Error(`Upload failed for image #${i + 1}`)
-            return item.objectKey
+          imageFiles.map(async (file, i) => {
+            const { objectKey } = await api.upload.direct(file)
+            if (!objectKey) throw new Error(`Upload failed for image #${i + 1}`)
+            return objectKey
           })
         )
 

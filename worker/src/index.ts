@@ -13,7 +13,7 @@ import { handleHistory } from './routes/history'
 import { handleHealth } from './routes/health'
 import { handleAdmin } from './routes/admin'
 import { handlePromos } from './routes/promos'
-import { handlePresignRoute, handlePresignBatchRoute, handleCleanupRoute } from './routes/upload'
+import { handleDirectUploadRoute, handlePresignRoute, handlePresignBatchRoute, handleCleanupRoute } from './routes/upload'
 import { handleImageRoute } from './routes/image'
 import { handleBrandKit } from './routes/brand-kit'
 import { runCronJobs, runDataRetention } from './services/cron'
@@ -689,7 +689,10 @@ export default {
       }
 
       // ── Protected routes ────────────────────────────────────
-      if (path === '/api/upload/presign' && request.method === 'POST') {
+      if (
+        (path === '/api/upload/direct' || path === '/api/upload/presign' || path === '/api/upload/presign-batch') &&
+        request.method === 'POST'
+      ) {
         const presignRl = await withPresignRateLimit(request, env, userId)
         if (!presignRl.ok) {
           return withCors(new Response(JSON.stringify({ error: 'Too many upload requests. Wait a moment.' }), {
@@ -697,18 +700,7 @@ export default {
             headers: { 'Content-Type': 'application/json', 'Retry-After': String(presignRl.retryAfter ?? 60) },
           }), env)
         }
-        return withCors(await handlePresignRoute(request, env, userId), env)
-      }
-
-      if (path === '/api/upload/presign-batch' && request.method === 'POST') {
-        const presignRl = await withPresignRateLimit(request, env, userId)
-        if (!presignRl.ok) {
-          return withCors(new Response(JSON.stringify({ error: 'Too many upload requests. Wait a moment.' }), {
-            status: 429,
-            headers: { 'Content-Type': 'application/json', 'Retry-After': String(presignRl.retryAfter ?? 60) },
-          }), env)
-        }
-        return withCors(await handlePresignBatchRoute(request, env, userId), env)
+        return withCors(await handleDirectUploadRoute(request, env, userId), env)
       }
 
       if (path === '/api/upload/cleanup' && request.method === 'POST') {

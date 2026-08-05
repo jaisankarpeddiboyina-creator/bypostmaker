@@ -302,9 +302,13 @@ export async function handleGenerate(
           // 3. Total estimated tokens reserved in global rate limiter
           const totalEstimatedTokens = exactInputTokens + outputTokenLimit
 
-          const waitMs = await acquireGroqSlot(env, totalEstimatedTokens)
-          if (waitMs > 0) {
-            console.log(`[generate] Batch ${batch.id} queued for ${waitMs}ms by rate limiter`)
+          // Rate limit check: only run Groq local Durable Object limiter when using direct free-tier Groq API (no Gateway token)
+          const isDirectGroq = !env.CLOUDFLARE_API_TOKEN && ((env.TEXT_MODEL || env.GROQ_MODEL || '').toLowerCase().includes('groq'))
+          if (isDirectGroq) {
+            const waitMs = await acquireGroqSlot(env, totalEstimatedTokens)
+            if (waitMs > 0) {
+              console.log(`[generate] Batch ${batch.id} queued for ${waitMs}ms by rate limiter`)
+            }
           }
 
           try {
@@ -346,7 +350,9 @@ export async function handleGenerate(
               await send('error', { platformId: id, message: 'This platform needs a quick refresh — tap retry to generate it!' })
             }
           } finally {
-            await releaseGroqSlot(env)
+            if (isDirectGroq) {
+              await releaseGroqSlot(env)
+            }
           }
         })
       )

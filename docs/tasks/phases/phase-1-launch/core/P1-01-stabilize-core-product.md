@@ -2,16 +2,14 @@
 
 **Phase:** Phase 1 — Launch
 **Type:** Core (committed)
-**Priority:** Critical
+**Priority:** High
 **Owner role:** Engineering
-**Depends on:** None
 **Status:** Not Started
 
 ## Description
-Audit and fix known bugs across content generation, export, and auth flows.
+Perform comprehensive end-to-end testing and bug fixes across all core user flows, including SSE stream stability, error boundary handling, and hydration state preservation.
 
 ## Definition of Done
-No open critical or high severity bugs across generation, export, and auth.
-
-## Notes
-_(add implementation notes, blockers, or decisions here as work progresses)_
+- [ ] Core creation flow verified clean under edge conditions.
+- [ ] Global error boundaries capture React runtime errors gracefully.
+- [ ] Verified zero TypeScript errors (`npm run type-check`).

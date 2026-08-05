@@ -14,3 +14,8 @@ RESEND_API_KEY=
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 JWT_SECRET=replace-with-a-64-character-random-string-for-local-development
+
+# Cloudflare AI Gateway & Unified Billing Configuration
+CF_AIG_GATEWAY_NAME=
+CLOUDFLARE_API_TOKEN=
+TEXT_MODEL=google-ai-studio/gemini-1.5-flash

@@ -225,14 +225,8 @@ export default function BrandKitPage() {
 
     setUploadingLogoType(type)
     try {
-      const { uploadUrl, objectKey } = await api.upload.presign(file.type, file.size)
-      const putRes = await fetch(uploadUrl, {
-        method: 'PUT',
-        headers: { 'Content-Type': file.type },
-        body: file,
-      })
-
-      if (!putRes.ok) throw new Error('Upload to storage failed')
+      const { objectKey } = await api.upload.direct(file)
+      if (!objectKey) throw new Error('Upload to storage failed')
 
       if (type === 'primary') setLogoKey(objectKey)
       if (type === 'dark') setLogoDarkKey(objectKey)

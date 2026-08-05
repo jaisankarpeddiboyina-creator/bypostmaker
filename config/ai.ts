@@ -29,6 +29,10 @@ export interface Env {
   BUCKET: R2Bucket
   ASSETS: { fetch: (request: Request) => Promise<Response> }
   CLOUDFLARE_ACCOUNT_ID: string
+  CF_AIG_ACCOUNT_ID?: string
+  CF_AIG_GATEWAY_NAME?: string
+  CLOUDFLARE_API_TOKEN?: string
+  TEXT_MODEL?: string
   R2_ACCESS_KEY_ID: string
   R2_SECRET_ACCESS_KEY: string
   R2_BUCKET_NAME: string
@@ -79,6 +83,19 @@ export function getLanguageTokenMultiplier(language: string): number {
     return 1.8
   }
   return 1.0
+}
+
+export function getProviderBaseURL(provider: 'google' | 'groq', env: Env): string | undefined {
+  const token = env.CLOUDFLARE_API_TOKEN
+  const accountId = env.CLOUDFLARE_ACCOUNT_ID || env.CF_AIG_ACCOUNT_ID
+  const gatewayName = env.CF_AIG_GATEWAY_NAME || 'postmaker-gateway'
+
+  if (!token || !accountId || !gatewayName) return undefined
+
+  if (provider === 'google') {
+    return `https://gateway.ai.cloudflare.com/v1/${accountId}/${gatewayName}/google-ai-studio/v1beta`
+  }
+  return `https://gateway.ai.cloudflare.com/v1/${accountId}/${gatewayName}/groq/openai/v1`
 }
 
 // ── AILink Instance Factory ───────────────────────────────────
@@ -180,8 +197,21 @@ export async function analyzeImage(
     return { description: null, errorType: 'error' }
   }
 
-  const geminiProvider = createGoogleGenerativeAI({ apiKey: env.GEMINI_API_KEY })
-  const model = geminiProvider(env.VISION_MODEL)
+  const googleBaseURL = getProviderBaseURL('google', env)
+  const token = env.CLOUDFLARE_API_TOKEN
+  const gatewayName = env.CF_AIG_GATEWAY_NAME || 'postmaker-gateway'
+
+  const googleHeaders: Record<string, string> = {}
+  if (googleBaseURL && token) {
+    googleHeaders['cf-aig-authorization'] = `Bearer ${token}`
+    googleHeaders['cf-aig-gateway-id'] = gatewayName
+  }
+
+  const geminiProvider = createGoogleGenerativeAI({
+    apiKey: env.GEMINI_API_KEY || token || '',
+    ...(googleBaseURL ? { baseURL: googleBaseURL, headers: googleHeaders } : {}),
+  })
+  const model = geminiProvider(env.VISION_MODEL || 'gemini-1.5-flash')
 
   const abortController = new AbortController()
   const timeoutId = setTimeout(() => abortController.abort(), 15_000)
@@ -221,7 +251,7 @@ Be specific — this description will be used by another AI to write platform ca
     ...imageList.map(img => ({
       type: 'image',
       image: img.buffer,
-      mediaType: img.contentType,
+      mimeType: img.contentType,
     }))
   ]
 
@@ -311,8 +341,31 @@ export function createStreamingClient(env: Env) {
     environment: env.ENVIRONMENT,
   })
 
-  const groqProvider = createGroq({ apiKey: env.GROQ_API_KEY })
-  const geminiProvider = createGoogleGenerativeAI({ apiKey: env.GEMINI_API_KEY })
+  const groqBaseURL = getProviderBaseURL('groq', env)
+  const googleBaseURL = getProviderBaseURL('google', env)
+  const token = env.CLOUDFLARE_API_TOKEN
+  const gatewayName = env.CF_AIG_GATEWAY_NAME || 'postmaker-gateway'
+
+  const groqHeaders: Record<string, string> = {}
+  if (groqBaseURL && token) {
+    groqHeaders['cf-aig-authorization'] = `Bearer ${token}`
+    groqHeaders['cf-aig-gateway-id'] = gatewayName
+  }
+
+  const googleHeaders: Record<string, string> = {}
+  if (googleBaseURL && token) {
+    googleHeaders['cf-aig-authorization'] = `Bearer ${token}`
+    googleHeaders['cf-aig-gateway-id'] = gatewayName
+  }
+
+  const groqProvider = createGroq({
+    apiKey: env.GROQ_API_KEY || token || '',
+    ...(groqBaseURL ? { baseURL: groqBaseURL, headers: groqHeaders } : {}),
+  })
+  const geminiProvider = createGoogleGenerativeAI({
+    apiKey: env.GEMINI_API_KEY || token || '',
+    ...(googleBaseURL ? { baseURL: googleBaseURL, headers: googleHeaders } : {}),
+  })
 
   const streamGenerate = ai.wrap(
     async ({ systemPrompt, userPrompt, useGroq = true, image, maxTokens }: {
@@ -322,9 +375,19 @@ export function createStreamingClient(env: Env) {
       image?: { buffer: ArrayBuffer; contentType: string }
       maxTokens?: number
     }) => {
-      const model = useGroq && !image
-        ? groqProvider(env.GROQ_MODEL)
-        : geminiProvider(env.VISION_MODEL)
+      const rawTextModel = env.TEXT_MODEL || env.GROQ_MODEL || 'llama-3.1-8b-instant'
+      const visionModelName = env.VISION_MODEL || 'gemini-1.5-flash'
+
+      let model: any
+      if (image) {
+        model = geminiProvider(visionModelName)
+      } else if (rawTextModel.startsWith('google-ai-studio/') || rawTextModel.includes('gemini')) {
+        const cleanName = rawTextModel.replace('google-ai-studio/', '')
+        model = geminiProvider(cleanName)
+      } else {
+        const cleanName = rawTextModel.replace('groq/', '')
+        model = groqProvider(cleanName)
+      }
 
       const messages: any[] = [
         {

@@ -11,6 +11,7 @@ export function ResultsView() {
     imageFiles,
     videoFile,
     isGenerating,
+    setIsGenerating,
     setViewMode,
     activePlatformId,
     setActivePlatformId,
@@ -65,7 +66,10 @@ export function ResultsView() {
           <button
             type="button"
             className="btn-ghost btn-sm back-to-create-btn"
-            onClick={() => setViewMode('create')}
+            onClick={() => {
+              setIsGenerating(false)
+              setViewMode('create')
+            }}
           >
             <ArrowLeft size={14} />
             <span>Edit Inputs</span>
