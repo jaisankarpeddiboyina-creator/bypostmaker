@@ -24,8 +24,8 @@ Root index for all 43 execution tasks, derived from `PostMaker_Product_Vision_Ro
 
 ## Overall Roadmap Status
 
-- **Overall Progress**: `1 / 43 tasks completed (2.3%)`
-- **Phase 1 — Launch Gate**: `[█░░░░░░░░░░░] 1/10 (10%)`
+- **Overall Progress**: `3 / 43 tasks completed (7.0%)`
+- **Phase 1 — Launch Gate**: `[████░░░░░░░░] 3/10 (30%)`
 - **Current Active Sprint Focus**: Phase 1 — Launch Gate (`P1-01` through `P1-10`)
 - **Recently Completed**: [`P1-07: Support higher AI rate limits`](file:///home/jaisankar/Documents/projects/bypostmaker/bypostmaker/docs/tasks/phases/phase-1-launch/core/P1-07-support-higher-ai-rate-limits.md) (Commit `d2ef3f2`)
 - **Next Actionable Task**: [`P1-01: Stabilize core product`](file:///home/jaisankar/Documents/projects/bypostmaker/bypostmaker/docs/tasks/phases/phase-1-launch/core/P1-01-stabilize-core-product.md)
@@ -36,7 +36,7 @@ Root index for all 43 execution tasks, derived from `PostMaker_Product_Vision_Ro
 
 | Phase | Focus Area | Core | Optional | Progress | Link |
 |---|---|:---:|:---:|:---:|---|
-| **Phase 1 — Launch** | Launch Readiness & AI Engine Polish | 10 | 0 | **1 / 10 (10%)** | [phases/phase-1-launch/README.md](file:///home/jaisankar/Documents/projects/bypostmaker/bypostmaker/docs/tasks/phases/phase-1-launch/README.md) |
+| **Phase 1 — Launch** | Launch Readiness & AI Engine Polish | 10 | 0 | **3 / 10 (30%)** | [phases/phase-1-launch/README.md](file:///home/jaisankar/Documents/projects/bypostmaker/bypostmaker/docs/tasks/phases/phase-1-launch/README.md) |
 | **Phase 2 — Creator Experience** | Assets, Tools Marketplace & Workspaces | 10 | 7 | **0 / 17 (0%)** | [phases/phase-2-creator-experience/README.md](file:///home/jaisankar/Documents/projects/bypostmaker/bypostmaker/docs/tasks/phases/phase-2-creator-experience/README.md) |
 | **Phase 3 — Automation** | Scheduling, Drafts & Auto-Publishing | 4 | 0 | **0 / 4 (0%)** | [phases/phase-3-automation/README.md](file:///home/jaisankar/Documents/projects/bypostmaker/bypostmaker/docs/tasks/phases/phase-3-automation/README.md) |
 | **Phase 4 — Business** | Analytics, Team Workspaces & Agency Features | 7 | 0 | **0 / 7 (0%)** | [phases/phase-4-business/README.md](file:///home/jaisankar/Documents/projects/bypostmaker/bypostmaker/docs/tasks/phases/phase-4-business/README.md) |
@@ -57,7 +57,7 @@ Root index for all 43 execution tasks, derived from `PostMaker_Product_Vision_Ro
 | **P1-05** | Build subscription flow | Core | High | ⏳ `Not Started` | [P1-05-build-subscription-flow.md](file:///home/jaisankar/Documents/projects/bypostmaker/bypostmaker/docs/tasks/phases/phase-1-launch/core/P1-05-build-subscription-flow.md) |
 | **P1-06** | **Improve AI provider reliability & routing** | Core | High | ✅ **`Completed`** | [P1-06-improve-ai-provider-reliability-routing.md](file:///home/jaisankar/Documents/projects/bypostmaker/bypostmaker/docs/tasks/phases/phase-1-launch/core/P1-06-improve-ai-provider-reliability-routing.md) |
 | **P1-07** | **Support higher AI rate limits** | Core | Medium | ✅ **`Completed`** | [P1-07-support-higher-ai-rate-limits.md](file:///home/jaisankar/Documents/projects/bypostmaker/bypostmaker/docs/tasks/phases/phase-1-launch/core/P1-07-support-higher-ai-rate-limits.md) |
-| **P1-08** | Implement bulk generation | Core | Medium | ⏳ `Not Started` | [P1-08-implement-bulk-generation.md](file:///home/jaisankar/Documents/projects/bypostmaker/bypostmaker/docs/tasks/phases/phase-1-launch/core/P1-08-implement-bulk-generation.md) |
+| **P1-08** | Implement bulk generation | Core | Medium | 💤 `Postponed` | [P1-08-implement-bulk-generation.md](file:///home/jaisankar/Documents/projects/bypostmaker/bypostmaker/docs/tasks/phases/phase-1-launch/core/P1-08-implement-bulk-generation.md) |
 | **P1-09** | **Strengthen fallback architecture** | Core | High | ✅ **`Completed`** | [P1-09-strengthen-fallback-architecture.md](file:///home/jaisankar/Documents/projects/bypostmaker/bypostmaker/docs/tasks/phases/phase-1-launch/core/P1-09-strengthen-fallback-architecture.md) |
 | **P1-10** | Set up production monitoring & logging | Core | Medium | ⏳ `Not Started` | [P1-10-set-up-production-monitoring-logging.md](file:///home/jaisankar/Documents/projects/bypostmaker/bypostmaker/docs/tasks/phases/phase-1-launch/core/P1-10-set-up-production-monitoring-logging.md) |
 

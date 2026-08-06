@@ -21,7 +21,7 @@ Single-pane task list covering all 43 execution items across Phases 1 through 5.
 
 ## 📊 Phase Progress Summary
 
-- **Phase 1 — Launch Gate**: `2 / 10 Tasks Completed (20%)`
+- **Phase 1 — Launch Gate**: `3 / 10 Tasks Completed (30%)`
 - **Phase 2 — Creator Experience**: `0 / 17 Tasks Completed (0%)`
 - **Phase 3 — Automation**: `0 / 4 Tasks Completed (0%)`
 - **Phase 4 — Business**: `0 / 7 Tasks Completed (0%)`
@@ -42,7 +42,7 @@ Single-pane task list covering all 43 execution items across Phases 1 through 5.
 | **P1-05** | Build subscription flow | Core | High | ⏳ `Not Started` | Plan upgrades, cancellation, and quota management |
 | **P1-06** | **Improve AI provider reliability & routing** | Core | High | ✅ **`Completed`** | Cloudflare AI Gateway integration & model slug routing |
 | **P1-07** | **Support higher AI rate limits** | Core | Medium | ✅ **`Completed`** | Groq slot pacing & token estimation rate limiter |
-| **P1-08** | Implement bulk generation | Core | Medium | ⏳ `Not Started` | Multi-prompt batch creation |
+| **P1-08** | Implement bulk generation | Core | Medium | 💤 `Postponed` | Multi-prompt batch creation |
 | **P1-09** | **Strengthen fallback architecture** | Core | High | ✅ **`Completed`** | Automatic provider failover on error |
 | **P1-10** | Set up production monitoring & logging | Core | Medium | ⏳ `Not Started` | Sentry and Cloudflare log push setup |
 
