@@ -146,6 +146,7 @@ export function ExportModal() {
               className={`format-toggle-btn ${format === 'zip' ? 'active' : ''}`}
               onClick={() => setFormat('zip')}
               disabled={isGenerating}
+              aria-pressed={format === 'zip'}
             >
               <Archive size={15} />
               <span>ZIP Archive</span>
@@ -156,6 +157,7 @@ export function ExportModal() {
               className={`format-toggle-btn ${format === 'pdf' ? 'active' : ''}`}
               onClick={() => setFormat('pdf')}
               disabled={isGenerating}
+              aria-pressed={format === 'pdf'}
             >
               <FileText size={15} />
               <span>PDF Document</span>
@@ -321,10 +323,10 @@ export function ExportModal() {
           }
 
           .format-toggle-btn.active {
-            background: var(--color-surface-glass);
-            border: 1px solid var(--color-border-glass);
-            color: var(--color-text-primary);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+            background: var(--gradient-primary);
+            color: var(--color-text-inverse);
+            font-weight: 800;
+            box-shadow: var(--shadow-btn);
           }
 
           .format-toggle-btn:disabled {
