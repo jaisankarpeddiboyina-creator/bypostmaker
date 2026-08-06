@@ -30,13 +30,14 @@ function parseTaskFile(filePath: string, relativePath: string): Task {
   let commitHash: string | undefined
 
   for (const line of lines) {
-    if (line.includes('**Phase:**')) phase = line.split('**Phase:**')[1].trim()
-    else if (line.includes('**Type:**')) {
-      type = line.split('**Type:**')[1].trim()
+    const trimmed = line.trim()
+    if (trimmed.startsWith('**Phase:**')) phase = trimmed.replace('**Phase:**', '').trim()
+    else if (trimmed.startsWith('**Type:**')) {
+      type = trimmed.replace('**Type:**', '').trim()
       type = type.split(' ')[0].trim()
     }
-    else if (line.includes('**Priority:**')) priority = line.split('**Priority:**')[1].trim()
-    else if (line.includes('**Status:**')) status = line.split('**Status:**')[1].trim()
+    else if (trimmed.startsWith('**Priority:**')) priority = trimmed.replace('**Priority:**', '').trim()
+    else if (trimmed.startsWith('**Status:**')) status = trimmed.replace('**Status:**', '').trim()
     
     const commitMatch = line.match(/\*?\s*\*\*Commit:\*\*\s*`?([a-f0-9]{7,40})`?/i)
     if (commitMatch) {
