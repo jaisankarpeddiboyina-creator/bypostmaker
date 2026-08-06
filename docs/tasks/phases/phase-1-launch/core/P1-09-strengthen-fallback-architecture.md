@@ -5,7 +5,7 @@
 **Priority:** High
 **Owner role:** Engineering
 **Depends on:** P1-06
-**Status:** Not Started
+**Status:** Completed
 
 ## Description
 Auto-fallback to a secondary AI provider on failure or timeout.
@@ -14,4 +14,5 @@ Auto-fallback to a secondary AI provider on failure or timeout.
 Simulated primary-provider outage still returns a successful generation via fallback.
 
 ## Notes
-_(add implementation notes, blockers, or decisions here as work progresses)_
+Implemented Stage 2 text generation fallback routing inside `createStreamingClient()`. Runs primary model for 5s (buffered), and falls back automatically to secondary model for 11s (direct stream) upon primary failure or timeout. Allowed custom fallback override via `TEXT_FALLBACK_PROVIDER` env variable. Modified Stage 1 (Vision) timeout to 12s. All behaviors verified via live-call test suite.
+
