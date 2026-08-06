@@ -5,7 +5,7 @@ category: Architecture
 status: Stable
 owner: Tech Lead & Docs Lead
 created_at: 2026-07-31
-last_updated: 2026-08-03
+last_updated: 2026-08-06
 version: 1.0.0
 breaking_changes: No
 migration_needed: No
