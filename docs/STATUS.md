@@ -29,10 +29,12 @@ Single-pane dashboard for current system health, active sprint progress, and ope
 
 ## 🎯 Active Sprint Status (Phase 1 — Launch Gate)
 
-- **Phase 1 Progress**: `2 / 10 Tasks Completed (20%)`
+- **Phase 1 Progress**: `4 / 10 Tasks Completed (40%)`
 - **Completed**:
   - ✅ `P1-06: Improve AI provider reliability & routing` (Cloudflare AI Gateway `postmaker-gateway` integration)
   - ✅ `P1-07: Support higher AI rate limits` (Groq slot pacing & token allocation)
+  - ✅ `P1-09: Strengthen fallback architecture` (Failover provider fail-routing)
+  - ✅ `P1-10: Set up production monitoring & logging` (Zero-dependency self-hosted monitoring)
 - **Active Focus**: `P1-01: Stabilize core product`
 
 ---
