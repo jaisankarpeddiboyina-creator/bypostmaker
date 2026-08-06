@@ -679,7 +679,7 @@ export default {
             status: 200, headers: { 'Content-Type': 'application/json' },
           }), env)
         }
-        if (path === '/api/test/token' && env.ENVIRONMENT !== 'production') {
+        if (path === '/api/test/token' && env.ENVIRONMENT === 'development') {
           const { signJWT, getJwtSecret } = await import('./middleware/auth')
           const token = await signJWT(
             { sub: '20493641-4030-4fa3-bbe6-b377d4661f87', plan: 'business' },
