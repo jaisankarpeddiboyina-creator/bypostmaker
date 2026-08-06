@@ -19,3 +19,6 @@ JWT_SECRET=replace-with-a-64-character-random-string-for-local-development
 CF_AIG_GATEWAY_NAME=
 CLOUDFLARE_API_TOKEN=
 TEXT_MODEL=google-ai-studio/gemini-1.5-flash
+# Explicit override for Stage 2 text generation fallback provider ("groq" | "gemini"). Only affects Stage 2 text, not vision.
+TEXT_FALLBACK_PROVIDER=
+

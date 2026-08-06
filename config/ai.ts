@@ -41,6 +41,7 @@ export interface Env {
   ENVIRONMENT: 'development' | 'staging' | 'production'
   GROQ_LIMITER?: DurableObjectNamespace
   TEXT_PROVIDER?: string
+  TEXT_FALLBACK_PROVIDER?: string
   AI_MAX_OUTPUT_TOKENS?: string
   AI_MAX_PLATFORMS_PER_BATCH?: string
   AI_AVG_TOKENS_PER_PLATFORM?: string
@@ -215,7 +216,8 @@ export async function analyzeImage(
   console.log(`[analyzeImage] Calling Gemini model: ${env.VISION_MODEL || 'gemini-2.5-flash'}, images: ${imageList.length}, hasGateway: ${!!googleBaseURL}, apiKeyPrefix: ${(env.GEMINI_API_KEY || '').slice(0, 6)}`)
 
   const abortController = new AbortController()
-  const timeoutId = setTimeout(() => abortController.abort(), 30_000)
+  const timeoutId = setTimeout(() => abortController.abort(), 12_000)
+
 
   const promptText = imageList.length === 1
     ? `Analyze this image and return a structured description as valid JSON only — no markdown fences, no explanation.
@@ -383,18 +385,43 @@ export function createStreamingClient(env: Env) {
       image?: { buffer: ArrayBuffer; contentType: string }
       maxTokens?: number
     }) => {
-      const rawTextModel = env.TEXT_MODEL || env.GROQ_MODEL || 'llama-3.1-8b-instant'
-      const visionModelName = env.VISION_MODEL || 'gemini-1.5-flash'
+      let primaryModel: any = null
+      let fallbackModel: any = null
 
-      let model: any
+      const rawTextModel = env.TEXT_MODEL || env.GROQ_MODEL || 'llama-3.3-70b-versatile'
+      const visionModelName = env.VISION_MODEL || 'gemini-2.5-flash'
+
+      // Detect if primary model is gemini vs groq
+      const isPrimaryGemini = rawTextModel.startsWith('google-ai-studio/') || rawTextModel.includes('gemini')
+      
+      const cleanGeminiName = visionModelName.replace('google-ai-studio/', '')
+      const groqModelName = env.GROQ_MODEL || 'llama-3.3-70b-versatile'
+      const cleanGroqName = groqModelName.replace('groq/', '')
+
       if (image) {
-        model = geminiProvider(visionModelName)
-      } else if (rawTextModel.startsWith('google-ai-studio/') || rawTextModel.includes('gemini')) {
-        const cleanName = rawTextModel.replace('google-ai-studio/', '')
-        model = geminiProvider(cleanName)
+        primaryModel = geminiProvider(visionModelName)
       } else {
-        const cleanName = rawTextModel.replace('groq/', '')
-        model = groqProvider(cleanName)
+        if (isPrimaryGemini) {
+          const cleanName = rawTextModel.replace('google-ai-studio/', '')
+          primaryModel = geminiProvider(cleanName)
+          
+          const fallbackProvider = env.TEXT_FALLBACK_PROVIDER || 'groq'
+          if (fallbackProvider === 'groq') {
+            fallbackModel = groqProvider(cleanGroqName)
+          } else if (fallbackProvider === 'gemini') {
+            fallbackModel = geminiProvider(cleanGeminiName)
+          }
+        } else {
+          const cleanName = rawTextModel.replace('groq/', '')
+          primaryModel = groqProvider(cleanName)
+
+          const fallbackProvider = env.TEXT_FALLBACK_PROVIDER || 'gemini'
+          if (fallbackProvider === 'gemini') {
+            fallbackModel = geminiProvider(cleanGeminiName)
+          } else if (fallbackProvider === 'groq') {
+            fallbackModel = groqProvider(cleanGroqName)
+          }
+        }
       }
 
       const messages: any[] = [
@@ -414,30 +441,65 @@ export function createStreamingClient(env: Env) {
         })
       }
 
-      const abortController = new AbortController()
-      const timeoutId = setTimeout(() => abortController.abort(), 35_000)
+      // Helper to generate a stream with an isolated AbortController and timeout
+      const runStream = (targetModel: any, timeoutMs: number) => {
+        const abortController = new AbortController()
+        const timeoutId = setTimeout(() => abortController.abort(), timeoutMs)
+        
+        const stream = streamText({
+          model: targetModel,
+          system: systemPrompt,
+          messages,
+          maxOutputTokens: maxTokens ?? 4096,
+          abortSignal: abortController.signal,
+        })
 
-      const stream = streamText({
-        model,
-        system: systemPrompt,
-        messages,
-        maxOutputTokens: maxTokens ?? 4096,
-        abortSignal: abortController.signal,
-      })
+        return { stream, timeoutId }
+      }
 
       return {
-        ...stream,
         textStream: (async function* () {
+          const primaryChunks: string[] = []
+          let primaryTimeoutId: any = null
           try {
+            console.log(`[streamGenerate] Starting primary generation...`)
+            // Stage 2 Primary gets a 5-second timeout window
+            const { stream, timeoutId } = runStream(primaryModel, 5000)
+            primaryTimeoutId = timeoutId
             for await (const chunk of stream.textStream) {
+              primaryChunks.push(chunk)
+            }
+            await stream.text
+            clearTimeout(primaryTimeoutId)
+            primaryTimeoutId = null
+            // Primary succeeded: Yield all buffered chunks
+            for (const chunk of primaryChunks) {
               yield chunk
             }
-          } finally {
-            // clearTimeout runs after stream is fully consumed (success or error).
-            // The AbortSignal remains live throughout iteration — it fires if the
-            // 10s window expires before the loop exits. clearTimeout only prevents
-            // an already-completed call from triggering an unnecessary abort.
-            clearTimeout(timeoutId)
+          } catch (err) {
+            if (primaryTimeoutId) clearTimeout(primaryTimeoutId)
+            console.warn('[streamGenerate] Primary model stream failed. Triggering automatic fallback...', err)
+            
+            if (fallbackModel) {
+              let fallbackTimeoutId: any = null
+              try {
+                console.log(`[streamGenerate] Starting fallback generation...`)
+                // Stage 2 Fallback gets an 11-second timeout window with fresh AbortController
+                const { stream: fallbackStream, timeoutId } = runStream(fallbackModel, 11000)
+                fallbackTimeoutId = timeoutId
+                for await (const chunk of fallbackStream.textStream) {
+                  yield chunk
+                }
+                await fallbackStream.text
+                clearTimeout(fallbackTimeoutId)
+              } catch (fallbackErr) {
+                if (fallbackTimeoutId) clearTimeout(fallbackTimeoutId)
+                console.error('[streamGenerate] Fallback model stream also failed:', fallbackErr)
+                throw fallbackErr
+              }
+            } else {
+              throw err
+            }
           }
         })()
       }
