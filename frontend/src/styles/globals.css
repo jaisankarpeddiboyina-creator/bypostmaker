@@ -7,57 +7,58 @@
 
 /* ── Design Tokens ─────────────────────────────────────────── */
 :root {
-  /* ── Real Sky Blue Accent Palette ───────────────────────── */
-  --color-primary-start:   #38BDF8;   /* radiant sky cyan */
-  --color-primary-end:     #0284C7;   /* deep sky blue */
+  /* ── Light-mode Glass Gradient Palette ───────────────────── */
+  --color-primary-start:   #FF4B91;   /* vibrant neon pink */
+  --color-primary-end:     #7209B7;   /* vibrant violet purple */
   --gradient-primary:      linear-gradient(135deg, var(--color-primary-start), var(--color-primary-end));
   --gradient-primary-h:    linear-gradient(90deg,  var(--color-primary-start), var(--color-primary-end));
-  --gradient-primary-glow: linear-gradient(135deg, rgba(56, 189, 248, 0.45), rgba(2, 132, 199, 0.45));
+  --gradient-primary-glow: linear-gradient(135deg, rgba(255, 75, 145, 0.35), rgba(114, 9, 183, 0.35));
 
-  /* ── Cosmic Magenta & Sunset Accents ─────────────────────── */
-  --color-accent-emerald:  #34D399;   /* fresh rain leaf green */
-  /* ── Vibrant Social Network Glass Surfaces ────────────────── */
-  --color-bg:              transparent;   /* 100% transparent canvas */
-  --color-surface:         rgba(15, 28, 48, 0.58); /* crystal liquid water glass fill */
-  --color-surface-solid:   #0E1B2E;   /* solid fallback */
-  --color-surface-inset:   rgba(8, 16, 30, 0.80); /* recessed field */
-  --color-surface-glass:   rgba(255, 255, 255, 0.12);
-  --backdrop-blur:         blur(36px) saturate(220%);
-  --color-border:          rgba(255, 255, 255, 0.22); /* specular water glass border */
-  --color-border-glass:    rgba(255, 255, 255, 0.45); /* specular top rim shine */
-  --color-border-hover:    rgba(56, 189, 248, 0.80);  /* sky cyan water glow */
-  --color-border-input:    rgba(255, 255, 255, 0.25);
+  /* ── Accent Palette ─────────────────────────────────────── */
+  --color-accent-emerald:  #059669;   /* solid emerald green */
 
-  /* ── Crisp Liquid Typography ─────────────────────────────── */
-  --color-text-primary:    #F8FAFC;   /* crisp liquid white */
-  --color-text-secondary:  #CBD5E1;   /* crisp silver cloud subtext */
-  --color-text-muted:      #94A3B8;   /* muted slate */
-  --color-text-placeholder:#64748B;   /* disabled */
-  --color-text-inverse:    #0A101D;   /* high contrast dark text on bright buttons */
+  /* ── Translucent Light Glass Surfaces ───────────────────── */
+  --color-bg:              transparent;
+  --color-surface:         rgba(255, 255, 255, 0.45); /* white liquid water glass fill */
+  --color-surface-solid:   #FFFFFF;
+  --color-surface-inset:   rgba(255, 255, 255, 0.35); /* recessed light glass panel */
+  --color-surface-glass:   rgba(255, 255, 255, 0.20);
+  --backdrop-blur:         blur(30px) saturate(180%);
+  --color-border:          rgba(255, 255, 255, 0.65); /* specular white glass border */
+  --color-border-glass:    rgba(255, 255, 255, 0.85); /* top rim highlight */
+  --color-border-hover:    rgba(255, 75, 145, 0.50);  /* pink water glow */
+  --color-border-input:    rgba(255, 255, 255, 0.70);
+
+  /* ── Light Mode Charcoal Typography ──────────────────────── */
+  --color-text-primary:    #0F172A;   /* deep charcoal/slate headings */
+  --color-text-secondary:  #334155;   /* slate cloud body text */
+  --color-text-muted:      #64748B;   /* muted slate details */
+  --color-text-placeholder:#94A3B8;   /* slate placeholder/disabled */
+  --color-text-inverse:    #FFFFFF;   /* high contrast white text on dark buttons */
   --color-text-accent:     var(--color-primary-start);
 
   /* ── Nav (Sidebar & Topbar Social Constellation Glass) ───── */
-  --color-nav-bg:          rgba(10, 20, 36, 0.85);
-  --color-nav-border:      rgba(255, 255, 255, 0.12);
-  --color-nav-item-text:   #CBD5E1;
-  --color-nav-item-icon:   #94A3B8;
-  --color-nav-active-bg:   rgba(56, 189, 248, 0.15);
-  --color-nav-active-text: #F8FAFC;
-  --color-nav-active-icon: #38BDF8;
+  --color-nav-bg:          rgba(255, 255, 255, 0.45);
+  --color-nav-border:      rgba(255, 255, 255, 0.55);
+  --color-nav-item-text:   #475569;
+  --color-nav-item-icon:   #64748B;
+  --color-nav-active-bg:   rgba(255, 75, 145, 0.08);
+  --color-nav-active-text: #FF4B91;
+  --color-nav-active-icon: #FF4B91;
 
   /* ── Status Colors ───────────────────────────────────────── */
-  --color-success:         #34D399;   /* emerald leaf green */
-  --color-success-bg:      rgba(52, 211, 153, 0.20);
-  --color-success-border:  rgba(52, 211, 153, 0.40);
-  --color-processing:      #38BDF8;   /* real sky blue */
-  --color-processing-bg:   rgba(56, 189, 248, 0.20);
-  --color-processing-border: rgba(56, 189, 248, 0.40);
-  --color-error:           #F43F5E;
-  --color-error-bg:        rgba(244, 63, 94, 0.20);
-  --color-error-border:    rgba(244, 63, 94, 0.40);
-  --color-warning:         #FBBF24;   /* sunbeam yellow */
-  --color-warning-bg:      rgba(251, 191, 36, 0.20);
-  --color-warning-border:    rgba(251, 191, 36, 0.40);
+  --color-success:         #059669;   /* deep emerald green */
+  --color-success-bg:      rgba(5, 150, 105, 0.08);
+  --color-success-border:  rgba(5, 150, 105, 0.20);
+  --color-processing:      #7209B7;   /* deep violet processing */
+  --color-processing-bg:   rgba(114, 9, 183, 0.08);
+  --color-processing-border: rgba(114, 9, 183, 0.20);
+  --color-error:           #E11D48;   /* deep rose error */
+  --color-error-bg:        rgba(225, 29, 72, 0.08);
+  --color-error-border:    rgba(225, 29, 72, 0.20);
+  --color-warning:         #D97706;   /* warm amber warning */
+  --color-warning-bg:      rgba(217, 119, 6, 0.08);
+  --color-warning-border:  rgba(217, 119, 6, 0.20);
 
   /* ── Typography ──────────────────────────────────────────── */
   --font-body:             'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -85,16 +86,14 @@
 
   /* ── Specular Top Rim Highlights & Soft Floating Shadows ─── */
   --shadow-card:       
-    inset 0 1.5px 1px rgba(255, 255, 255, 0.45),
-    inset 0 -1px 2px rgba(0, 0, 0, 0.40),
-    0 24px 60px -12px rgba(2, 132, 199, 0.38);
+    inset 0 1px 1px rgba(255, 255, 255, 0.8),
+    0 10px 30px -10px rgba(31, 38, 135, 0.06);
   --shadow-card-hover: 
-    inset 0 1.5px 1px rgba(255, 255, 255, 0.70),
-    inset 0 -1px 2px rgba(0, 0, 0, 0.50),
-    0 32px 72px -12px rgba(56, 189, 248, 0.50);
-  --shadow-btn:        0 8px 24px rgba(56, 189, 248, 0.40);
-  --shadow-inset:      inset 0 2px 8px rgba(0, 0, 0, 0.50), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
-  --shadow-modal:      0 32px 80px -16px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.30);
+    inset 0 1px 1px rgba(255, 255, 255, 0.9),
+    0 20px 40px -10px rgba(247, 37, 133, 0.12);
+  --shadow-btn:        0 10px 24px rgba(247, 37, 133, 0.25);
+  --shadow-inset:      inset 0 2px 4px rgba(0, 0, 0, 0.04), inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+  --shadow-modal:      0 32px 80px rgba(0, 0, 0, 0.10), inset 0 1px 0 rgba(255, 255, 255, 0.9);
 
   /* ── Transitions ─────────────────────────────────────────── */
   --transition:      160ms cubic-bezier(0.16, 1, 0.3, 1);
@@ -109,12 +108,12 @@
   --bg:           transparent;
   --surface:      var(--color-surface);
   --card:         var(--color-surface);
-  --card-hover:   rgba(30, 41, 59, 0.80);
+  --card-hover:   rgba(255, 255, 255, 0.60);
   --border:       var(--color-border);
   --border-light: var(--color-border-input);
   --accent:       var(--color-primary-start);
-  --accent-dim:   #0284C7;
-  --accent-glow:  rgba(56, 189, 248, 0.22);
+  --accent-dim:   #FF4B91;
+  --accent-glow:  rgba(255, 75, 145, 0.22);
   --accent-subtle:var(--color-nav-active-bg);
   --text-1:       var(--color-text-primary);
   --text-2:       var(--color-text-secondary);
@@ -134,7 +133,7 @@
 /* ── Reset ─────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-html { height: 100%; font-size: 16px; background: #0A1628; }
+html { height: 100%; font-size: 16px; background: #F8FAFC; }
 
 body {
   min-height: 100%;
@@ -149,8 +148,7 @@ body {
 
 #root { min-height: 100%; background: transparent !important; }
 
-/* ── Hardware-Accelerated Deep Midnight Radial Dark Canvas ── */
-/* ── Hardware-Accelerated Luminous Ocean Water & Sky Cyan Canvas ── */
+/* ── Hardware-Accelerated Pastel Light Glow Canvas ── */
 .app-fixed-bg-canvas {
   position: fixed;
   top: 0;
@@ -161,50 +159,12 @@ body {
   height: 100vh;
   z-index: -100;
   pointer-events: none;
-  background-color: #0A1628;
+  background-color: #F8FAFC;
   background-image: 
-    radial-gradient(circle at 25% 20%, rgba(56, 189, 248, 0.40) 0%, rgba(2, 132, 199, 0.22) 40%, transparent 70%),
-    radial-gradient(circle at 80% 25%, rgba(45, 212, 191, 0.35) 0%, rgba(14, 165, 233, 0.20) 45%, transparent 70%),
-    radial-gradient(circle at 50% 85%, rgba(14, 165, 233, 0.30) 0%, rgba(15, 23, 42, 0.60) 60%, transparent 80%),
-    linear-gradient(160deg, #0A1628 0%, #0F2537 40%, #071322 100%);
-  transform: translateZ(0);
-  will-change: transform;
-}
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-html { height: 100%; font-size: 16px; background: #0A0D1A; }
-
-body {
-  min-height: 100%;
-  font-family: var(--font-body);
-  background-color: transparent !important;
-  color: var(--color-text-primary);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
-  overflow-y: auto;
-}
-
-#root { min-height: 100%; background: transparent !important; }
-
-/* ── Hardware-Accelerated Deep Midnight Radial Dark Canvas ── */
-/* ── Hardware-Accelerated Luminous Ocean Water & Sky Cyan Canvas ── */
-.app-fixed-bg-canvas {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: -100;
-  pointer-events: none;
-  background-color: #0A1628;
-  background-image: 
-    radial-gradient(circle at 25% 20%, rgba(56, 189, 248, 0.40) 0%, rgba(2, 132, 199, 0.22) 40%, transparent 70%),
-    radial-gradient(circle at 80% 25%, rgba(45, 212, 191, 0.35) 0%, rgba(14, 165, 233, 0.20) 45%, transparent 70%),
-    radial-gradient(circle at 50% 85%, rgba(14, 165, 233, 0.30) 0%, rgba(15, 23, 42, 0.60) 60%, transparent 80%),
-    linear-gradient(160deg, #0A1628 0%, #0F2537 40%, #071322 100%);
+    radial-gradient(circle at 15% 15%, rgba(56, 189, 248, 0.35) 0%, transparent 45%),
+    radial-gradient(circle at 85% 15%, rgba(255, 75, 145, 0.18) 0%, transparent 40%),
+    radial-gradient(circle at 50% 80%, rgba(114, 9, 183, 0.22) 0%, transparent 60%),
+    linear-gradient(135deg, #FFF5F7 0%, #F5F3FF 45%, #F0FDFA 100%);
   transform: translateZ(0);
   will-change: transform;
 }
@@ -294,7 +254,7 @@ code, .mono {
 /* Primary Action Button: Real Sky Blue (#38BDF8 to #0284C7) */
 .btn-primary {
   background: var(--gradient-primary);
-  color: #0A101D;
+  color: var(--color-text-inverse);
   font-weight: 800;
   box-shadow: var(--shadow-btn);
 }
@@ -385,6 +345,40 @@ code, .mono {
   animation: pulseGlow 2s infinite;
 }
 
+/* ── Loading / Generating Animations ─────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
+}
+
+.shimmer {
+  background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.10) 50%, rgba(255,255,255,0.04) 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.6s infinite linear;
+  border-radius: 4px;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.spin {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes genDotBounce {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+  40%           { transform: scale(1.2); opacity: 1; }
+}
+
+.gen-dot {
+  animation: genDotBounce 1.2s ease-in-out infinite;
+}
+.gen-dot:nth-child(2) { animation-delay: 0.2s; }
+.gen-dot:nth-child(3) { animation-delay: 0.4s; }
+
+
 /* ── GPU-Accelerated Card Virtualization ─────────────────── */
 .uc-card-shell,
 .post-card {
@@ -417,6 +411,14 @@ code, .mono {
   .responsive-stacked-grid [data-label]:empty {
     display: none !important;
   }
+}
+
+/* ── Text Truncation Utility ────────────────────────────── */
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
 }
 
 

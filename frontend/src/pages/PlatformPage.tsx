@@ -362,9 +362,9 @@ const platformStyles = `
     align-items: center;
     gap: 8px;
     padding: 6px 14px;
-    border: 1px solid rgba(56, 189, 248, 0.3);
+    border: 1px solid rgba(255, 75, 145, 0.3);
     border-radius: 99px;
-    background: rgba(56, 189, 248, 0.08);
+    background: rgba(255, 75, 145, 0.08);
     color: var(--color-primary-start);
     font-size: 12px;
     font-weight: 600;
@@ -397,7 +397,7 @@ const platformStyles = `
     color: var(--color-text-secondary);
   }
   .platform-audience-box {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.20);
     border: 1px solid var(--color-border);
     border-radius: var(--radius);
     padding: 16px 20px;
@@ -451,8 +451,8 @@ const platformStyles = `
   .platform-tip-card {
     display: flex;
     gap: 12px;
-    background: rgba(56, 189, 248, 0.05);
-    border: 1px solid rgba(56, 189, 248, 0.2);
+    background: rgba(255, 75, 145, 0.04);
+    border: 1px solid rgba(255, 75, 145, 0.2);
     border-radius: var(--radius);
     padding: 16px 20px;
     align-items: flex-start;
@@ -492,8 +492,8 @@ const platformStyles = `
     backdrop-filter: var(--backdrop-blur);
   }
   .comparison-card.optimized {
-    border-color: rgba(56, 189, 248, 0.5);
-    background: rgba(15, 28, 48, 0.7);
+    border-color: rgba(255, 75, 145, 0.35);
+    background: rgba(255, 255, 255, 0.25);
   }
   .comparison-card h3 {
     font-size: 15px;
@@ -507,7 +507,7 @@ const platformStyles = `
     color: var(--color-text-secondary);
     font-family: var(--font-mono);
     white-space: pre-wrap;
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(255, 255, 255, 0.30);
     padding: 14px;
     border-radius: var(--radius-sm);
   }
@@ -592,7 +592,7 @@ const platformStyles = `
     transition: border-color var(--transition);
   }
   .platform-faq-item.active {
-    border-color: rgba(56, 189, 248, 0.4);
+    border-color: rgba(255, 75, 145, 0.3);
   }
   .platform-faq-trigger {
     width: 100%;
@@ -627,8 +627,8 @@ const platformStyles = `
   .platform-footer-cta {
     margin-top: 40px;
     padding: 48px;
-    background: linear-gradient(135deg, rgba(56, 189, 248, 0.06), rgba(2, 132, 199, 0.06));
-    border: 1px solid rgba(56, 189, 248, 0.2);
+    background: var(--gradient-primary-glow);
+    border: 1px solid rgba(255, 75, 145, 0.2);
     border-radius: var(--radius-card);
     text-align: center;
     display: flex;
@@ -704,7 +704,7 @@ const platformStyles = `
     height: 48px;
     display: grid;
     place-items: center;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.20);
     border-radius: var(--radius-sm);
     border: 1px solid var(--color-border);
   }

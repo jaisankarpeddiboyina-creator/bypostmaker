@@ -213,6 +213,24 @@ export const api = {
 
   // ── Upload ──────────────────────────────────────────────────
   upload: {
+    direct: async (file: File) => {
+      const res = await fetch(`${BASE}/upload/direct`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': file.type,
+        },
+        body: file,
+      })
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'Upload failed' }))
+        throw new ApiError((err as { error: string }).error ?? 'Upload failed', res.status)
+      }
+
+      return res.json() as Promise<{ success: boolean; objectKey: string; uploadUrl: string }>
+    },
+
     presign: (contentType: string, contentLength: number) =>
       request<{ uploadUrl: string; objectKey: string }>('/upload/presign', {
         method: 'POST',

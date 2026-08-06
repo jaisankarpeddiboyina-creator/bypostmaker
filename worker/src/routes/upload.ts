@@ -1,146 +1,100 @@
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import type { Env } from '../../../config/ai'
 import { generateId } from '../utils/id'
-import { MAX_IMAGE_SIZE_BYTES, MAX_BATCH_IMAGE_SIZE_BYTES, MAX_CAMPAIGN_IMAGES } from '../../../config/limits'
+import { MAX_IMAGE_SIZE_BYTES } from '../../../config/limits'
 
-const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+const allowedTypes = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+  'image/svg+xml',
+]
 
-function createS3Client(env: Env) {
-  return new S3Client({
-    region: 'auto',
-    endpoint: `https://${env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-    credentials: {
-      accessKeyId: env.R2_ACCESS_KEY_ID,
-      secretAccessKey: env.R2_SECRET_ACCESS_KEY,
-    },
-    requestChecksumCalculation: 'WHEN_REQUIRED',
-    responseChecksumValidation: 'WHEN_REQUIRED',
-  })
+/**
+ * Native Direct Upload Route (POST /api/upload/direct)
+ * Accepts raw binary image payload in request.body.
+ * Writes directly to env.BUCKET (Workers R2 binding) without AWS S3 SDK.
+ */
+export async function handleDirectUploadRoute(
+  request: Request,
+  env: Env,
+  userId: string
+): Promise<Response> {
+  if (request.method !== 'POST') {
+    return jsonError('Method not allowed', 405)
+  }
+
+  try {
+    const contentType = request.headers.get('Content-Type')?.split(';')[0].trim().toLowerCase() ?? ''
+    if (!allowedTypes.includes(contentType)) {
+      return jsonError('Invalid file type. Only JPEG, PNG, WEBP, GIF, and SVG are allowed.', 400)
+    }
+
+    const contentLengthHeader = request.headers.get('Content-Length')
+    if (contentLengthHeader) {
+      const parsedLength = parseInt(contentLengthHeader, 10)
+      if (!isNaN(parsedLength) && parsedLength > MAX_IMAGE_SIZE_BYTES) {
+        return jsonError('File size exceeds the 15MB limit.', 400)
+      }
+    }
+
+    const body = await request.arrayBuffer()
+    if (body.byteLength === 0) {
+      return jsonError('Empty file payload.', 400)
+    }
+    if (body.byteLength > MAX_IMAGE_SIZE_BYTES) {
+      return jsonError('File size exceeds the 15MB limit.', 400)
+    }
+
+    let ext = contentType.split('/')[1] ?? 'bin'
+    if (ext === 'jpeg') ext = 'jpg'
+    if (ext === 'svg+xml') ext = 'svg'
+
+    const objectKey = `uploads/${userId}/${generateId()}.${ext}`
+
+    await env.BUCKET.put(objectKey, body, {
+      httpMetadata: { contentType },
+    })
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        uploadUrl: `/api/upload/direct`, // For backward compatibility
+        objectKey,
+      }),
+      {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }
+    )
+  } catch (err: any) {
+    console.error('Direct R2 upload failed:', err)
+    return jsonError('Failed to save image to storage', 500)
+  }
 }
 
-// Single File Presigned URL Route (Legacy / Backward Compatibility)
+// Backward compatibility alias for single file presign route
 export async function handlePresignRoute(
   request: Request,
   env: Env,
   userId: string
 ): Promise<Response> {
-  if (request.method !== 'POST') {
-    return jsonError('Method not allowed', 405)
-  }
-
-  try {
-    const { contentType, contentLength } = await request.json() as {
-      contentType: string
-      contentLength: number
-    }
-
-    if (!contentType || typeof contentLength !== 'number') {
-      return jsonError('Invalid request body', 400)
-    }
-
-    if (!allowedTypes.includes(contentType)) {
-      return jsonError('Invalid file type. Only JPEG, PNG, WEBP, and GIF are allowed.', 400)
-    }
-
-    if (contentLength <= 0 || contentLength > MAX_IMAGE_SIZE_BYTES) {
-      return jsonError('File size exceeds the 15MB limit.', 400)
-    }
-
-    const ext = contentType.split('/')[1] === 'jpeg' ? 'jpg' : contentType.split('/')[1]
-    const objectKey = `uploads/${userId}/${generateId()}.${ext}`
-
-    const s3 = createS3Client(env)
-    const command = new PutObjectCommand({
-      Bucket: env.R2_BUCKET_NAME,
-      Key: objectKey,
-      ContentType: contentType,
-      ContentLength: contentLength,
-    })
-
-    const uploadUrl = await getSignedUrl(s3, command, { expiresIn: 600 })
-
-    return new Response(JSON.stringify({ uploadUrl, objectKey }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    })
-  } catch (err: any) {
-    console.error('Presigned URL generation failed:', err)
-    return jsonError('Failed to generate upload URL', 500)
-  }
+  return handleDirectUploadRoute(request, env, userId)
 }
 
-// Batch Presigned URL Route (Multi-Image Support up to 4 files, 30MB max total)
+// Backward compatibility alias for batch presign route
 export async function handlePresignBatchRoute(
   request: Request,
   env: Env,
   userId: string
 ): Promise<Response> {
-  if (request.method !== 'POST') {
-    return jsonError('Method not allowed', 405)
-  }
-
-  try {
-    const { files } = await request.json() as {
-      files?: Array<{ contentType: string; contentLength: number }>
-    }
-
-    if (!Array.isArray(files) || files.length === 0) {
-      return jsonError('Select at least one image file.', 400)
-    }
-
-    if (files.length > MAX_CAMPAIGN_IMAGES) {
-      return jsonError(`Maximum ${MAX_CAMPAIGN_IMAGES} images allowed per campaign.`, 400)
-    }
-
-    let totalBatchSize = 0
-    for (const f of files) {
-      if (!f.contentType || typeof f.contentLength !== 'number') {
-        return jsonError('Invalid file metadata in batch request.', 400)
-      }
-      if (!allowedTypes.includes(f.contentType)) {
-        return jsonError('Invalid file type in batch. Only JPEG, PNG, WEBP, and GIF are allowed.', 400)
-      }
-      if (f.contentLength <= 0 || f.contentLength > MAX_IMAGE_SIZE_BYTES) {
-        return jsonError('Individual file size exceeds the 15MB limit.', 400)
-      }
-      totalBatchSize += f.contentLength
-    }
-
-    if (totalBatchSize > MAX_BATCH_IMAGE_SIZE_BYTES) {
-      return jsonError('Total batch image size exceeds the 30MB limit.', 400)
-    }
-
-    const s3 = createS3Client(env)
-    const items: Array<{ uploadUrl: string; objectKey: string; sortOrder: number }> = []
-
-    for (let i = 0; i < files.length; i++) {
-      const f = files[i]
-      const ext = f.contentType.split('/')[1] === 'jpeg' ? 'jpg' : f.contentType.split('/')[1]
-      const objectKey = `uploads/${userId}/${generateId()}.${ext}`
-
-      const command = new PutObjectCommand({
-        Bucket: env.R2_BUCKET_NAME,
-        Key: objectKey,
-        ContentType: f.contentType,
-        ContentLength: f.contentLength,
-      })
-
-      const uploadUrl = await getSignedUrl(s3, command, { expiresIn: 600 })
-      items.push({ uploadUrl, objectKey, sortOrder: i })
-    }
-
-    return new Response(JSON.stringify({ items }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    })
-  } catch (err: any) {
-    console.error('Batch presigned URL generation failed:', err)
-    return jsonError('Failed to generate batch upload URLs', 500)
-  }
+  return handleDirectUploadRoute(request, env, userId)
 }
 
-// Cleanup Route (Deletes orphaned R2 objects on partial upload failure)
+/**
+ * Cleanup Route (POST /api/upload/cleanup)
+ * Deletes orphaned R2 objects on partial upload or generation failure
+ */
 export async function handleCleanupRoute(
   request: Request,
   env: Env,
@@ -151,7 +105,7 @@ export async function handleCleanupRoute(
   }
 
   try {
-    const { keys } = await request.json() as { keys?: string[] }
+    const { keys } = (await request.json()) as { keys?: string[] }
     if (!Array.isArray(keys) || keys.length === 0) {
       return new Response(JSON.stringify({ ok: true, cleaned: 0 }), {
         status: 200,
@@ -159,13 +113,13 @@ export async function handleCleanupRoute(
       })
     }
 
-    // Security: Filter keys to strictly enforce user ownership boundary
+    // Security boundary: filter keys to strictly enforce user ownership prefix
     const userPrefix = `uploads/${userId}/`
-    const validKeys = keys.filter(k => typeof k === 'string' && k.startsWith(userPrefix))
+    const validKeys = keys.filter((k) => typeof k === 'string' && k.startsWith(userPrefix))
 
     let cleaned = 0
     await Promise.all(
-      validKeys.map(async key => {
+      validKeys.map(async (key) => {
         try {
           await env.BUCKET.delete(key)
           cleaned++

@@ -29,6 +29,10 @@ export interface Env {
   BUCKET: R2Bucket
   ASSETS: { fetch: (request: Request) => Promise<Response> }
   CLOUDFLARE_ACCOUNT_ID: string
+  CF_AIG_ACCOUNT_ID?: string
+  CF_AIG_GATEWAY_NAME?: string
+  CLOUDFLARE_API_TOKEN?: string
+  TEXT_MODEL?: string
   R2_ACCESS_KEY_ID: string
   R2_SECRET_ACCESS_KEY: string
   R2_BUCKET_NAME: string
@@ -36,11 +40,63 @@ export interface Env {
   DOMAIN: string
   ENVIRONMENT: 'development' | 'staging' | 'production'
   GROQ_LIMITER?: DurableObjectNamespace
+  TEXT_PROVIDER?: string
+  TEXT_FALLBACK_PROVIDER?: string
+  AI_MAX_OUTPUT_TOKENS?: string
+  AI_MAX_PLATFORMS_PER_BATCH?: string
+  AI_AVG_TOKENS_PER_PLATFORM?: string
   // Test-only mock flags — hard-gated to non-production in analyzeImage() / generate.ts
   STAGE1_MOCK_FAIL?: string
   STAGE1_MOCK_SUCCESS?: string
   STAGE2_MOCK_FAIL_GROUP?: string
   STAGE2_MOCK_SUCCESS?: string
+}
+
+export interface ModelCapabilities {
+  maxOutputTokens: number
+  maxPlatformsPerBatch: number
+  avgTokensPerPlatform: number
+}
+
+export function parseEnvInt(val: string | undefined, fallback: number): number {
+  if (!val) return fallback
+  const parsed = parseInt(val, 10)
+  return isNaN(parsed) || parsed <= 0 ? fallback : parsed
+}
+
+export function getModelCapabilities(env: Env): ModelCapabilities {
+  return {
+    maxOutputTokens: parseEnvInt(env.AI_MAX_OUTPUT_TOKENS, 4096),
+    maxPlatformsPerBatch: parseEnvInt(env.AI_MAX_PLATFORMS_PER_BATCH, 10),
+    avgTokensPerPlatform: parseEnvInt(env.AI_AVG_TOKENS_PER_PLATFORM, 250),
+  }
+}
+
+export function getLanguageTokenMultiplier(language: string): number {
+  const l = (language || '').toLowerCase().trim()
+  if (l === 'hindi' || l === 'hi' || l === 'chinese' || l === 'zh' || l === 'japanese' || l === 'ja' || l === 'korean' || l === 'ko') {
+    return 3.0
+  }
+  if (l === 'arabic' || l === 'ar') {
+    return 2.4
+  }
+  if (l === 'russian' || l === 'ru' || l === 'greek' || l === 'el') {
+    return 1.8
+  }
+  return 1.0
+}
+
+export function getProviderBaseURL(provider: 'google' | 'groq', env: Env): string | undefined {
+  const token = env.CLOUDFLARE_API_TOKEN
+  const accountId = env.CLOUDFLARE_ACCOUNT_ID || env.CF_AIG_ACCOUNT_ID
+  const gatewayName = env.CF_AIG_GATEWAY_NAME || 'postmaker-gateway'
+
+  if (!token || !accountId || !gatewayName) return undefined
+
+  if (provider === 'google') {
+    return `https://gateway.ai.cloudflare.com/v1/${accountId}/${gatewayName}/google-ai-studio/v1beta`
+  }
+  return `https://gateway.ai.cloudflare.com/v1/${accountId}/${gatewayName}/groq/openai/v1`
 }
 
 // ── AILink Instance Factory ───────────────────────────────────
@@ -142,11 +198,26 @@ export async function analyzeImage(
     return { description: null, errorType: 'error' }
   }
 
-  const geminiProvider = createGoogleGenerativeAI({ apiKey: env.GEMINI_API_KEY })
-  const model = geminiProvider(env.VISION_MODEL)
+  const googleBaseURL = getProviderBaseURL('google', env)
+  const token = env.CLOUDFLARE_API_TOKEN
+  const gatewayName = env.CF_AIG_GATEWAY_NAME || 'postmaker-gateway'
+
+  const googleHeaders: Record<string, string> = {}
+  if (googleBaseURL && token) {
+    googleHeaders['cf-aig-authorization'] = `Bearer ${token}`
+    googleHeaders['cf-aig-gateway-id'] = gatewayName
+  }
+
+  const geminiProvider = createGoogleGenerativeAI({
+    apiKey: env.GEMINI_API_KEY || token || '',
+    ...(googleBaseURL ? { baseURL: googleBaseURL, headers: googleHeaders } : {}),
+  })
+  const model = geminiProvider(env.VISION_MODEL || 'gemini-2.5-flash')
+  console.log(`[analyzeImage] Calling Gemini model: ${env.VISION_MODEL || 'gemini-2.5-flash'}, images: ${imageList.length}, hasGateway: ${!!googleBaseURL}, apiKeyPrefix: ${(env.GEMINI_API_KEY || '').slice(0, 6)}`)
 
   const abortController = new AbortController()
-  const timeoutId = setTimeout(() => abortController.abort(), 15_000)
+  const timeoutId = setTimeout(() => abortController.abort(), 12_000)
+
 
   const promptText = imageList.length === 1
     ? `Analyze this image and return a structured description as valid JSON only — no markdown fences, no explanation.
@@ -181,8 +252,8 @@ Be specific — this description will be used by another AI to write platform ca
   const contentParts: any[] = [
     { type: 'text', text: promptText },
     ...imageList.map(img => ({
-      type: 'image',
-      image: img.buffer,
+      type: 'file',
+      data: img.buffer,
       mediaType: img.contentType,
     }))
   ]
@@ -201,6 +272,7 @@ Be specific — this description will be used by another AI to write platform ca
     })
 
     const raw = result.text?.trim() ?? ''
+    console.log(`[analyzeImage] Gemini raw response (first 200 chars): ${raw.slice(0, 200)}`)
     if (!raw) {
       console.error('[analyzeImage] Gemini returned empty response')
       return { description: null, errorType: 'error' }
@@ -240,7 +312,13 @@ Be specific — this description will be used by another AI to write platform ca
       console.error('[analyzeImage] Gemini 429 rate limit hit')
       return { description: null, errorType: 'rate_limit' }
     }
-    console.error('[analyzeImage] Gemini vision call failed:', err?.message ?? err)
+    console.error('[analyzeImage] Gemini vision call FAILED — full error:', {
+      name: err?.name,
+      message: err?.message,
+      status: err?.status ?? err?.statusCode,
+      cause: err?.cause?.message ?? err?.cause,
+      responseBody: err?.responseBody ?? err?.data,
+    })
     return { description: null, errorType: 'error' }
   } finally {
     clearTimeout(timeoutId)
@@ -273,19 +351,78 @@ export function createStreamingClient(env: Env) {
     environment: env.ENVIRONMENT,
   })
 
-  const groqProvider = createGroq({ apiKey: env.GROQ_API_KEY })
-  const geminiProvider = createGoogleGenerativeAI({ apiKey: env.GEMINI_API_KEY })
+  const groqBaseURL = getProviderBaseURL('groq', env)
+  const googleBaseURL = getProviderBaseURL('google', env)
+  const token = env.CLOUDFLARE_API_TOKEN
+  const gatewayName = env.CF_AIG_GATEWAY_NAME || 'postmaker-gateway'
+
+  const groqHeaders: Record<string, string> = {}
+  if (groqBaseURL && token) {
+    groqHeaders['cf-aig-authorization'] = `Bearer ${token}`
+    groqHeaders['cf-aig-gateway-id'] = gatewayName
+  }
+
+  const googleHeaders: Record<string, string> = {}
+  if (googleBaseURL && token) {
+    googleHeaders['cf-aig-authorization'] = `Bearer ${token}`
+    googleHeaders['cf-aig-gateway-id'] = gatewayName
+  }
+
+  const groqProvider = createGroq({
+    apiKey: env.GROQ_API_KEY || token || '',
+    ...(groqBaseURL ? { baseURL: groqBaseURL, headers: groqHeaders } : {}),
+  })
+  const geminiProvider = createGoogleGenerativeAI({
+    apiKey: env.GEMINI_API_KEY || token || '',
+    ...(googleBaseURL ? { baseURL: googleBaseURL, headers: googleHeaders } : {}),
+  })
 
   const streamGenerate = ai.wrap(
-    async ({ systemPrompt, userPrompt, useGroq = true, image }: {
+    async ({ systemPrompt, userPrompt, useGroq = true, image, maxTokens }: {
       systemPrompt: string
       userPrompt: string
       useGroq?: boolean
       image?: { buffer: ArrayBuffer; contentType: string }
+      maxTokens?: number
     }) => {
-      const model = useGroq && !image
-        ? groqProvider(env.GROQ_MODEL)
-        : geminiProvider(env.VISION_MODEL)
+      let primaryModel: any = null
+      let fallbackModel: any = null
+
+      const rawTextModel = env.TEXT_MODEL || env.GROQ_MODEL || 'llama-3.3-70b-versatile'
+      const visionModelName = env.VISION_MODEL || 'gemini-2.5-flash'
+
+      // Detect if primary model is gemini vs groq
+      const isPrimaryGemini = rawTextModel.startsWith('google-ai-studio/') || rawTextModel.includes('gemini')
+      
+      const cleanGeminiName = visionModelName.replace('google-ai-studio/', '')
+      const groqModelName = env.GROQ_MODEL || 'llama-3.3-70b-versatile'
+      const cleanGroqName = groqModelName.replace('groq/', '')
+
+      if (image) {
+        primaryModel = geminiProvider(visionModelName)
+      } else {
+        if (isPrimaryGemini) {
+          const cleanName = rawTextModel.replace('google-ai-studio/', '')
+          primaryModel = geminiProvider(cleanName)
+          
+          const fallbackProvider = env.TEXT_FALLBACK_PROVIDER || 'groq'
+          if (fallbackProvider === 'groq') {
+            fallbackModel = groqProvider(cleanGroqName)
+          } else if (fallbackProvider === 'gemini') {
+            fallbackModel = geminiProvider(cleanGeminiName)
+          }
+        } else {
+          const cleanName = rawTextModel.replace('groq/', '')
+          primaryModel = groqProvider(cleanName)
+
+          const fallbackProvider = env.TEXT_FALLBACK_PROVIDER || 'gemini'
+          if (fallbackProvider === 'gemini') {
+            fallbackModel = geminiProvider(cleanGeminiName)
+          } else if (fallbackProvider === 'groq') {
+            fallbackModel = groqProvider(cleanGroqName)
+          }
+        }
+      }
 
       const messages: any[] = [
         {
@@ -300,42 +437,69 @@ export function createStreamingClient(env: Env) {
         messages[0].content.push({
           type: 'image',
           image: image.buffer,
-          mimeType: image.contentType
+          mediaType: image.contentType
         })
       }
 
-      // Stage 2 timeout: 10 seconds per Groq group call.
-      // Reasoning: Stage 2 is text-only (Groq llama-3.3-70b-versatile).
-      // Typical response time: 1–4s for 100–300 tokens. 10s is 2.5–10× headroom.
-      // Combined ceiling with Stage 1's 15s cap: 15 + 10 = 25s max total, safely
-      // under Cloudflare's ~30s wall-clock limit with a 5s buffer for I/O.
-      // The image path (legacy retry fallback) is a Gemini call and gets the same
-      // 10s limit — Gemini is faster for single-platform retries than multi-platform
-      // generation, so this is still sufficient.
-      const abortController = new AbortController()
-      const timeoutId = setTimeout(() => abortController.abort(), 10_000)
+      // Helper to generate a stream with an isolated AbortController and timeout
+      const runStream = (targetModel: any, timeoutMs: number) => {
+        const abortController = new AbortController()
+        const timeoutId = setTimeout(() => abortController.abort(), timeoutMs)
+        
+        const stream = streamText({
+          model: targetModel,
+          system: systemPrompt,
+          messages,
+          maxOutputTokens: maxTokens ?? 4096,
+          abortSignal: abortController.signal,
+        })
 
-      const stream = streamText({
-        model,
-        system: systemPrompt,
-        messages,
-        maxOutputTokens: 4096,
-        abortSignal: abortController.signal,
-      })
+        return { stream, timeoutId }
+      }
 
       return {
-        ...stream,
         textStream: (async function* () {
+          const primaryChunks: string[] = []
+          let primaryTimeoutId: any = null
           try {
+            console.log(`[streamGenerate] Starting primary generation...`)
+            // Stage 2 Primary gets a 5-second timeout window
+            const { stream, timeoutId } = runStream(primaryModel, 5000)
+            primaryTimeoutId = timeoutId
             for await (const chunk of stream.textStream) {
+              primaryChunks.push(chunk)
+            }
+            await stream.text
+            clearTimeout(primaryTimeoutId)
+            primaryTimeoutId = null
+            // Primary succeeded: Yield all buffered chunks
+            for (const chunk of primaryChunks) {
               yield chunk
             }
-          } finally {
-            // clearTimeout runs after stream is fully consumed (success or error).
-            // The AbortSignal remains live throughout iteration — it fires if the
-            // 10s window expires before the loop exits. clearTimeout only prevents
-            // an already-completed call from triggering an unnecessary abort.
-            clearTimeout(timeoutId)
+          } catch (err) {
+            if (primaryTimeoutId) clearTimeout(primaryTimeoutId)
+            console.warn('[streamGenerate] Primary model stream failed. Triggering automatic fallback...', err)
+            
+            if (fallbackModel) {
+              let fallbackTimeoutId: any = null
+              try {
+                console.log(`[streamGenerate] Starting fallback generation...`)
+                // Stage 2 Fallback gets an 11-second timeout window with fresh AbortController
+                const { stream: fallbackStream, timeoutId } = runStream(fallbackModel, 11000)
+                fallbackTimeoutId = timeoutId
+                for await (const chunk of fallbackStream.textStream) {
+                  yield chunk
+                }
+                await fallbackStream.text
+                clearTimeout(fallbackTimeoutId)
+              } catch (fallbackErr) {
+                if (fallbackTimeoutId) clearTimeout(fallbackTimeoutId)
+                console.error('[streamGenerate] Fallback model stream also failed:', fallbackErr)
+                throw fallbackErr
+              }
+            } else {
+              throw err
+            }
           }
         })()
       }
@@ -419,22 +583,32 @@ export function buildImageContext(imageDescription: string | null): string {
 }
 
 export function parseGroupResponse(text: string, platformIds: string[]): Record<string, string> {
+  const result: Record<string, string> = {}
+
+  // Stage 1: Standard JSON parse
   try {
     const clean = text.replace(/```json|```/g, '').trim()
     const parsed = JSON.parse(clean)
-    const result: Record<string, string> = {}
-    for (const id of platformIds) {
-      if (parsed[id] && typeof parsed[id] === 'string') {
-        result[id] = parsed[id].trim()
+    if (typeof parsed === 'object' && parsed !== null) {
+      for (const id of platformIds) {
+        if (parsed[id] && typeof parsed[id] === 'string') {
+          result[id] = parsed[id].trim()
+        }
       }
     }
-    return result
   } catch {
-    const result: Record<string, string> = {}
-    for (const id of platformIds) {
-      const match = text.match(new RegExp(`"${id}"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"`, 's'))
-      if (match) result[id] = match[1].replace(/\\n/g, '\n').replace(/\\"/g, '"')
-    }
-    return result
+    // Standard JSON.parse failed (e.g. malformed trailing syntax) — proceed to Stage 2
   }
+
+  // Stage 2: Fail-soft regex key-value extractor (for any platform IDs missed by JSON.parse)
+  for (const id of platformIds) {
+    if (!result[id]) {
+      const match = text.match(new RegExp(`"${id}"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"`, 's'))
+      if (match && match[1]) {
+        result[id] = match[1].replace(/\\n/g, '\n').replace(/\\"/g, '"').trim()
+      }
+    }
+  }
+
+  return result
 }

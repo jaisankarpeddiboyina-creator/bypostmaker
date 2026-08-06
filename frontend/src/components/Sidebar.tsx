@@ -1,8 +1,9 @@
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
-  LayoutDashboard, PlusCircle, Bookmark, History, CreditCard, Settings, Zap, X, Shield
+  LayoutDashboard, PlusCircle, Bookmark, History, CreditCard, Settings, Zap, X, Shield, LogOut
 } from 'lucide-react'
 import { useAppStore } from '../store/app'
+import { api } from '../lib/api'
 
 interface SidebarProps {
   isOpen?: boolean
@@ -12,10 +13,23 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen, onClose, onUpgradeClick }: SidebarProps) {
   const location = useLocation()
+  const navigate = useNavigate()
   const path = location.pathname
-  const { user } = useAppStore()
+  const { user, setUser, setUsage, addToast } = useAppStore()
 
   const userPlan = user?.plan ?? 'free'
+
+  const handleLogout = async () => {
+    try {
+      await api.auth.logout()
+      setUser(null)
+      setUsage(null)
+      addToast('Signed out successfully.', 'info')
+      navigate('/')
+    } catch (err: any) {
+      addToast(err?.message || 'Failed to sign out', 'error')
+    }
+  }
 
   const navItems = [
     { label: 'Dashboard', path: '/app', icon: LayoutDashboard },
@@ -109,15 +123,26 @@ export function Sidebar({ isOpen, onClose, onUpgradeClick }: SidebarProps) {
             </div>
           )}
 
-          {/* User Card */}
+          {/* User Profile & Logout Card */}
           <div className="user-profile-card">
             <div className="avatar-circle">
               {user?.email?.charAt(0).toUpperCase() ?? 'U'}
             </div>
             <div className="user-info-text">
-              <span className="user-email-name truncate">{user?.email ?? 'Creator'}</span>
+              <span className="user-email-name truncate" title={user?.email ?? 'Creator'}>
+                {user?.email ?? 'Creator'}
+              </span>
               <span className="user-tier-badge">{userPlan.toUpperCase()} Plan</span>
             </div>
+            <button
+              type="button"
+              className="user-logout-btn"
+              onClick={handleLogout}
+              title="Sign Out"
+              aria-label="Sign Out"
+            >
+              <LogOut size={16} />
+            </button>
           </div>
         </div>
 
@@ -131,10 +156,10 @@ export function Sidebar({ isOpen, onClose, onUpgradeClick }: SidebarProps) {
             z-index: 90;
             display: flex;
             flex-direction: column;
-            background: rgba(10, 20, 36, 0.85);
+            background: var(--color-nav-bg);
             backdrop-filter: blur(30px);
             -webkit-backdrop-filter: blur(30px);
-            border-right: 1px solid var(--color-border);
+            border-right: 1px solid var(--color-nav-border);
             border-radius: 0;
             padding: 20px 14px;
             transition: transform var(--transition);
@@ -157,7 +182,7 @@ export function Sidebar({ isOpen, onClose, onUpgradeClick }: SidebarProps) {
           .sidebar-close-btn {
             background: none;
             border: none;
-            color: #94A3B8;
+            color: var(--color-nav-item-text);
             cursor: pointer;
             display: none;
           }
@@ -171,7 +196,7 @@ export function Sidebar({ isOpen, onClose, onUpgradeClick }: SidebarProps) {
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 6px 20px rgba(56, 189, 248, 0.40), inset 0 1px 0 rgba(255, 255, 255, 0.40);
+            box-shadow: 0 6px 20px rgba(255, 75, 145, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.60);
             transition: transform var(--transition);
           }
 
@@ -183,7 +208,7 @@ export function Sidebar({ isOpen, onClose, onUpgradeClick }: SidebarProps) {
             font-size: 19px;
             font-weight: 800;
             letter-spacing: -0.03em;
-            color: #F8FAFC;
+            color: var(--color-text-primary);
           }
 
           .brand-highlight {
@@ -203,7 +228,7 @@ export function Sidebar({ isOpen, onClose, onUpgradeClick }: SidebarProps) {
             gap: 12px;
             padding: 10px 14px;
             border-radius: var(--radius);
-            color: #94A3B8;
+            color: var(--color-nav-item-text);
             font-size: 13.5px;
             font-weight: 600;
             text-decoration: none;
@@ -212,17 +237,17 @@ export function Sidebar({ isOpen, onClose, onUpgradeClick }: SidebarProps) {
           }
 
           .nav-item-link:hover {
-            color: #F8FAFC;
-            background: rgba(255, 255, 255, 0.06);
+            color: var(--color-text-primary);
+            background: rgba(255, 255, 255, 0.25);
           }
 
           .nav-item-link.active {
-            color: #F8FAFC;
-            background: rgba(56, 189, 248, 0.12);
+            color: var(--color-nav-active-text);
+            background: var(--color-nav-active-bg);
           }
 
           .nav-item-link.active .nav-item-icon {
-            color: var(--color-primary-start);
+            color: var(--color-nav-active-icon);
           }
 
           .active-pill-indicator {
@@ -234,7 +259,7 @@ export function Sidebar({ isOpen, onClose, onUpgradeClick }: SidebarProps) {
             height: 18px;
             background: var(--color-primary-start);
             border-radius: 0 4px 4px 0;
-            box-shadow: 0 0 10px rgba(56, 189, 248, 0.8);
+            box-shadow: 0 0 10px rgba(255, 75, 145, 0.6);
           }
 
           .sidebar-footer {
@@ -242,13 +267,13 @@ export function Sidebar({ isOpen, onClose, onUpgradeClick }: SidebarProps) {
             flex-direction: column;
             gap: 14px;
             padding-top: 14px;
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            border-top: 1px solid var(--color-nav-border);
           }
 
           .upgrade-teaser-card {
             padding: 12px;
-            background: rgba(56, 189, 248, 0.08);
-            border-color: rgba(56, 189, 248, 0.25);
+            background: rgba(255, 75, 145, 0.04);
+            border-color: rgba(255, 75, 145, 0.2);
             display: flex;
             flex-direction: column;
             gap: 8px;
@@ -268,7 +293,7 @@ export function Sidebar({ isOpen, onClose, onUpgradeClick }: SidebarProps) {
 
           .teaser-desc {
             font-size: 11.5px;
-            color: #94A3B8;
+            color: var(--color-text-secondary);
             line-height: 1.4;
           }
 
@@ -276,38 +301,70 @@ export function Sidebar({ isOpen, onClose, onUpgradeClick }: SidebarProps) {
             display: flex;
             align-items: center;
             gap: 10px;
-            padding: 6px 4px;
+            padding: 8px 10px;
+            background: rgba(255, 255, 255, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: var(--radius);
+            min-width: 0;
+            width: 100%;
           }
 
           .avatar-circle {
             width: 32px;
             height: 32px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.10);
-            color: #F8FAFC;
+            background: rgba(255, 255, 255, 0.5);
+            color: var(--color-text-primary);
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 13px;
             font-weight: 700;
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            flex-shrink: 0;
           }
 
           .user-info-text {
             display: flex;
             flex-direction: column;
             min-width: 0;
+            flex: 1;
+            overflow: hidden;
           }
 
           .user-email-name {
             font-size: 12.5px;
             font-weight: 700;
-            color: #F8FAFC;
+            color: var(--color-text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: block;
+            width: 100%;
           }
 
           .user-tier-badge {
             font-size: 11px;
-            color: #94A3B8;
+            color: var(--color-text-secondary);
+          }
+
+          .user-logout-btn {
+            background: transparent;
+            border: none;
+            color: var(--color-text-secondary);
+            padding: 6px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all var(--transition);
+          }
+
+          .user-logout-btn:hover {
+            color: var(--color-error);
+            background: var(--color-error-bg);
           }
 
           .sidebar-mobile-backdrop {
@@ -328,7 +385,7 @@ export function Sidebar({ isOpen, onClose, onUpgradeClick }: SidebarProps) {
               display: block;
               position: fixed;
               inset: 0;
-              background: rgba(0, 0, 0, 0.7);
+              background: rgba(15, 23, 42, 0.4);
               backdrop-filter: blur(4px);
               z-index: 85;
             }
@@ -338,3 +395,4 @@ export function Sidebar({ isOpen, onClose, onUpgradeClick }: SidebarProps) {
     </>
   )
 }
+

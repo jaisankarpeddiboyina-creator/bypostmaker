@@ -9,7 +9,8 @@
     "deploy": "npm run build && npm run prerender && npm run deploy:production --prefix worker",
     "deploy:staging": "npm run build && npm run prerender && npm run deploy:staging --prefix worker",
     "db:migrate": "npm run db:migrate:prod --prefix worker",
-    "type-check": "concurrently \"npm run type-check --prefix worker\" \"npm run type-check --prefix frontend\""
+    "type-check": "concurrently \"npm run type-check --prefix worker\" \"npm run type-check --prefix frontend\"",
+    "tasks": "tsx scripts/task-status.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",

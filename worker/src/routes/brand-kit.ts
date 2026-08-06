@@ -208,10 +208,10 @@ export async function handleBrandKit(
       const voiceJson = JSON.stringify(body.voice ?? DEFAULT_BRAND_KIT.voice)
       const socialJson = JSON.stringify(body.social_links ?? DEFAULT_BRAND_KIT.social_links)
       const platformLinksJson = JSON.stringify(body.platform_links ?? [])
-      const products_services = body.products_services ?? ''
-      const target_audience = body.target_audience ?? ''
-      const competitors = body.competitors ?? ''
-      const brand_guidelines = body.brand_guidelines ?? ''
+      const products_services = (body.products_services ?? '').slice(0, 1000)
+      const target_audience = (body.target_audience ?? '').slice(0, 1000)
+      const competitors = (body.competitors ?? '').slice(0, 1000)
+      const brand_guidelines = (body.brand_guidelines ?? '').slice(0, 2000)
 
       const id = generateId()
 

@@ -1,5 +1,9 @@
-import { lazy, Suspense, memo } from 'react'
+import { lazy, Suspense, memo, useRef, useCallback, useEffect } from 'react'
 import type { CardProps } from './cards/types'
+import { CardSkeleton, CardGenerating, CardError } from './cards/CardStates'
+import { api } from '../lib/api'
+import { PLATFORM_MAP } from '@@config/platforms'
+import { useAppStore } from '../store/app'
 
 const cardMap: Record<string, React.LazyExoticComponent<React.ComponentType<CardProps>>> = {
   instagram: lazy(() => import('./cards/InstagramCard').then(m => ({ default: m.InstagramCard }))),
@@ -69,12 +73,92 @@ function CardFallback() {
   )
 }
 
+if (typeof window !== 'undefined' && window.URL && !((window.URL as any).__postmakerPatched)) {
+  const originalCreate = window.URL.createObjectURL
+  window.URL.createObjectURL = function (obj: any) {
+    if (obj && obj.__urlOverride) {
+      return obj.__urlOverride
+    }
+    return originalCreate(obj)
+  }
+  ;(window.URL as any).__postmakerPatched = true
+}
+
 function PostCardBase(props: CardProps) {
+  const { updatePost, addToast } = useAppStore()
+  const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current)
+    }
+  }, [])
+
+  const handleRetry = useCallback(async () => {
+    if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current)
+    updatePost(props.platformId, { status: 'generating', content: '', errorMessage: undefined, statusText: 'Retrying...' })
+
+    let active = true
+    retryTimeoutRef.current = setTimeout(() => {
+      if (active) {
+        active = false
+        updatePost(props.platformId, { status: 'error', errorMessage: 'Retry timed out.' })
+        addToast('Retry timed out', 'error')
+      }
+    }, 45000)
+
+    try {
+      const result = await api.generate.retry(props.campaignId, props.platformId)
+      if (active) {
+        active = false
+        if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current)
+        updatePost(props.platformId, { content: result.content, status: 'done', statusText: undefined })
+      }
+    } catch (err: any) {
+      if (active) {
+        active = false
+        if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current)
+        updatePost(props.platformId, { status: 'error', errorMessage: err.message ?? 'Generation failed' })
+      }
+    }
+  }, [props.platformId, props.campaignId, updatePost, addToast])
+
+  const post = props.post
+  const platform = PLATFORM_MAP[props.platformId]
+  const brandColor = platform?.brandColor || '#F72585'
+
+  if (post.status === 'pending') {
+    return <CardSkeleton statusText={post.statusText} />
+  }
+  if (post.status === 'generating') {
+    return <CardGenerating name={platform?.name ?? props.platformId} statusText={post.statusText} />
+  }
+  if (post.status === 'error') {
+    return (
+      <CardError
+        name={platform?.name ?? props.platformId}
+        message={post.errorMessage ?? 'Generation failed'}
+        brandColor={brandColor}
+        onRetry={handleRetry}
+      />
+    )
+  }
+
   const CardComponent = cardMap[props.platformId] || StandardCardLazy
+
+  const imageFiles = props.imageFiles.length > 0
+    ? props.imageFiles
+    : (props.imageUrls || []).map(url => {
+        const blob = new Blob([], { type: 'image/jpeg' }) as any
+        blob.__urlOverride = url
+        blob.name = 'image.jpg'
+        blob.lastModified = Date.now()
+        return blob as File
+      })
 
   return (
     <Suspense fallback={<CardFallback />}>
-      <CardComponent {...props} />
+      <CardComponent {...props} imageFiles={imageFiles} />
     </Suspense>
   )
 }
@@ -85,8 +169,11 @@ export const PostCard = memo(PostCardBase, (prev, next) => {
     prev.post.content === next.post.content &&
     prev.post.edited === next.post.edited &&
     prev.post.status === next.post.status &&
+    prev.post.statusText === next.post.statusText &&
+    prev.post.errorMessage === next.post.errorMessage &&
     prev.campaignId === next.campaignId &&
     prev.imageFiles.length === next.imageFiles.length &&
-    prev.videoFile === next.videoFile
+    prev.videoFile === next.videoFile &&
+    (prev.imageUrls || []).join(',') === (next.imageUrls || []).join(',')
   )
 })

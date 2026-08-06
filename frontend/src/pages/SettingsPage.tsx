@@ -1,16 +1,28 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Globe, Trash2, AlertTriangle, User } from 'lucide-react'
+import { Globe, Trash2, AlertTriangle, User, LogOut } from 'lucide-react'
 import { useAppStore } from '../store/app'
 import { api } from '../lib/api'
 
 export default function SettingsPage() {
-  const { user, addToast, setUser, currency, setCurrency } = useAppStore()
+  const { user, addToast, setUser, setUsage, currency, setCurrency } = useAppStore()
   const navigate = useNavigate()
 
   const [deleteModal, setDeleteModal] = useState(false)
   const [deleteInput, setDeleteInput] = useState('')
   const [deleting, setDeleting] = useState(false)
+
+  const handleLogout = async () => {
+    try {
+      await api.auth.logout()
+      setUser(null)
+      setUsage(null)
+      addToast('Signed out successfully.', 'info')
+      navigate('/')
+    } catch (err: any) {
+      addToast(err?.message || 'Failed to sign out', 'error')
+    }
+  }
 
   const handleDeleteAccount = async () => {
     if (deleteInput !== 'DELETE MY ACCOUNT') {
@@ -90,6 +102,12 @@ export default function SettingsPage() {
               <div className="settings-detail-row">
                 <span className="detail-field-label">Email Address</span>
                 <span className="detail-field-value">{user?.email}</span>
+              </div>
+              <div style={{ paddingTop: 12, borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                <button type="button" className="btn btn-ghost btn-sm" onClick={handleLogout}>
+                  <LogOut size={14} />
+                  <span>Sign Out</span>
+                </button>
               </div>
             </div>
           </div>

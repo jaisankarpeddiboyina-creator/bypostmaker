@@ -6,14 +6,23 @@
 
 import type { Env } from '../../../config/ai'
 import type { PlatformTier } from '../../../config/platforms'
-import { createStreamingClient, detectLanguage, buildGroupSystemPrompt, parseGroupResponse, analyzeImage, buildImageContext } from '../../../config/ai'
-import { PLATFORM_MAP, isPlatformAccessible, TIER_LIMITS } from '../../../config/platforms'
+import {
+  createStreamingClient,
+  detectLanguage,
+  buildGroupSystemPrompt,
+  parseGroupResponse,
+  analyzeImage,
+  buildImageContext,
+  getModelCapabilities,
+  getLanguageTokenMultiplier,
+} from '../../../config/ai'
+import { PLATFORM_MAP, PLATFORM_BATCH_MAP, isPlatformAccessible, TIER_LIMITS } from '../../../config/platforms'
 import { generateId } from '../utils/id'
 import { reserveUsageCredit, refundUsageCredit } from '../services/usage'
 import { sendEmail } from '../services/email'
 import { MAX_IMAGE_SIZE_BYTES } from '../../../config/limits'
 import { getCurrentPeriod } from '../utils/period'
-import { acquireGroqSlot, releaseGroqSlot, GROQ_RATE_LIMITS } from '../services/limiter'
+import { acquireGroqSlot, releaseGroqSlot } from '../services/limiter'
 
 
 // Sentinel: thrown when a 'fatal' SSE event has already been sent to the client
@@ -148,7 +157,9 @@ export async function handleGenerate(
         let totalSize = 0
 
         // Phase 1: Fetch all R2 object metadata in parallel (no sequential await-in-loop)
+        console.log(`[generate] Fetching ${imageKeys.length} R2 objects:`, imageKeys)
         const objects = await Promise.all(imageKeys.map(key => env.BUCKET.get(key)))
+        console.log(`[generate] R2 fetch results:`, objects.map((o, i) => o ? `key[${i}] size=${o.size} type=${o.httpMetadata?.contentType}` : `key[${i}] MISSING`))
 
         // Phase 2: Validate sequentially — preserves per-image fatal event semantics
         // (first failing image sends the fatal event and throws, same as before)
@@ -208,10 +219,12 @@ export async function handleGenerate(
           } else {
             msg = 'Could not analyze the images. Please try again, or remove images to generate text-only captions.'
           }
+          console.error(`[generate] Stage 1 vision FAILED: errorType=${errorType} — sending fatal event`)
           await send('fatal', { message: msg })
           throw new FatalAlreadySentError()
         }
 
+        console.log(`[generate] Stage 1 vision SUCCESS: description length=${description.length}`)
         imageDescription = description
 
         await env.DB.prepare(
@@ -244,7 +257,12 @@ export async function handleGenerate(
             if (brandRow.target_audience) rules.push(`- Target Audience: ${brandRow.target_audience}`)
             if (brandRow.products_services) rules.push(`- Products / Services: ${brandRow.products_services}`)
             if (brandRow.competitors) rules.push(`- Competitors / Positioning: ${brandRow.competitors}`)
-            if (brandRow.brand_guidelines) rules.push(`- Brand Guidelines: ${brandRow.brand_guidelines}`)
+            if (brandRow.brand_guidelines) {
+              if (brandRow.brand_guidelines.length > 1500) {
+                console.warn(`[generate] Brand Kit guidelines truncated from ${brandRow.brand_guidelines.length} to 1500 chars for user ${userId}`)
+              }
+              rules.push(`- Brand Guidelines: ${brandRow.brand_guidelines.slice(0, 1500)}`)
+            }
 
             if (rules.length > 0) {
               brandKitContext = `\n\n[BRAND KIT & IDENTITY RULES]:\n${rules.join('\n')}\n(Ensure all generated posts strictly adhere to this brand identity, voice, and guidelines).`
@@ -255,71 +273,90 @@ export async function handleGenerate(
         }
       }
 
-      // groupByGroup() restores full per-platform-group failure isolation.
-      // Each group's catch block only affects that group's platforms.
-      // The image was sent to Gemini above exactly once — these calls are text-only.
-      const grouped = groupByGroup(accessibleIds)
+      // ── Stage 2: Caption Writing (Per Batch / Chunk, Parallel) ───────────
+      const caps = getModelCapabilities(env)
+      const langMultiplier = getLanguageTokenMultiplier(language)
+      const batches = groupAndChunkPlatforms(accessibleIds, caps)
       const { streamGenerate } = createStreamingClient(env)
 
-      // Run all groups in parallel — stream results as each finishes
+      // Run all batch chunks in parallel — stream results as each finishes
       await Promise.all(
-        Object.entries(grouped).map(async ([group, ids]) => {
+        batches.map(async (batch) => {
+          const ids = batch.platforms
           const platforms = ids.map(id => PLATFORM_MAP[id]).filter(Boolean) as typeof PLATFORM_MAP[string][]
           const systemPrompt = buildGroupSystemPrompt(platforms, language)
 
-          // Inject the Stage 1 image description & Brand Kit context into the user prompt.
+          // Inject Stage 1 image description & Brand Kit context into user prompt
           const imageContext = buildImageContext(imageDescription)
           const userPrompt = `User's content: "${prompt}"${imageContext}${brandKitContext}\n\nGenerate posts for: ${platforms.map(p => p.name).join(', ')}. Return only JSON.`
 
-          const estimatedTokens = imageDescription
-            ? GROQ_RATE_LIMITS.ESTIMATED_TOKENS_IMAGE
-            : GROQ_RATE_LIMITS.ESTIMATED_TOKENS_TEXT
+          // 1. Output token calculation: min(caps.maxOutputTokens - 256, max(512, rawTokens))
+          const rawOutputTokens = Math.ceil(ids.length * caps.avgTokensPerPlatform * langMultiplier)
+          const outputTokenLimit = Math.min(
+            caps.maxOutputTokens - 256,
+            Math.max(512, rawOutputTokens)
+          )
 
-          const waitMs = await acquireGroqSlot(env, estimatedTokens)
-          if (waitMs > 0) {
-            console.log(`[generate] Group ${group} queued for ${waitMs}ms by global rate limiter`)
+          // 2. Script-aware input token estimation: charsPerTokenInput = 3.5 / langMultiplier
+          const charsPerTokenInput = 3.5 / langMultiplier
+          const exactInputTokens = Math.ceil(
+            (systemPrompt.length + userPrompt.length + (imageDescription?.length ?? 0)) / charsPerTokenInput
+          )
+
+          // 3. Total estimated tokens reserved in global rate limiter
+          const totalEstimatedTokens = exactInputTokens + outputTokenLimit
+
+          // Rate limit check: only run Groq local Durable Object limiter when using direct free-tier Groq API (no Gateway token)
+          const isDirectGroq = !env.CLOUDFLARE_API_TOKEN && ((env.TEXT_MODEL || env.GROQ_MODEL || '').toLowerCase().includes('groq'))
+          if (isDirectGroq) {
+            const waitMs = await acquireGroqSlot(env, totalEstimatedTokens)
+            if (waitMs > 0) {
+              console.log(`[generate] Batch ${batch.id} queued for ${waitMs}ms by rate limiter`)
+            }
           }
 
           try {
-            // STAGE2_MOCK_FAIL_GROUP: test-only failure simulation.
-            // Hard-gated: only honoured in development/staging environments.
-            if (env.ENVIRONMENT !== 'production' && (env.STAGE2_MOCK_FAIL_GROUP === group || mockFailStage2Group === group)) {
-              console.log(`[generate] STAGE2_MOCK_FAIL_GROUP="${group}" active — simulating failure (test mode)`)
+            // STAGE2_MOCK_FAIL_GROUP: test-only failure simulation
+            if (env.ENVIRONMENT !== 'production' && (env.STAGE2_MOCK_FAIL_GROUP === batch.groupName || mockFailStage2Group === batch.groupName)) {
+              console.log(`[generate] STAGE2_MOCK_FAIL_GROUP="${batch.groupName}" active — simulating failure (test mode)`)
               throw new Error('Simulated Stage 2 group failure (STAGE2_MOCK_FAIL_GROUP)')
             }
 
-            // No `image` param — Stage 2 is text-only. useGroq defaults to true,
-            // which routes to Groq since no image is present (ai.ts line: useGroq && !image).
-            const stream = await streamGenerate({ systemPrompt, userPrompt })
+            const stream = await streamGenerate({ systemPrompt, userPrompt, maxTokens: outputTokenLimit })
             let fullText = ''
             for await (const chunk of stream.textStream) {
               fullText += chunk
             }
 
+            // 2-Stage Fail-Soft JSON Extractor
             const parsed = parseGroupResponse(fullText, ids)
 
             for (const [platformId, content] of Object.entries(parsed)) {
-              await send('platform', { platformId, content, group })
+              const platformObj = PLATFORM_MAP[platformId]
+              const displayGroup = platformObj?.group ?? batch.groupName
+              await send('platform', { platformId, content, group: displayGroup })
               await env.DB.prepare(
                 `INSERT OR REPLACE INTO generated_posts (id, campaign_id, user_id, platform_id, content, edited)
                  VALUES (?, ?, ?, ?, ?, 0)`
               ).bind(generateId(), campaignId, userId, platformId, content).run()
             }
 
-            // Any platforms in this group that got no content → error
+            // Any platforms in this batch that failed BOTH JSON.parse and fail-soft regex extractor get explicit error event
             for (const id of ids) {
               if (!parsed[id]) {
-                await send('error', { platformId: id, message: 'This one slipped through — tap retry to generate it!' })
+                await send('error', { platformId: id, message: 'This platform needs a quick refresh — tap retry to generate it!' })
               }
             }
           } catch (err) {
-            console.error(`[generate] Group ${group} failed:`, err)
-            // Only this group's platforms receive an error — other groups are unaffected.
+            console.error(`[generate] Batch ${batch.id} failed:`, err)
+            // Only this batch's platforms receive an error — other batches are unaffected.
             for (const id of ids) {
-              await send('error', { platformId: id, message: 'AI was momentarily busy — tap retry!' })
+              await send('error', { platformId: id, message: 'This platform needs a quick refresh — tap retry to generate it!' })
             }
           } finally {
-            await releaseGroqSlot(env)
+            if (isDirectGroq) {
+              await releaseGroqSlot(env)
+            }
           }
         })
       )
@@ -393,15 +430,42 @@ export async function handleGenerate(
   })
 }
 
-function groupByGroup(platformIds: string[]): Record<string, string[]> {
-  const groups: Record<string, string[]> = {}
+export function chunkArray<T>(arr: T[], size: number): T[][] {
+  const chunks: T[][] = []
+  for (let i = 0; i < arr.length; i += size) {
+    chunks.push(arr.slice(i, i + size))
+  }
+  return chunks
+}
+
+export function groupAndChunkPlatforms(
+  platformIds: string[],
+  caps: ReturnType<typeof getModelCapabilities>
+): Array<{ id: string; groupName: string; platforms: string[] }> {
+  const baseGroups: Record<string, string[]> = {}
   for (const id of platformIds) {
     const platform = PLATFORM_MAP[id]
     if (!platform) continue
-    if (!groups[platform.group]) groups[platform.group] = []
-    groups[platform.group].push(id)
+    const batchKey = PLATFORM_BATCH_MAP[id] ?? 'social'
+    if (!baseGroups[batchKey]) baseGroups[batchKey] = []
+    baseGroups[batchKey].push(id)
   }
-  return groups
+
+  const finalBatches: Array<{ id: string; groupName: string; platforms: string[] }> = []
+  let counter = 1
+
+  for (const [groupName, ids] of Object.entries(baseGroups)) {
+    const chunks = chunkArray(ids, caps.maxPlatformsPerBatch)
+    for (const chunk of chunks) {
+      finalBatches.push({
+        id: `${groupName}_${counter++}`,
+        groupName,
+        platforms: chunk,
+      })
+    }
+  }
+
+  return finalBatches
 }
 
 function jsonError(message: string, status: number): Response {

@@ -147,7 +147,7 @@ const pricingStyles = `
     top: 0;
     z-index: 100;
     border-bottom: 1px solid var(--border);
-    background: rgba(8,8,8,0.85);
+    background: var(--color-nav-bg);
     backdrop-filter: blur(12px);
   }
   .pricing-nav-inner {

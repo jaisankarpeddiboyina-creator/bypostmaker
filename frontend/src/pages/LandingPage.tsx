@@ -131,7 +131,6 @@ export default function LandingPage() {
           </div>
 
           <div className="landing-nav-links">
-            <a href="#demo">Live Studio Demo</a>
             <a href="#features">Features</a>
             <a href="#pricing">Pricing</a>
             <a href="#faq">FAQ</a>
@@ -161,7 +160,6 @@ export default function LandingPage() {
         {/* Mobile Navigation Drawer */}
         {mobileMenuOpen && (
           <div className="landing-mobile-drawer">
-            <a href="#demo" onClick={() => setMobileMenuOpen(false)}>Live Studio Demo</a>
             <a href="#features" onClick={() => setMobileMenuOpen(false)}>Features</a>
             <a href="#pricing" onClick={() => setMobileMenuOpen(false)}>Pricing</a>
             <a href="#faq" onClick={() => setMobileMenuOpen(false)}>FAQ</a>
@@ -175,7 +173,7 @@ export default function LandingPage() {
 
       {/* Hero Section */}
       <section className="hero">
-        <div className="hero-inner-grid">
+        <div className="hero-inner">
           <div className="hero-content">
             <div className="hero-badge">
               <span className="hero-badge-dot" />
@@ -215,8 +213,8 @@ export default function LandingPage() {
               </div>
             </div>
           </div>
-          </div>
-          </section>
+        </div>
+      </section>
               
       {/* How it works */}
       <section className="section" id="features">
@@ -530,16 +528,16 @@ export default function LandingPage() {
           padding: 72px 24px 60px;
           position: relative;
         }
-        .hero-inner-grid {
-          max-width: 1240px;
+        .hero-inner {
+          max-width: 860px;
           margin: 0 auto;
-          display: grid;
-          grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
-          gap: 48px;
-          align-items: center;
+          text-align: center;
         }
-        .hero-content, .hero-interactive-card {
+        .hero-content {
           min-width: 0;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
         }
         .hero-badge {
           display: inline-flex;
@@ -578,7 +576,7 @@ export default function LandingPage() {
           letter-spacing: -0.04em;
         }
         .hero-accent {
-          background: linear-gradient(135deg, #38BDF8 0%, #0284C7 50%, #34D399 100%);
+          background: var(--gradient-primary);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
@@ -588,7 +586,7 @@ export default function LandingPage() {
           color: var(--color-text-secondary);
           line-height: 1.65;
           margin-bottom: 32px;
-          max-width: 540px;
+          max-width: 620px;
         }
         .hero-cta-row {
           display: flex;
@@ -603,7 +601,7 @@ export default function LandingPage() {
           font-size: 15px;
           font-weight: 800;
           background: var(--gradient-primary);
-          color: #0A101D;
+          color: var(--color-text-inverse);
           border-radius: var(--radius-pill);
           box-shadow: var(--shadow-btn);
         }
@@ -830,7 +828,7 @@ export default function LandingPage() {
         }
         .pricing-card.featured {
           border-color: var(--color-primary-start);
-          box-shadow: 0 0 40px rgba(56, 189, 248, 0.25);
+          box-shadow: 0 0 40px rgba(255, 75, 145, 0.25);
         }
         .pricing-badge {
           position: absolute;
@@ -838,7 +836,7 @@ export default function LandingPage() {
           left: 50%;
           transform: translateX(-50%);
           background: var(--gradient-primary);
-          color: #0A101D;
+          color: var(--color-text-inverse);
           font-size: 11px;
           font-weight: 800;
           padding: 4px 14px;
@@ -957,7 +955,7 @@ export default function LandingPage() {
 
         /* Responsive Breakpoints */
         @media (max-width: ${BREAKPOINT_TABLET}) {
-          .hero-inner-grid { grid-template-columns: minmax(0, 1fr); gap: 40px; }
+          .hero-inner { max-width: 100%; }
           .features-grid, .why-grid { grid-template-columns: 1fr 1fr; }
           .pricing-grid { grid-template-columns: 1fr 1fr; }
         }

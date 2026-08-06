@@ -1,8 +1,6 @@
-import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
-import { AlertCircle } from 'lucide-react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { PLATFORM_MAP } from '@@config/platforms'
 import { useAppStore } from '../../store/app'
-import { api } from '../../lib/api'
 import { generateClientZip, sanitize } from '../../lib/downloadKit'
 import type { CardProps } from './types'
 import { UnifiedCardShell } from './UnifiedCardShell'
@@ -143,42 +141,9 @@ export function StandardCard({ platformId, post, campaignId, imageFiles, videoFi
     updatePost(platformId, { extraFields: { ...extraFields, [key]: value } })
   }
 
-  const handleRetry = useCallback(async () => {
-    if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current)
-    updatePost(platformId, { status: 'generating', content: '', errorMessage: undefined, statusText: 'Retrying...' })
-
-    let active = true
-    retryTimeoutRef.current = setTimeout(() => {
-      if (active) {
-        active = false
-        updatePost(platformId, { status: 'error', errorMessage: 'Retry timed out.' })
-        addToast('Retry taking longer than expected', 'error')
-      }
-    }, 45000)
-
-    try {
-      const result = await api.generate.retry(campaignId, platformId)
-      if (active) {
-        active = false
-        if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current)
-        updatePost(platformId, { content: result.content, status: 'done', statusText: undefined })
-      }
-    } catch (err: any) {
-      if (active) {
-        active = false
-        if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current)
-        updatePost(platformId, { status: 'error', errorMessage: err.message ?? 'Generation failed' })
-      }
-    }
-  }, [platformId, campaignId, updatePost, addToast])
-
   const shareUrl = platform?.shareUrl(post.content, extraFields)
   const charLimit = platform?.charLimit
   const charCount = post.content.length
-
-  if (post.status === 'pending') return <CardSkeleton statusText={post.statusText} />
-  if (post.status === 'generating') return <CardGenerating name={platform?.name ?? platformId} statusText={post.statusText} />
-  if (post.status === 'error') return <CardError name={platform?.name ?? platformId} message={post.errorMessage ?? 'Generation failed'} brandColor={brandColor} onRetry={handleRetry} />
 
   return (
     <UnifiedCardShell
@@ -290,70 +255,5 @@ export function StandardCard({ platformId, post, campaignId, imageFiles, videoFi
         .pc-textarea { width: 100%; font-family: var(--font-body); font-size: 13.5px; line-height: 1.55; color: var(--color-text-primary); background: #ffffff; border: 1px solid var(--color-primary-start); border-radius: 6px; padding: 8px 10px; outline: none; resize: vertical; min-height: 90px; box-sizing: border-box; white-space: pre-wrap; word-break: break-word; }
       `}</style>
     </UnifiedCardShell>
-  )
-}
-
-function CardSkeleton({ statusText }: { statusText?: string }) {
-  return (
-    <div className="glass-panel" style={{ borderRadius: 'var(--radius-card)', padding: 14, minWidth: 280, maxWidth: 340, flexShrink: 0 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <div className="shimmer" style={{ height: 12, width: '45%' }} />
-        {statusText && <span style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{statusText}</span>}
-      </div>
-      <div className="shimmer" style={{ height: 10, width: '100%', marginBottom: 6 }} />
-      <div className="shimmer" style={{ height: 10, width: '85%', marginBottom: 6 }} />
-      <div className="shimmer" style={{ height: 10, width: '65%' }} />
-    </div>
-  )
-}
-
-function CardGenerating({ name, statusText }: { name: string; statusText?: string }) {
-  return (
-    <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-primary-start)', borderRadius: 'var(--radius-card)', padding: 14, minWidth: 280, maxWidth: 340, flexShrink: 0, boxShadow: '0 4px 16px rgba(247,37,133,0.12)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-        <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--color-primary-start)', textTransform: 'uppercase' }}>{name}</div>
-        {statusText && <span style={{ fontSize: 11, color: 'var(--color-primary-end)', fontWeight: 600 }}>{statusText}</span>}
-      </div>
-      <div style={{ display: 'flex', gap: 5, padding: '4px 0 10px' }}>
-        <div className="gen-dot" style={{ background: 'var(--color-primary-start)', width: 5, height: 5, borderRadius: '50%' }} />
-        <div className="gen-dot" style={{ background: 'var(--color-primary-end)', width: 5, height: 5, borderRadius: '50%' }} />
-        <div className="gen-dot" style={{ background: 'var(--color-primary-start)', width: 5, height: 5, borderRadius: '50%' }} />
-      </div>
-      <div className="shimmer" style={{ height: 10, width: '90%', marginBottom: 6 }} />
-      <div className="shimmer" style={{ height: 10, width: '70%' }} />
-    </div>
-  )
-}
-
-function CardError({ name, message, brandColor, onRetry }: {
-  name: string
-  message: string
-  brandColor?: string
-  onRetry?: () => void
-}) {
-  const [retrying, setRetrying] = useState(false)
-  const handleClick = async () => {
-    if (!onRetry || retrying) return
-    setRetrying(true)
-    await onRetry()
-  }
-
-  return (
-    <div style={{
-      background: 'var(--color-surface)', border: '1px solid var(--color-border)',
-      borderTop: `3px solid ${brandColor ?? 'var(--color-error)'}`, borderRadius: 'var(--radius-card)',
-      padding: 14, minWidth: 280, maxWidth: 340, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 10,
-    }}>
-      <div style={{ fontSize: 12, fontWeight: 800, color: brandColor ?? 'var(--color-text-primary)', textTransform: 'uppercase' }}>{name}</div>
-      <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start', color: 'var(--color-text-secondary)', fontSize: 12, lineHeight: 1.5 }}>
-        <AlertCircle size={15} style={{ flexShrink: 0, marginTop: 1, color: 'var(--color-error)' }} />
-        <span>{message}</span>
-      </div>
-      {onRetry && (
-        <button onClick={handleClick} disabled={retrying} className="btn btn-ghost btn-sm" style={{ alignSelf: 'flex-start', borderColor: brandColor ?? 'var(--color-primary-start)', color: brandColor ?? 'var(--color-primary-start)' }}>
-          {retrying ? 'Retrying…' : 'Try again'}
-        </button>
-      )}
-    </div>
   )
 }

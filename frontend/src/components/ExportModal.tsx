@@ -319,7 +319,7 @@ export function ExportModal() {
 
           .format-toggle-btn:hover:not(:disabled) {
             color: var(--color-text-primary);
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.20);
           }
 
           .format-toggle-btn.active {
@@ -338,8 +338,8 @@ export function ExportModal() {
             display: flex;
             align-items: center;
             gap: 10px;
-            background: rgba(56, 189, 248, 0.08);
-            border: 1px solid rgba(56, 189, 248, 0.2);
+            background: rgba(255, 75, 145, 0.04);
+            border: 1px solid rgba(255, 75, 145, 0.20);
             border-radius: var(--radius);
             padding: 12px 16px;
             margin-bottom: 20px;
