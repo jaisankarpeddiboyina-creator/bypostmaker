@@ -223,7 +223,7 @@ export async function handleAdmin(
       { id: 'P1-07', title: 'Support higher AI rate limits', phase: 'Phase 1 — Launch', type: 'Core', priority: 'Medium', status: 'Completed', path: 'docs/tasks/phases/phase-1-launch/core/P1-07-support-higher-ai-rate-limits.md', commitHash: 'd2ef3f2' },
       { id: 'P1-08', title: 'Implement bulk generation', phase: 'Phase 1 — Launch', type: 'Core', priority: 'Medium', status: 'Postponed', path: 'docs/tasks/phases/phase-1-launch/core/P1-08-implement-bulk-generation.md' },
       { id: 'P1-09', title: 'Strengthen fallback architecture', phase: 'Phase 1 — Launch', type: 'Core', priority: 'High', status: 'Completed', path: 'docs/tasks/phases/phase-1-launch/core/P1-09-strengthen-fallback-architecture.md', commitHash: 'c1850b9' },
-      { id: 'P1-10', title: 'Set up production monitoring & logging', phase: 'Phase 1 — Launch', type: 'Core', priority: 'Medium', status: 'Not Started', path: 'docs/tasks/phases/phase-1-launch/core/P1-10-set-up-production-monitoring-logging.md' },
+      { id: 'P1-10', title: 'Set up production monitoring & logging', phase: 'Phase 1 — Launch', type: 'Core', priority: 'Medium', status: 'Completed', path: 'docs/tasks/phases/phase-1-launch/core/P1-10-set-up-production-monitoring-logging.md', commitHash: '9ba1494' },
 
       // Phase 2 — Creator Experience (17)
       { id: 'P2-01', title: 'Assets library storage backend', phase: 'Phase 2 — Creator Experience', type: 'Core', priority: 'High', status: 'Not Started', path: 'docs/tasks/phases/phase-2-creator-experience/core/P2-01-assets-library-storage-backend.md' },

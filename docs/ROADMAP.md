@@ -44,7 +44,7 @@ Single-pane task list covering all 43 execution items across Phases 1 through 5.
 | **P1-07** | **Support higher AI rate limits** | Core | Medium | ✅ **`Completed`** | Groq slot pacing & token estimation rate limiter |
 | **P1-08** | Implement bulk generation | Core | Medium | 💤 `Postponed` | Multi-prompt batch creation |
 | **P1-09** | **Strengthen fallback architecture** | Core | High | ✅ **`Completed`** | Automatic provider failover on error |
-| **P1-10** | Set up production monitoring & logging | Core | Medium | ⏳ `Not Started` | Sentry and Cloudflare log push setup |
+| **P1-10** | **Set up production monitoring & logging** | Core | Medium | ✅ **`Completed`** | Zero-dependency self-hosted D1 table monitoring & logs dashboard |
 
 ---
 
