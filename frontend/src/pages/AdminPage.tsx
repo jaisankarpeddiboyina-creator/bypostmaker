@@ -70,7 +70,7 @@ const PLATFORM_NAMES: Record<string, string> = {
 export default function AdminPage() {
   const { user, addToast } = useAppStore()
   const navigate = useNavigate()
-  const [tab, setTab] = useState<'stats'|'users'|'promos'|'tasks'>('stats')
+  const [tab, setTab] = useState<'stats'|'users'|'promos'|'tasks'|'logs'>('stats')
   const [stats, setStats] = useState<Stats | null>(null)
   const [users, setUsers] = useState<AdminUser[]>([])
   const [userTotal, setUserTotal] = useState(0)
@@ -95,6 +95,13 @@ export default function AdminPage() {
   const [taskSearch, setTaskSearch] = useState('')
   const [taskStatusFilter, setTaskStatusFilter] = useState('all')
 
+  // Logs State
+  const [logs, setLogs] = useState<any[]>([])
+  const [logsLoading, setLogsLoading] = useState(false)
+  const [logsHasMore, setLogsHasMore] = useState(true)
+  const [logsTypeFilter, setLogsTypeFilter] = useState('all')
+  const [logsLevelFilter, setLogsLevelFilter] = useState('all')
+
   const [loading, setLoading] = useState(false)
   const [exportingCsv, setExportingCsv] = useState(false)
 
@@ -104,7 +111,57 @@ export default function AdminPage() {
     if (tab === 'users') loadUsers(1, search, planFilter, roleFilter, statusFilter)
     if (tab === 'promos') loadPromos()
     if (tab === 'tasks') loadTasks()
-  }, [tab, user])
+    if (tab === 'logs') loadLogs(true)
+  }, [tab, user, logsTypeFilter, logsLevelFilter])
+
+  const loadLogs = async (reset: boolean = false) => {
+    setLogsLoading(true)
+    try {
+      const currentLogs = reset ? [] : logs
+      const before = currentLogs.length > 0 ? currentLogs[currentLogs.length - 1].created_at : ''
+      
+      const queryParams = new URLSearchParams({
+        before: before.toString(),
+        type: logsTypeFilter,
+        level: logsLevelFilter,
+        limit: '50'
+      })
+      
+      const res = await fetch(`/api/admin/logs?${queryParams}`, { credentials: 'include' })
+      if (!res.ok) {
+        addToast('Failed to load logs', 'error')
+        setLogsLoading(false)
+        return
+      }
+      
+      const data = await res.json() as { logs: any[] }
+      if (reset) {
+        setLogs(data.logs)
+      } else {
+        setLogs(prev => [...prev, ...data.logs])
+      }
+      setLogsHasMore(data.logs.length === 50)
+    } catch {
+      addToast('Error loading system logs', 'error')
+    }
+    setLogsLoading(false)
+  }
+
+  const clearLogs = async () => {
+    if (!window.confirm('Are you sure you want to delete all system logs?')) return
+    try {
+      const res = await fetch('/api/admin/logs', { method: 'DELETE', credentials: 'include' })
+      if (res.ok) {
+        setLogs([])
+        setLogsHasMore(false)
+        addToast('System logs cleared successfully', 'success')
+      } else {
+        addToast('Failed to clear logs', 'error')
+      }
+    } catch {
+      addToast('Error clearing logs', 'error')
+    }
+  }
 
   const loadTasks = async () => {
     try {
@@ -265,9 +322,9 @@ export default function AdminPage() {
             <h1 className="admin-title">Admin Operations</h1>
           </div>
           <div className="admin-tabs">
-            {(['stats','users','promos','tasks'] as const).map(t => (
+            {(['stats','users','promos','tasks','logs'] as const).map(t => (
               <button key={t} className={`admin-tab ${tab === t ? 'active' : ''}`} onClick={() => setTab(t)}>
-                {t === 'tasks' ? 'Roadmap Tasks' : t.charAt(0).toUpperCase() + t.slice(1)}
+                {t === 'tasks' ? 'Roadmap Tasks' : t === 'logs' ? 'System Logs' : t.charAt(0).toUpperCase() + t.slice(1)}
               </button>
             ))}
           </div>
@@ -789,6 +846,89 @@ export default function AdminPage() {
             </div>
           </div>
         )}
+
+        {/* System Logs Tab View */}
+        {tab === 'logs' && (
+          <div className="admin-logs">
+            <div className="admin-filter-bar glass-card">
+              <div className="filter-dropdowns">
+                <div className="filter-item">
+                  <Filter size={12} />
+                  <select
+                    className="admin-select"
+                    value={logsTypeFilter}
+                    onChange={e => {
+                      setLogsTypeFilter(e.target.value)
+                    }}
+                  >
+                    <option value="all">All Types</option>
+                    <option value="error">Error</option>
+                    <option value="event">Event</option>
+                    <option value="info">Info</option>
+                  </select>
+                </div>
+
+                <div className="filter-item">
+                  <select
+                    className="admin-select"
+                    value={logsLevelFilter}
+                    onChange={e => {
+                      setLogsLevelFilter(e.target.value)
+                    }}
+                  >
+                    <option value="all">All Levels</option>
+                    <option value="debug">Debug</option>
+                    <option value="info">Info</option>
+                    <option value="warn">Warn</option>
+                    <option value="error">Error</option>
+                    <option value="fatal">Fatal</option>
+                  </select>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                onClick={clearLogs}
+                style={{ marginLeft: 'auto', color: 'var(--error)' }}
+              >
+                Clear All Logs
+              </button>
+            </div>
+
+            <div className="admin-table">
+              <div className="admin-table-header logs-grid-header">
+                <span>Time</span><span>Type</span><span>Level</span><span>Message</span><span>Context</span>
+              </div>
+              {logs.map(log => (
+                <div key={log.id} className="admin-table-row logs-grid-row">
+                  <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)' }} title={new Date(log.created_at * 1000).toLocaleString()}>
+                    {new Date(log.created_at * 1000).toISOString().replace('T', ' ').substring(0, 19)}
+                  </span>
+                  <span className={`badge badge-${log.type}`}>{log.type}</span>
+                  <span className={`badge badge-${log.level}`}>{log.level}</span>
+                  <div style={{ fontSize: 12, fontWeight: 500, wordBreak: 'break-word', color: 'var(--color-text-primary)' }}>{log.message}</div>
+                  <pre style={{ fontSize: 10, overflow: 'auto', background: 'rgba(0,0,0,0.2)', padding: 4, borderRadius: 4, maxWidth: '100%', color: 'var(--color-text-secondary)' }}>
+                    {log.context || '{}'}
+                  </pre>
+                </div>
+              ))}
+              {logs.length === 0 && !logsLoading && (
+                <div style={{ padding: 24, textAlign: 'center', color: 'var(--color-text-secondary)' }}>
+                  No logs found matching criteria.
+                </div>
+              )}
+            </div>
+
+            {logsHasMore && (
+              <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
+                <button className="btn btn-primary btn-sm" onClick={() => loadLogs(false)} disabled={logsLoading}>
+                  {logsLoading ? 'Loading...' : 'Load More'}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <style>{`
@@ -882,6 +1022,17 @@ export default function AdminPage() {
         .protocol-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-top: 8px; }
         .protocol-col { background: rgba(0, 0, 0, 0.25); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: var(--radius); padding: 14px; }
         code.mono { font-family: var(--font-mono); font-size: 11.5px; color: var(--color-primary-start); background: rgba(56, 189, 248, 0.1); padding: 2px 6px; border-radius: 4px; }
+
+        .admin-logs { display: flex; flex-direction: column; gap: 12px; }
+        .logs-grid-header { display: grid; grid-template-columns: 1.5fr 0.8fr 0.8fr 3fr 3fr; gap: 12px; padding: 10px 16px; background: rgba(255,255,255,0.25); border-bottom: 1px solid var(--color-border); font-size: 11px; font-weight: 700; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.06em; }
+        .logs-grid-row { display: grid; grid-template-columns: 1.5fr 0.8fr 0.8fr 3fr 3fr; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--color-border); align-items: start; }
+        
+        .badge-error { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 1px 6px; border-radius: 4px; background: rgba(239, 68, 68, 0.15); color: #EF4444; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .badge-fatal { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 1px 6px; border-radius: 4px; background: rgba(220, 38, 38, 0.25); color: #DC2626; border: 1px solid rgba(220, 38, 38, 0.4); font-weight: 700; }
+        .badge-event { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 1px 6px; border-radius: 4px; background: rgba(59, 130, 246, 0.15); color: #3B82F6; border: 1px solid rgba(59, 130, 246, 0.3); }
+        .badge-info { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 1px 6px; border-radius: 4px; background: rgba(148, 163, 184, 0.15); color: #94A3B8; border: 1px solid rgba(148, 163, 184, 0.3); }
+        .badge-warn { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 1px 6px; border-radius: 4px; background: rgba(245, 158, 11, 0.15); color: #F59E0B; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .badge-debug { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 1px 6px; border-radius: 4px; background: rgba(168, 85, 247, 0.15); color: #A855F7; border: 1px solid rgba(168, 85, 247, 0.3); }
 
         @media (max-width: ${BREAKPOINT_MOBILE}) {
           .admin-page { padding: 16px 12px; }

@@ -367,6 +367,43 @@ export async function handleAdmin(
     return json({ ok: true })
   }
 
+  // ── GET /api/admin/logs (Cursor Pagination) ────────────────
+  if (path === '/api/admin/logs' && request.method === 'GET') {
+    const before = url.searchParams.get('before') ? parseInt(url.searchParams.get('before')!) : null
+    const typeFilter = url.searchParams.get('type') ?? 'all'
+    const levelFilter = url.searchParams.get('level') ?? 'all'
+    const limit = Math.min(parseInt(url.searchParams.get('limit') ?? '50'), 100)
+
+    const conditions: string[] = []
+    const params: unknown[] = []
+
+    if (typeFilter !== 'all') {
+      conditions.push('type = ?')
+      params.push(typeFilter)
+    }
+    if (levelFilter !== 'all') {
+      conditions.push('level = ?')
+      params.push(levelFilter)
+    }
+    if (before !== null && !isNaN(before)) {
+      conditions.push('created_at < ?')
+      params.push(before)
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
+    const query = `SELECT * FROM system_logs ${whereClause} ORDER BY created_at DESC LIMIT ?`
+    params.push(limit)
+
+    const { results } = await env.DB.prepare(query).bind(...params).all()
+    return json({ logs: results })
+  }
+
+  // ── DELETE /api/admin/logs (Clear Logs) ────────────────────
+  if (path === '/api/admin/logs' && request.method === 'DELETE') {
+    await env.DB.prepare('DELETE FROM system_logs').run()
+    return json({ ok: true })
+  }
+
   return jsonError('Not found', 404)
 }
 

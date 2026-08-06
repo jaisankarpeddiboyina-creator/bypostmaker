@@ -1,6 +1,5 @@
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useEffect, useState, lazy, Suspense } from 'react'
-import * as Sentry from '@sentry/react'
 import { useAppStore } from './store/app'
 import { api } from './lib/api'
 import { identifyUser } from './lib/monitoring'
@@ -27,7 +26,7 @@ const ForPage = lazy(() => import('./pages/ForPage'))
 const BrandKitPage = lazy(() => import('./pages/BrandKitPage'))
 const PlatformPage = lazy(() => import('./pages/PlatformPage'))
 
-const SentryRoutes = Sentry.withSentryReactRouterV6Routing(Routes)
+const SentryRoutes = Routes
 
 function UpgradeModalWrapper() {
   const showUpgradeModal = useAppStore(s => s.showUpgradeModal)

@@ -60,6 +60,15 @@ name = "bypostamaker-worker-dev"
 vars = { ENVIRONMENT = "development", DOMAIN = "localhost:5173", GROQ_MODEL = "llama-3.3-70b-versatile" }
 triggers = { crons = [] }
 
+[env.development.durable_objects]
+bindings = [
+  { name = "GROQ_LIMITER", class_name = "GroqRateLimiter" }
+]
+
+[[env.development.migrations]]
+tag = "v1"
+new_sqlite_classes = ["GroqRateLimiter"]
+
 [[env.development.d1_databases]]
 binding = "DB"
 database_name = "postmaker-db-dev"
