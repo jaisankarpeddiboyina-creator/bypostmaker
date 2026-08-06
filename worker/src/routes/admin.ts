@@ -219,10 +219,10 @@ export async function handleAdmin(
       { id: 'P1-03', title: 'Performance optimization pass', phase: 'Phase 1 — Launch', type: 'Core', priority: 'Medium', status: 'Not Started', path: 'docs/tasks/phases/phase-1-launch/core/P1-03-performance-optimization-pass.md' },
       { id: 'P1-04', title: 'Complete Razorpay international payments', phase: 'Phase 1 — Launch', type: 'Core', priority: 'High', status: 'Not Started', path: 'docs/tasks/phases/phase-1-launch/core/P1-04-complete-razorpay-international-payments.md' },
       { id: 'P1-05', title: 'Build subscription flow', phase: 'Phase 1 — Launch', type: 'Core', priority: 'High', status: 'Not Started', path: 'docs/tasks/phases/phase-1-launch/core/P1-05-build-subscription-flow.md' },
-      { id: 'P1-06', title: 'Improve AI provider reliability & routing', phase: 'Phase 1 — Launch', type: 'Core', priority: 'High', status: 'Not Started', path: 'docs/tasks/phases/phase-1-launch/core/P1-06-improve-ai-provider-reliability-routing.md' },
+      { id: 'P1-06', title: 'Improve AI provider reliability & routing', phase: 'Phase 1 — Launch', type: 'Core', priority: 'High', status: 'Completed', path: 'docs/tasks/phases/phase-1-launch/core/P1-06-improve-ai-provider-reliability-routing.md', commitHash: '9a08dbd' },
       { id: 'P1-07', title: 'Support higher AI rate limits', phase: 'Phase 1 — Launch', type: 'Core', priority: 'Medium', status: 'Completed', path: 'docs/tasks/phases/phase-1-launch/core/P1-07-support-higher-ai-rate-limits.md', commitHash: 'd2ef3f2' },
-      { id: 'P1-08', title: 'Implement bulk generation', phase: 'Phase 1 — Launch', type: 'Core', priority: 'Medium', status: 'Not Started', path: 'docs/tasks/phases/phase-1-launch/core/P1-08-implement-bulk-generation.md' },
-      { id: 'P1-09', title: 'Strengthen fallback architecture', phase: 'Phase 1 — Launch', type: 'Core', priority: 'High', status: 'Not Started', path: 'docs/tasks/phases/phase-1-launch/core/P1-09-strengthen-fallback-architecture.md' },
+      { id: 'P1-08', title: 'Implement bulk generation', phase: 'Phase 1 — Launch', type: 'Core', priority: 'Medium', status: 'Postponed', path: 'docs/tasks/phases/phase-1-launch/core/P1-08-implement-bulk-generation.md' },
+      { id: 'P1-09', title: 'Strengthen fallback architecture', phase: 'Phase 1 — Launch', type: 'Core', priority: 'High', status: 'Completed', path: 'docs/tasks/phases/phase-1-launch/core/P1-09-strengthen-fallback-architecture.md', commitHash: 'c1850b9' },
       { id: 'P1-10', title: 'Set up production monitoring & logging', phase: 'Phase 1 — Launch', type: 'Core', priority: 'Medium', status: 'Not Started', path: 'docs/tasks/phases/phase-1-launch/core/P1-10-set-up-production-monitoring-logging.md' },
 
       // Phase 2 — Creator Experience (17)
@@ -274,7 +274,7 @@ export async function handleAdmin(
     const pending = total - completed - inProgress - blocked
 
     const phaseBreakdown = [
-      { name: 'Phase 1 — Launch', total: 10, completed: 1, percent: 10 },
+      { name: 'Phase 1 — Launch', total: 10, completed: 3, percent: 30 },
       { name: 'Phase 2 — Creator Experience', total: 17, completed: 0, percent: 0 },
       { name: 'Phase 3 — Automation', total: 4, completed: 0, percent: 0 },
       { name: 'Phase 4 — Business', total: 7, completed: 0, percent: 0 },
