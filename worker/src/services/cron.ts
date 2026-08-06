@@ -10,6 +10,7 @@ export async function runCronJobs(cron: string, env: Env): Promise<void> {
       await Promise.all([
         runDataRetention(env),
         runDBHealthCheck(env),
+        runSystemLogsPurge(env),
       ])
     }
 
@@ -111,4 +112,18 @@ async function runDBHealthCheck(env: Env): Promise<void> {
     console.warn(`ALERT: ${recentUsers?.count} new users in last 24h — possible abuse`)
   }
 }
+
+// ── System Logs Purge ──────────────────────────────────────────
+export async function runSystemLogsPurge(env: Env): Promise<void> {
+  const cutoff = Math.floor(Date.now() / 1000) - (14 * 24 * 60 * 60)
+  try {
+    const res = await env.DB.prepare(
+      'DELETE FROM system_logs WHERE created_at < ?'
+    ).bind(cutoff).run()
+    console.log(`Cron: system logs retention purge completed. Rows deleted: ${res.meta.changes ?? 0}`)
+  } catch (err) {
+    console.error('Failed to run system logs retention purge:', err)
+  }
+}
+
 

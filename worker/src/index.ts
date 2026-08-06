@@ -1,7 +1,9 @@
 import type { Env } from '../../config/ai'
 import { withAuth } from './middleware/auth'
-import { withRateLimit, withIpRateLimit, withPresignRateLimit } from './middleware/rateLimit'
+import { withRateLimit, withIpRateLimit, withPresignRateLimit, checkIpRateLimitDurable } from './middleware/rateLimit'
 import { withCors } from './middleware/cors'
+import { handleMonitoringBatch } from './routes/monitoring'
+import { logRequest } from './middleware/logger'
 import { handleAuth } from './routes/auth'
 import { handleGenerate } from './routes/generate'
 import { handleRetry } from './routes/retry'
@@ -570,183 +572,227 @@ async function handleStaticPageSEO(request: Request, env: Env): Promise<Response
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    const startTime = Date.now()
     const url = new URL(request.url)
     const path = url.pathname
 
     // 301 redirect trailing slash URLs for non-API requests (SEO best practice)
     if (!path.startsWith('/api/') && path !== '/' && path.endsWith('/')) {
       url.pathname = path.slice(0, -1)
-      return Response.redirect(url.toString(), 301)
+      const res = Response.redirect(url.toString(), 301)
+      logRequest(request.method, path, 301, Date.now() - startTime)
+      return res
     }
 
-    if (request.method === 'OPTIONS') return withCors(new Response(null, { status: 204 }), env)
+    if (request.method === 'OPTIONS') {
+      const res = withCors(new Response(null, { status: 204 }), env)
+      logRequest(request.method, path, 204, Date.now() - startTime)
+      return res
+    }
 
+    let response: Response | undefined
     try {
-      // ── Constraint #1: Public page and sitemap routes ───────────────────────
-      // Must be intercepted BEFORE auth guards and rate limiters.
-      if (path === '/sitemap.xml') {
-        return handleSitemap(request, env)
-      }
-      if (
-        !path.startsWith('/api/') &&
-        (path.startsWith('/blog') ||
-         path === '/vs' || path.startsWith('/vs/') ||
-         // Exact/subpath match only — NOT startsWith('/for'), which would
-         // also incorrectly match the existing /forgot-password route.
-         path === '/for' || path.startsWith('/for/') ||
-         path === '/tools' || path.startsWith('/tools/') ||
-         findMatchingRoute(path) ||
-         path === '/' ||
-         path === '/privacy' ||
-         path === '/terms' ||
-         path === '/refund' ||
-         path === '/cookies' ||
-         path === '/shipping' ||
-         path === '/contact')
-      ) {
-        return handleStaticPageSEO(request, env)
-      }
-
-      // ── Public routes ───────────────────────────────────────
-      if (path.startsWith('/api/auth')) {
-        // Scoped IP rate limiting for sensitive email routes
+      response = await (async () => {
+        // ── Constraint #1: Public page and sitemap routes ───────────────────────
+        // Must be intercepted BEFORE auth guards and rate limiters.
+        if (path === '/sitemap.xml') {
+          return handleSitemap(request, env)
+        }
         if (
-          path === '/api/auth/email/signup' ||
-          path === '/api/auth/email/login' ||
-          path === '/api/auth/email/forgot-password' ||
-          path === '/api/auth/email/reset-password'
+          !path.startsWith('/api/') &&
+          (path.startsWith('/blog') ||
+           path === '/vs' || path.startsWith('/vs/') ||
+           // Exact/subpath match only — NOT startsWith('/for'), which would
+           // also incorrectly match the existing /forgot-password route.
+           path === '/for' || path.startsWith('/for/') ||
+           path === '/tools' || path.startsWith('/tools/') ||
+           findMatchingRoute(path) ||
+           path === '/' ||
+           path === '/privacy' ||
+           path === '/terms' ||
+           path === '/refund' ||
+           path === '/cookies' ||
+           path === '/shipping' ||
+           path === '/contact')
         ) {
-          const limit = path === '/api/auth/email/signup' ? 10 : 5
-          const ipRl = await withIpRateLimit(request, env, limit)
-          if (!ipRl.ok) {
+          return handleStaticPageSEO(request, env)
+        }
+
+        // ── Public routes ───────────────────────────────────────
+        if (path.startsWith('/api/auth')) {
+          // Scoped IP rate limiting for sensitive email routes
+          if (
+            path === '/api/auth/email/signup' ||
+            path === '/api/auth/email/login' ||
+            path === '/api/auth/email/forgot-password' ||
+            path === '/api/auth/email/reset-password'
+          ) {
+            const limit = path === '/api/auth/email/signup' ? 10 : 5
+            const ipRl = await withIpRateLimit(request, env, limit)
+            if (!ipRl.ok) {
+              return withCors(new Response(JSON.stringify({ error: 'Too many requests' }), {
+                status: 429,
+                headers: { 'Content-Type': 'application/json', 'Retry-After': String(ipRl.retryAfter ?? 60) },
+              }), env)
+            }
+          }
+          return withCors(await handleAuth(request, env), env)
+        }
+        if (path === '/api/webhooks/razorpay') return withCors(await handleWebhook(request, env, ctx), env)
+        if (path === '/api/health') return withCors(await handleHealth(env), env)
+
+        // ── Batch Monitoring Ingestion Endpoint ──
+        if (path === '/api/monitoring/batch' && request.method === 'POST') {
+          const rateLimit = await checkIpRateLimitDurable(request, env)
+          if (!rateLimit.ok) {
             return withCors(new Response(JSON.stringify({ error: 'Too many requests' }), {
               status: 429,
-              headers: { 'Content-Type': 'application/json', 'Retry-After': String(ipRl.retryAfter ?? 60) },
+              headers: { 
+                'Content-Type': 'application/json',
+                'Retry-After': String(rateLimit.retryAfter ?? 60)
+              },
             }), env)
           }
+          return withCors(await handleMonitoringBatch(request, env), env)
         }
-        return withCors(await handleAuth(request, env), env)
-      }
-      if (path === '/api/webhooks/razorpay') return withCors(await handleWebhook(request, env, ctx), env)
-      if (path === '/api/health') return withCors(await handleHealth(env), env)
-      if (path === '/api/test/retention' && env.ENVIRONMENT === 'development') {
-        await runDataRetention(env)
-        return withCors(new Response(JSON.stringify({ ok: true, message: 'Retention completed' }), {
-          status: 200, headers: { 'Content-Type': 'application/json' },
-        }), env)
-      }
-      if (path === '/api/test/upload' && env.ENVIRONMENT === 'development') {
-        const url = new URL(request.url)
-        const key = url.searchParams.get('key')
-        if (!key) {
-          return withCors(new Response(JSON.stringify({ error: 'Missing key' }), {
-            status: 400, headers: { 'Content-Type': 'application/json' },
+
+        if (path === '/api/test/retention' && env.ENVIRONMENT === 'development') {
+          await runDataRetention(env)
+          return withCors(new Response(JSON.stringify({ ok: true, message: 'Retention completed' }), {
+            status: 200, headers: { 'Content-Type': 'application/json' },
           }), env)
         }
-        const contentType = request.headers.get('Content-Type') ?? 'image/jpeg'
-        const body = await request.arrayBuffer()
-        await env.BUCKET.put(key, body, {
-          httpMetadata: { contentType }
-        })
-        return withCors(new Response(JSON.stringify({ ok: true }), {
-          status: 200, headers: { 'Content-Type': 'application/json' },
-        }), env)
-      }
-      if (path === '/api/test/token' && env.ENVIRONMENT !== 'production') {
-        const { signJWT, getJwtSecret } = await import('./middleware/auth')
-        const token = await signJWT(
-          { sub: '20493641-4030-4fa3-bbe6-b377d4661f87', plan: 'business' },
-          getJwtSecret(env)
-        )
-        return withCors(new Response(JSON.stringify({ token }), {
-          status: 200, headers: { 'Content-Type': 'application/json' },
-        }), env)
-      }
+        if (path === '/api/test/upload' && env.ENVIRONMENT === 'development') {
+          const url = new URL(request.url)
+          const key = url.searchParams.get('key')
+          if (!key) {
+            return withCors(new Response(JSON.stringify({ error: 'Missing key' }), {
+              status: 400, headers: { 'Content-Type': 'application/json' },
+            }), env)
+          }
+          const contentType = request.headers.get('Content-Type') ?? 'image/jpeg'
+          const body = await request.arrayBuffer()
+          await env.BUCKET.put(key, body, {
+            httpMetadata: { contentType }
+          })
+          return withCors(new Response(JSON.stringify({ ok: true }), {
+            status: 200, headers: { 'Content-Type': 'application/json' },
+          }), env)
+        }
+        if (path === '/api/test/token' && env.ENVIRONMENT !== 'production') {
+          const { signJWT, getJwtSecret } = await import('./middleware/auth')
+          const token = await signJWT(
+            { sub: '20493641-4030-4fa3-bbe6-b377d4661f87', plan: 'business' },
+            getJwtSecret(env)
+          )
+          return withCors(new Response(JSON.stringify({ token }), {
+            status: 200, headers: { 'Content-Type': 'application/json' },
+          }), env)
+        }
 
-      // ── Auth guard ──────────────────────────────────────────
-      const auth = await withAuth(request, env)
-      if (!auth.ok) {
-        return withCors(new Response(JSON.stringify({ error: 'Unauthorized' }), {
-          status: 401, headers: { 'Content-Type': 'application/json' },
-        }), env)
-      }
-      const { userId, userPlan, userRole, emailVerified } = auth
+        // ── Auth guard ──────────────────────────────────────────
+        const auth = await withAuth(request, env)
+        if (!auth.ok) {
+          return withCors(new Response(JSON.stringify({ error: 'Unauthorized' }), {
+            status: 401, headers: { 'Content-Type': 'application/json' },
+          }), env)
+        }
+        const { userId, userPlan, userRole, emailVerified } = auth
 
-      // ── Email verification guard ────────────────────────────
-      if (!emailVerified && path !== '/api/user/me' && path !== '/api/user/resend-verification') {
-        return withCors(new Response(JSON.stringify({ error: 'Email not verified' }), {
-          status: 403, headers: { 'Content-Type': 'application/json' },
-        }), env)
-      }
+        // ── Email verification guard ────────────────────────────
+        if (!emailVerified && path !== '/api/user/me' && path !== '/api/user/resend-verification') {
+          return withCors(new Response(JSON.stringify({ error: 'Email not verified' }), {
+            status: 403, headers: { 'Content-Type': 'application/json' },
+          }), env)
+        }
 
-      // ── Rate limit ──────────────────────────────────────────
-      const rl = await withRateLimit(request, env, userId)
-      if (!rl.ok) {
-        return withCors(new Response(JSON.stringify({ error: 'Too many requests' }), {
-          status: 429,
-          headers: { 'Content-Type': 'application/json', 'Retry-After': String(rl.retryAfter ?? 60) },
-        }), env)
-      }
-
-      // ── Protected routes ────────────────────────────────────
-      if (
-        (path === '/api/upload/direct' || path === '/api/upload/presign' || path === '/api/upload/presign-batch') &&
-        request.method === 'POST'
-      ) {
-        const presignRl = await withPresignRateLimit(request, env, userId)
-        if (!presignRl.ok) {
-          return withCors(new Response(JSON.stringify({ error: 'Too many upload requests. Wait a moment.' }), {
+        // ── Rate limit ──────────────────────────────────────────
+        const rl = await withRateLimit(request, env, userId)
+        if (!rl.ok) {
+          return withCors(new Response(JSON.stringify({ error: 'Too many requests' }), {
             status: 429,
-            headers: { 'Content-Type': 'application/json', 'Retry-After': String(presignRl.retryAfter ?? 60) },
+            headers: { 'Content-Type': 'application/json', 'Retry-After': String(rl.retryAfter ?? 60) },
           }), env)
         }
-        return withCors(await handleDirectUploadRoute(request, env, userId), env)
-      }
 
-      if (path === '/api/upload/cleanup' && request.method === 'POST') {
-        return withCors(await handleCleanupRoute(request, env, userId), env)
-      }
+        // ── Protected routes ────────────────────────────────────
+        if (
+          (path === '/api/upload/direct' || path === '/api/upload/presign' || path === '/api/upload/presign-batch') &&
+          request.method === 'POST'
+        ) {
+          const presignRl = await withPresignRateLimit(request, env, userId)
+          if (!presignRl.ok) {
+            return withCors(new Response(JSON.stringify({ error: 'Too many upload requests. Wait a moment.' }), {
+              status: 429,
+              headers: { 'Content-Type': 'application/json', 'Retry-After': String(presignRl.retryAfter ?? 60) },
+            }), env)
+          }
+          return withCors(await handleDirectUploadRoute(request, env, userId), env)
+        }
 
+        if (path === '/api/upload/cleanup' && request.method === 'POST') {
+          return withCors(await handleCleanupRoute(request, env, userId), env)
+        }
 
-      if (path === '/api/generate' && request.method === 'POST')
-        return withCors(await handleGenerate(request, env, userId, userPlan, ctx), env)
+        if (path === '/api/generate' && request.method === 'POST')
+          return withCors(await handleGenerate(request, env, userId, userPlan, ctx), env)
 
-      if (path === '/api/generate/retry' && request.method === 'POST')
-        return withCors(await handleRetry(request, env, userId, userPlan, ctx), env)
+        if (path === '/api/generate/retry' && request.method === 'POST')
+          return withCors(await handleRetry(request, env, userId, userPlan, ctx), env)
 
-      if (path.startsWith('/api/refine'))
-        return withCors(await handleRefinement(request, env, userId, userPlan), env)
+        if (path.startsWith('/api/refine'))
+          return withCors(await handleRefinement(request, env, userId, userPlan), env)
 
-      if (path.startsWith('/api/payments'))
-        return withCors(await handlePayments(request, env, userId), env)
+        if (path.startsWith('/api/payments'))
+          return withCors(await handlePayments(request, env, userId), env)
 
-      if (path.startsWith('/api/promos'))
-        return withCors(await handlePromos(request, env, userId), env)
+        if (path.startsWith('/api/promos'))
+          return withCors(await handlePromos(request, env, userId), env)
 
-      if (path.startsWith('/api/user'))
-        return withCors(await handleUser(request, env, userId), env)
+        if (path.startsWith('/api/user'))
+          return withCors(await handleUser(request, env, userId), env)
 
-      if (path.startsWith('/api/history'))
-        return withCors(await handleHistory(request, env, userId), env)
+        if (path.startsWith('/api/history'))
+          return withCors(await handleHistory(request, env, userId), env)
 
-      if (path.startsWith('/api/brand-kit'))
-        return withCors(await handleBrandKit(request, env, userId), env)
+        if (path.startsWith('/api/brand-kit'))
+          return withCors(await handleBrandKit(request, env, userId), env)
 
-      if (path.startsWith('/api/image/') && request.method === 'GET')
+        if (path.startsWith('/api/image/') && request.method === 'GET')
+          return withCors(await handleImageRoute(request, env, userId), env)
 
-        return withCors(await handleImageRoute(request, env, userId), env)
+        if (path.startsWith('/api/admin'))
+          return withCors(await handleAdmin(request, env, userId, userRole), env)
 
-      if (path.startsWith('/api/admin'))
-        return withCors(await handleAdmin(request, env, userId, userRole), env)
-
-      return withCors(new Response(JSON.stringify({ error: 'Not found' }), {
-        status: 404, headers: { 'Content-Type': 'application/json' },
-      }), env)
-    } catch (err) {
+        return withCors(new Response(JSON.stringify({ error: 'Not found' }), {
+          status: 404, headers: { 'Content-Type': 'application/json' },
+        }), env)
+      })()
+      return response
+    } catch (err: any) {
       console.error('Worker unhandled error:', err)
-      return withCors(new Response(JSON.stringify({ error: 'Internal server error' }), {
+      ctx.waitUntil((async () => {
+        try {
+          await env.DB.prepare(
+            `INSERT INTO system_logs (id, type, level, user_id, message, context, created_at)
+             VALUES (?, 'error', 'fatal', NULL, ?, ?, unixepoch())`
+          ).bind(
+            crypto.randomUUID(),
+            String(err.message || err).slice(0, 500),
+            JSON.stringify({ stack: err.stack || '' }).slice(0, 4096)
+          ).run()
+        } catch (dbErr) {
+          console.error('[Exception Logging] Failed to insert exception to D1:', dbErr)
+        }
+      })())
+
+      response = withCors(new Response(JSON.stringify({ error: 'Internal server error' }), {
         status: 500, headers: { 'Content-Type': 'application/json' },
       }), env)
+      return response
+    } finally {
+      const duration = Date.now() - startTime
+      logRequest(request.method, path, response ? response.status : 500, duration)
     }
   },
 

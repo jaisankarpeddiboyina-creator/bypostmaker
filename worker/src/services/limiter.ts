@@ -46,6 +46,27 @@ export class GroqRateLimiter {
       })
     }
 
+    if (url.pathname === '/check-ip-limit') {
+      const now = Date.now()
+      if (now - this.windowStart >= 60_000) {
+        this.windowStart = now
+        this.requestsInWindow = 0
+      }
+
+      if (this.requestsInWindow >= 10) {
+        const retryAfter = Math.ceil((60_000 - (now - this.windowStart)) / 1000)
+        return new Response(JSON.stringify({ allowed: false, retryAfter }), {
+          status: 429,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      }
+
+      this.requestsInWindow++
+      return new Response(JSON.stringify({ allowed: true }), {
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
+
     return new Response('Not found', { status: 404 })
   }
 

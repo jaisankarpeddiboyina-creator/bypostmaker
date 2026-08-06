@@ -96,4 +96,32 @@ export async function withPresignRateLimit(
   return { ok: true }
 }
 
+export async function checkIpRateLimitDurable(
+  request: Request,
+  env: Env,
+  maxRequests: number = 10
+): Promise<RateLimitResult> {
+  const ip = request.headers.get('CF-Connecting-IP') ?? 'unknown'
+  if (env.GROQ_LIMITER) {
+    try {
+      const id = env.GROQ_LIMITER.idFromName(`ip:${ip}`)
+      const stub = env.GROQ_LIMITER.get(id)
+      const res = await stub.fetch('http://do/check-ip-limit', { method: 'POST' })
+      if (res.status === 429) {
+        const data = await res.json() as { retryAfter: number }
+        return { ok: false, retryAfter: data.retryAfter }
+      }
+      if (res.ok) {
+        return { ok: true }
+      }
+    } catch (err) {
+      console.warn('[RateLimit] Durable Object IP rate check failed, using fallback:', err)
+    }
+  }
+
+  // Fallback to isolate-local rate limit
+  return withIpRateLimit(request, env, maxRequests)
+}
+
+
 
