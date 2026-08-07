@@ -177,13 +177,9 @@ export default function App() {
         if (user.currency) {
           setCurrency(user.currency)
         } else {
-          try {
-            const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
-            const isIndia = tz === 'Asia/Kolkata' || navigator.language?.endsWith('-IN')
-            setCurrency(isIndia ? 'inr' : 'usd')
-          } catch {
-            setCurrency('usd')
-          }
+          api.payments.currency()
+            .then(({ currency }) => setCurrency(currency))
+            .catch(() => setCurrency('usd'))
         }
         if (usage) {
           const planLimits: Record<string, number> = { free: 5, starter: 50, pro: 200, business: -1 }
@@ -209,13 +205,9 @@ export default function App() {
       })
       .catch(() => {
         setUser(null)
-        try {
-          const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
-          const isIndia = tz === 'Asia/Kolkata' || navigator.language?.endsWith('-IN')
-          setCurrency(isIndia ? 'inr' : 'usd')
-        } catch {
-          setCurrency('usd')
-        }
+        api.payments.currency()
+          .then(({ currency }) => setCurrency(currency))
+          .catch(() => setCurrency('usd'))
       })
       .finally(() => setAuthReadySnapshot(true))
   }, [addToast])
