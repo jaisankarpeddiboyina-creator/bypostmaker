@@ -174,6 +174,17 @@ export default function App() {
     api.user.me()
       .then(({ user, usage }) => {
         setUser(user)
+        if (user.currency) {
+          setCurrency(user.currency)
+        } else {
+          try {
+            const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+            const isIndia = tz === 'Asia/Kolkata' || navigator.language?.endsWith('-IN')
+            setCurrency(isIndia ? 'inr' : 'usd')
+          } catch {
+            setCurrency('usd')
+          }
+        }
         if (usage) {
           const planLimits: Record<string, number> = { free: 5, starter: 50, pro: 200, business: -1 }
           const limit = planLimits[user.plan] ?? 5
@@ -196,11 +207,17 @@ export default function App() {
           setUser({ ...user, plan: 'business' })
         }
       })
-      .catch(() => setUser(null))
+      .catch(() => {
+        setUser(null)
+        try {
+          const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+          const isIndia = tz === 'Asia/Kolkata' || navigator.language?.endsWith('-IN')
+          setCurrency(isIndia ? 'inr' : 'usd')
+        } catch {
+          setCurrency('usd')
+        }
+      })
       .finally(() => setAuthReadySnapshot(true))
-
-    // Force INR for now since USD plan IDs are not configured
-    setCurrency('inr')
   }, [addToast])
 
   return (

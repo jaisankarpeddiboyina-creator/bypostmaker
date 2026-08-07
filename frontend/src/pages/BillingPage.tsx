@@ -2,16 +2,10 @@ import { useState, useEffect } from 'react'
 import { CreditCard, Sparkles, AlertTriangle, ShieldCheck, Check } from 'lucide-react'
 import { useAppStore } from '../store/app'
 import { api } from '../lib/api'
-
-const PLANS_INFO = {
-  free: { name: 'Free', price: '₹0', gens: 5, features: ['5 generations/month', 'Basic platforms', '7-day history'] },
-  starter: { name: 'Starter', price: '₹299', gens: 50, features: ['50 generations/month', 'All 30+ platforms', '30-day history', 'AI refinement'] },
-  pro: { name: 'Pro', price: '₹799', gens: 200, features: ['200 generations/month', 'All 30+ platforms', '90-day history', 'Priority generation'] },
-  business: { name: 'Business', price: '₹1,999', gens: 1000, features: ['1,000 generations/month', 'All 30+ platforms', '1-year history', 'API access (v2)'] }
-}
+import { PLANS } from '../config/pricing'
 
 export default function BillingPage() {
-  const { user, usage, addToast, setShowUpgradeModal, setUpgradeReason } = useAppStore()
+  const { user, usage, addToast, setShowUpgradeModal, setUpgradeReason, currency } = useAppStore()
   const [subStatus, setSubStatus] = useState<any>(null)
   const [loadingSub, setLoadingSub] = useState(true)
   const [cancelling, setCancelling] = useState(false)
@@ -56,7 +50,7 @@ export default function BillingPage() {
           <div className="card-header">
             <div>
               <span className="section-label">CURRENT PLAN</span>
-              <h2 className="plan-name">{user?.plan ? PLANS_INFO[user.plan as keyof typeof PLANS_INFO]?.name : 'Free'} Plan</h2>
+              <h2 className="plan-name">{user?.plan ? PLANS.find(p => p.key === user.plan)?.name : 'Free'} Plan</h2>
             </div>
             <span className={`badge badge-${user?.plan}`}>{user?.plan}</span>
           </div>
@@ -122,26 +116,20 @@ export default function BillingPage() {
           )}
         </div>
 
-        {/* INR Only Alert banner */}
-        <div className="inr-only-alert">
-          <AlertTriangle size={16} />
-          <span><strong>INR Payments Only:</strong> Displayed prices are in INR (₹). USD billing is temporarily unavailable.</span>
-        </div>
-
         {/* Available Plans */}
         <div className="billing-upgrade-section">
           <h3 className="upgrade-section-title">Available Subscription Plans</h3>
           <div className="plans-grid">
-            {Object.entries(PLANS_INFO).map(([key, plan]) => {
-              const isCurrent = user?.plan === key
-              const canUpgrade = user?.plan !== 'business' && key !== 'free' && key !== user?.plan
+            {PLANS.map((plan) => {
+              const isCurrent = user?.plan === plan.key
+              const canUpgrade = user?.plan !== 'business' && plan.key !== 'free' && plan.key !== user?.plan
 
               return (
-                <div key={key} className={`plan-card-item ${isCurrent ? 'active' : ''} ${key === 'pro' ? 'featured' : ''}`}>
-                  {key === 'pro' && <div className="featured-badge">Most Popular</div>}
+                <div key={plan.key} className={`plan-card-item ${isCurrent ? 'active' : ''} ${plan.key === 'pro' ? 'featured' : ''}`}>
+                  {plan.key === 'pro' && <div className="featured-badge">Most Popular</div>}
                   <h4 className="plan-item-name">{plan.name}</h4>
                   <div className="plan-item-price">
-                    {plan.price}<span className="price-period">/month</span>
+                    {currency === 'inr' ? plan.price.inr : plan.price.usd}<span className="price-period">/month</span>
                   </div>
                   <ul className="plan-item-features">
                     {plan.features.map(f => (
@@ -157,7 +145,7 @@ export default function BillingPage() {
                     </div>
                   ) : canUpgrade ? (
                     <button
-                      className={`btn ${key === 'pro' ? 'btn-primary' : 'btn-ghost'} select-plan-btn`}
+                      className={`btn ${plan.key === 'pro' ? 'btn-primary' : 'btn-ghost'} select-plan-btn`}
                       onClick={() => {
                         setUpgradeReason(`Subscribe to our ${plan.name} plan for expanded limits.`)
                         setShowUpgradeModal(true)
