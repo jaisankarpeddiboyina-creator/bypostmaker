@@ -204,3 +204,45 @@ CREATE TABLE IF NOT EXISTS brand_kits (
 
 CREATE INDEX IF NOT EXISTS idx_brand_kits_user ON brand_kits(user_id);
 
+
+-- ── Asset Folders (migration 0010) ────────────────────────────
+CREATE TABLE IF NOT EXISTS asset_folders (
+  id          TEXT PRIMARY KEY,
+  user_id     TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name        TEXT NOT NULL,
+  created_at  INTEGER NOT NULL DEFAULT (unixepoch())
+);
+
+CREATE INDEX IF NOT EXISTS idx_asset_folders_user ON asset_folders(user_id);
+
+-- ── Assets (migration 0010) ───────────────────────────────────
+-- Exactly one of r2_key or external_url must be set per row.
+-- connected_drives deferred to migration 0011 (token security design pending).
+CREATE TABLE IF NOT EXISTS assets (
+  id              TEXT PRIMARY KEY,
+  user_id         TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  folder_id       TEXT REFERENCES asset_folders(id) ON DELETE SET NULL,
+  type            TEXT NOT NULL CHECK (type IN ('image','video','audio','font','icon','svg','doc')),
+  name            TEXT NOT NULL,
+  r2_key          TEXT,
+  external_url    TEXT,
+  provider        TEXT NOT NULL DEFAULT 'upload',
+  mime_type       TEXT,
+  file_size       INTEGER,
+  width           INTEGER,
+  height          INTEGER,
+  attr_author     TEXT,
+  attr_author_url TEXT,
+  attr_source_url TEXT,
+  is_favorite     INTEGER NOT NULL DEFAULT 0,
+  is_trashed      INTEGER NOT NULL DEFAULT 0,
+  created_at      INTEGER NOT NULL DEFAULT (unixepoch()),
+  updated_at      INTEGER NOT NULL DEFAULT (unixepoch())
+);
+
+CREATE INDEX IF NOT EXISTS idx_assets_user     ON assets(user_id);
+CREATE INDEX IF NOT EXISTS idx_assets_folder   ON assets(folder_id);
+CREATE INDEX IF NOT EXISTS idx_assets_type     ON assets(type);
+CREATE INDEX IF NOT EXISTS idx_assets_fav      ON assets(user_id, is_favorite);
+CREATE INDEX IF NOT EXISTS idx_assets_trashed  ON assets(user_id, is_trashed);
+CREATE INDEX IF NOT EXISTS idx_assets_created  ON assets(user_id, created_at DESC);

@@ -50,6 +50,11 @@ export interface Env {
   STAGE1_MOCK_SUCCESS?: string
   STAGE2_MOCK_FAIL_GROUP?: string
   STAGE2_MOCK_SUCCESS?: string
+  // Asset provider secrets (wrangler secret put — never in wrangler.toml vars)
+  PEXELS_API_KEY?: string
+  PIXABAY_API_KEY?: string
+  UNSPLASH_ACCESS_KEY?: string
+  GOOGLE_FONTS_API_KEY?: string
 }
 
 export interface ModelCapabilities {
