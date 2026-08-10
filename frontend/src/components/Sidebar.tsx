@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
-  LayoutDashboard, PlusCircle, Bookmark, History, CreditCard, Settings, Zap, X, Shield, LogOut
+  LayoutDashboard, PlusCircle, Bookmark, History, CreditCard, Settings, Zap, X, Shield, LogOut, Plug
 } from 'lucide-react'
 import { useAppStore } from '../store/app'
 import { api } from '../lib/api'
@@ -34,6 +34,7 @@ export function Sidebar({ isOpen, onClose, onUpgradeClick }: SidebarProps) {
   const navItems = [
     { label: 'Dashboard', path: '/app', icon: LayoutDashboard },
     { label: 'Create Post', path: '/app/create', icon: PlusCircle, highlight: true },
+    { label: 'Connections', path: '/app/connections', icon: Plug },
     { label: 'Brand Kit', path: '/app/brand-kit', icon: Bookmark },
     { label: 'My Generations', path: '/app/history', icon: History },
     { label: 'Billing', path: '/app/billing', icon: CreditCard },

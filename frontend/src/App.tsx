@@ -25,6 +25,7 @@ const VsPage = lazy(() => import('./pages/VsPage'))
 const ForPage = lazy(() => import('./pages/ForPage'))
 const BrandKitPage = lazy(() => import('./pages/BrandKitPage'))
 const PlatformPage = lazy(() => import('./pages/PlatformPage'))
+const ConnectionsPage = lazy(() => import('./pages/ConnectionsPage'))
 
 const SentryRoutes = Routes
 
@@ -241,6 +242,9 @@ export default function App() {
           } />
           <Route path="/app/brand-kit" element={
             <AuthGuard><AppShell><BrandKitPage /></AppShell></AuthGuard>
+          } />
+          <Route path="/app/connections" element={
+            <AuthGuard><AppShell><ConnectionsPage /></AppShell></AuthGuard>
           } />
 
           <Route path="/admin" element={

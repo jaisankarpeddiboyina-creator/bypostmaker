@@ -92,6 +92,30 @@ export async function handleOmnipost(request: Request, env: Env, userId: string)
     }
   }
 
+  // ── 3. DELETE /api/omnipost/connections/:id ─────────────────────
+  if (path.startsWith('/api/omnipost/connections/') && method === 'DELETE') {
+    try {
+      const connectionId = path.replace('/api/omnipost/connections/', '').trim();
+      if (!connectionId) {
+        return Response.json({ success: false, error: 'Connection ID is required' }, { status: 400 });
+      }
+
+      // Delete scoped strictly by BOTH id AND user_id
+      const res = await env.DB.prepare(
+        `DELETE FROM omnipost_connections WHERE id = ? AND user_id = ?`
+      ).bind(connectionId, userId).run();
+
+      if (!res.meta || res.meta.changes === 0) {
+        return Response.json({ success: false, error: 'Connection not found or unauthorized' }, { status: 404 });
+      }
+
+      return Response.json({ success: true, message: 'Connection deleted successfully' });
+    } catch (err: any) {
+      console.error('Failed to delete omnipost connection:', err);
+      return Response.json({ success: false, error: err.message || 'Internal error' }, { status: 500 });
+    }
+  }
+
   // ── 3. POST /api/omnipost/publish ──────────────────────────────
   if (path === '/api/omnipost/publish' && method === 'POST') {
     try {

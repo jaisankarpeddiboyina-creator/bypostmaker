@@ -284,6 +284,11 @@ export const api = {
           content: { text, mediaUrls },
         }),
       }),
+
+    deleteConnection: (id: string) =>
+      request<{ success: boolean; message?: string; error?: string }>(`/omnipost/connections/${id}`, {
+        method: 'DELETE',
+      }),
   },
 }
 
