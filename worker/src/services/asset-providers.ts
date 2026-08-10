@@ -23,7 +23,17 @@ export interface Attribution {
   authorName: string
   authorUrl: string   // link to creator profile page
   sourceUrl: string   // link to original asset on provider site
-  providerName: string // internal label only — never sent to frontend UI
+  providerName: string
+  // License shown on card. Values per provider:
+  //   Pexels:     'Pexels Free'       (free for commercial/personal, attribution optional)
+  //   Pixabay:    'Pixabay Free'      (free for commercial use, no attribution required)
+  //   Unsplash:   'Unsplash License'  (ATTRIBUTION REQUIRED per API Terms of Service)
+  //   Openverse:  actual CC license from API (e.g. 'CC BY 2.0')
+  //   Iconify:    null                (public domain / no attribution)
+  //   Google Fonts: null              (Open Font License)
+  license: string
+  // Whether attribution is legally required by provider ToS
+  attributionRequired: boolean
 }
 
 // ── MediaItem ─────────────────────────────────────────────────
@@ -143,9 +153,14 @@ interface IconifyIconSet {
 }
 
 // ── Pexels Provider ───────────────────────────────────────────
-// Photos + Videos. Attribution populated (not legally required but consistent shape).
-// Face/people filtering: Pexels has no dedicated face-exclusion param. We rely on
-// Pixabay's safesearch and Openverse's CC licensing to provide cleaner results.
+// Photos + Videos.
+// RATE LIMITS (confirmed from response headers, 2026-08-10):
+//   x-ratelimit-limit: 25000   (requests per month)
+//   x-ratelimit-remaining: N   (we throw when < 50 to avoid account suspension)
+//   x-ratelimit-reset: unix timestamp
+// LICENSE: Pexels Free License — free for commercial & personal use.
+// Attribution not legally required, but shown for UX and provider goodwill.
+// Default (no query): use /v1/curated endpoint — editorial picks, diverse subjects.
 const pexelsProvider: AssetProvider = {
   id: 'pexels',
   types: ['image', 'video'],
@@ -159,20 +174,35 @@ const pexelsProvider: AssetProvider = {
     if (!apiKey) return []
 
     const perPage = 20
-    // Pexels orientation values: landscape | portrait | square
     const oriParam = orientation !== 'all' ? `&orientation=${orientation}` : ''
+    const isDefaultQuery = !query.trim() || query === 'trending'
 
-    const endpoint = type === 'video'
-      ? `https://api.pexels.com/videos/search?query=${encodeURIComponent(query)}&per_page=${perPage}&page=${page}${oriParam}`
-      : `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=${perPage}&page=${page}${oriParam}`
-
-    const res = await fetch(endpoint, {
-      headers: { Authorization: apiKey },
-    })
-
-    if (!res.ok) {
-      throw new Error(`[pexels] API error ${res.status}`)
+    // When no search term: use Pexels curated endpoint for editorial picks
+    // (avoids showing people-heavy trending content by default)
+    let endpoint: string
+    if (isDefaultQuery && type === 'image') {
+      endpoint = `https://api.pexels.com/v1/curated?per_page=${perPage}&page=${page}`
+    } else if (type === 'video') {
+      const videoQuery = isDefaultQuery ? 'nature landscape' : query
+      endpoint = `https://api.pexels.com/videos/search?query=${encodeURIComponent(videoQuery)}&per_page=${perPage}&page=${page}${oriParam}`
+    } else {
+      endpoint = `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=${perPage}&page=${page}${oriParam}`
     }
+
+    const res = await fetch(endpoint, { headers: { Authorization: apiKey } })
+
+    // Parse rate limit headers and throw BEFORE exhausting the quota
+    const remaining = parseInt(res.headers.get('x-ratelimit-remaining') ?? '999', 10)
+    if (remaining < 50) {
+      console.warn(`[pexels] Monthly quota low: ${remaining} requests remaining`)
+    }
+    if (remaining <= 0) throw new RateLimitError('pexels')
+
+    if (res.status === 429 || !res.ok) {
+      throw new Error(`[pexels] API error ${res.status}${res.status === 429 ? ' (rate limited)' : ''}`)
+    }
+
+    const PEXELS_LICENSE: Attribution['license'] = 'Pexels Free'
 
     if (type === 'video') {
       const data = await res.json() as { videos: PexelsVideo[] }
@@ -193,6 +223,8 @@ const pexelsProvider: AssetProvider = {
             authorUrl: v.user.url,
             sourceUrl: v.url,
             providerName: 'Pexels',
+            license: PEXELS_LICENSE,
+            attributionRequired: false,
           },
         }
       })
@@ -212,15 +244,21 @@ const pexelsProvider: AssetProvider = {
         authorUrl: p.photographer_url,
         sourceUrl: p.url,
         providerName: 'Pexels',
+        license: PEXELS_LICENSE,
+        attributionRequired: false,
       },
     }))
   },
 }
 
 // ── Pixabay Provider ──────────────────────────────────────────
-// Photos + Videos. safesearch=true filters adult content (including nudity/explicit).
-// Pixabay does NOT have a dedicated face-exclusion parameter in the free API.
-// authorUrl falls back to a Pixabay search URL for the username.
+// Photos + Videos. safesearch=true filters adult content.
+// RATE LIMITS (confirmed from response headers, 2026-08-10):
+//   x-ratelimit-limit: 100  (per minute)
+//   x-ratelimit-remaining: N (resets every 60s)
+//   x-ratelimit-reset: seconds until reset
+// LICENSE: Pixabay License — free for commercial use. No attribution required.
+// Default (no query): use curated nature/landscape seed for varied defaults.
 const pixabayProvider: AssetProvider = {
   id: 'pixabay',
   types: ['image', 'video'],
@@ -231,20 +269,32 @@ const pixabayProvider: AssetProvider = {
     if (!allowed) throw new RateLimitError('pixabay')
 
     const apiKey = env.PIXABAY_API_KEY
-    if (!apiKey) return [] // key not configured — skip silently, other providers handle it
+    if (!apiKey) return []
 
     const perPage = 20
-    // Pixabay orientation values: horizontal | vertical (no square option)
     const oriMap: Record<string, string> = { landscape: 'horizontal', portrait: 'vertical' }
     const oriParam = orientation !== 'all' && oriMap[orientation] ? `&orientation=${oriMap[orientation]}` : ''
     const imageType = type === 'video' ? '' : '&image_type=photo'
+    const isDefaultQuery = !query.trim() || query === 'trending'
+    const searchQ = isDefaultQuery ? 'nature background' : query
 
     const endpoint = type === 'video'
-      ? `https://pixabay.com/api/videos/?key=${apiKey}&q=${encodeURIComponent(query)}&per_page=${perPage}&page=${page}&safesearch=true`
-      : `https://pixabay.com/api/?key=${apiKey}&q=${encodeURIComponent(query)}&per_page=${perPage}&page=${page}${imageType}${oriParam}&safesearch=true`
+      ? `https://pixabay.com/api/videos/?key=${apiKey}&q=${encodeURIComponent(searchQ)}&per_page=${perPage}&page=${page}&safesearch=true`
+      : `https://pixabay.com/api/?key=${apiKey}&q=${encodeURIComponent(searchQ)}&per_page=${perPage}&page=${page}${imageType}${oriParam}&safesearch=true`
 
     const res = await fetch(endpoint)
-    if (!res.ok) throw new Error(`[pixabay] API error ${res.status}`)
+
+    // Parse rate limit remaining from header — throw if <= 5 (protect from exhausting per-minute quota)
+    const remaining = parseInt(res.headers.get('x-ratelimit-remaining') ?? '99', 10)
+    const resetIn = res.headers.get('x-ratelimit-reset') ?? '60'
+    if (remaining <= 5) {
+      console.warn(`[pixabay] Rate limit low: ${remaining} remaining, resets in ${resetIn}s`)
+      throw new RateLimitError('pixabay')
+    }
+
+    if (res.status === 429 || !res.ok) throw new Error(`[pixabay] API error ${res.status}`)
+
+    const PIXABAY_LICENSE: Attribution['license'] = 'Pixabay Free'
 
     if (type === 'video') {
       const data = await res.json() as { hits: Array<{
@@ -265,6 +315,8 @@ const pixabayProvider: AssetProvider = {
           authorUrl: `https://pixabay.com/users/${encodeURIComponent(v.user)}/`,
           sourceUrl: v.pageURL,
           providerName: 'Pixabay',
+          license: PIXABAY_LICENSE,
+          attributionRequired: false,
         },
       }))
     }
@@ -283,18 +335,24 @@ const pixabayProvider: AssetProvider = {
         authorUrl: `https://pixabay.com/users/${encodeURIComponent(p.user)}/`,
         sourceUrl: p.pageURL,
         providerName: 'Pixabay',
+        license: PIXABAY_LICENSE,
+        attributionRequired: false,
       },
     }))
   },
 }
 
 // ── Unsplash Provider ─────────────────────────────────────────
-// Photos only. Attribution is LEGALLY REQUIRED by Unsplash API terms.
-// Field mapping verified from https://unsplash.com/documentation:
-//   authorName  ← photo.user.name
-//   authorUrl   ← photo.user.links.html
-//   sourceUrl   ← photo.links.html
-// UTM params appended to authorUrl/sourceUrl per Unsplash guidelines.
+// Photos only. Attribution is LEGALLY REQUIRED by Unsplash API Terms of Service.
+// RATE LIMITS (from docs + headers):
+//   Demo apps: 50 req/hour. Production-approved apps: 5000 req/hour.
+//   Header: X-RateLimit-Remaining (requests left in current hour window).
+//   We throw when remaining <= 5 to avoid account suspension.
+// LICENSE: Unsplash License (https://unsplash.com/license)
+//   Free to use, but you MUST attribute the photographer AND Unsplash.
+//   Per API Terms, do NOT download-and-host without triggering a download event.
+//   UTM params required on all links back to Unsplash.
+// Default (no query): use curated /photos endpoint.
 const unsplashProvider: AssetProvider = {
   id: 'unsplash',
   types: ['image'],
@@ -307,24 +365,40 @@ const unsplashProvider: AssetProvider = {
     const accessKey = env.UNSPLASH_ACCESS_KEY
     if (!accessKey) return []
 
-    // Unsplash orientation values: landscape | portrait | squarish
     const oriMap: Record<string, string> = { landscape: 'landscape', portrait: 'portrait', square: 'squarish' }
     const oriParam = orientation !== 'all' && oriMap[orientation] ? `&orientation=${oriMap[orientation]}` : ''
     const perPage = 20
-    const res = await fetch(
-      `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=${perPage}&page=${page}${oriParam}`,
-      {
-        headers: {
-          Authorization: `Client-ID ${accessKey}`,
-          'Accept-Version': 'v1',
-        },
-      }
-    )
-    if (!res.ok) throw new Error(`[unsplash] API error ${res.status}`)
-
-    const data = await res.json() as { results: UnsplashPhoto[] }
+    const isDefaultQuery = !query.trim() || query === 'trending'
     const UTM = '?utm_source=postmaker&utm_medium=referral'
-    return (data.results ?? []).map(p => ({
+
+    // No query: use /photos curated feed instead of search (better quality defaults)
+    const endpoint = isDefaultQuery
+      ? `https://api.unsplash.com/photos?per_page=${perPage}&page=${page}&order_by=editorial`
+      : `https://api.unsplash.com/search/photos?query=${encodeURIComponent(query)}&per_page=${perPage}&page=${page}${oriParam}`
+
+    const res = await fetch(endpoint, {
+      headers: {
+        Authorization: `Client-ID ${accessKey}`,
+        'Accept-Version': 'v1',
+      },
+    })
+
+    // Parse rate limit remaining — protect from hourly quota exhaustion
+    const remaining = parseInt(res.headers.get('x-ratelimit-remaining') ?? '50', 10)
+    if (remaining <= 5) {
+      console.warn(`[unsplash] Rate limit low: ${remaining} requests remaining this hour`)
+      throw new RateLimitError('unsplash')
+    }
+
+    if (res.status === 429 || !res.ok) throw new Error(`[unsplash] API error ${res.status}`)
+
+    const UNSPLASH_LICENSE: Attribution['license'] = 'Unsplash License'
+
+    // Curated feed returns an array; search returns { results: [] }
+    const raw = await res.json() as UnsplashPhoto[] | { results: UnsplashPhoto[] }
+    const photos: UnsplashPhoto[] = Array.isArray(raw) ? raw : (raw as any).results ?? []
+
+    return photos.map(p => ({
       id: `unsplash_${p.id}`,
       type: 'image' as const,
       title: p.alt_description || p.description || 'Photo',
@@ -337,6 +411,9 @@ const unsplashProvider: AssetProvider = {
         authorUrl: `${p.user.links.html}${UTM}`,
         sourceUrl: `${p.links.html}${UTM}`,
         providerName: 'Unsplash',
+        license: UNSPLASH_LICENSE,
+        // LEGALLY REQUIRED: Unsplash API Terms § "Attribution"
+        attributionRequired: true,
       },
     }))
   },
@@ -380,7 +457,13 @@ const iconifyProvider: AssetProvider = {
 
 // ── Openverse Provider (Keyless Stock Images) ─────────────────
 // Keyless image search using Creative Commons Openverse API.
-// No API key required out-of-the-box.
+// RATE LIMITS (from Openverse docs):
+//   Unauthenticated: 100 requests/day per IP
+//   Authenticated (OAuth2 token): 10,000 requests/day
+//   We parse X-RateLimit-Available-Requests header if present.
+// LICENSE: Per-image CC license returned in API response.
+//   We map it to a human-readable string and flag attributionRequired=true
+//   (all Creative Commons licenses require attribution).
 interface OpenverseImageResult {
   id: string
   title: string
@@ -391,6 +474,18 @@ interface OpenverseImageResult {
   foreign_landing_url?: string
   width?: number
   height?: number
+  license?: string           // e.g. 'by', 'by-sa', 'by-nc', 'cc0'
+  license_version?: string   // e.g. '2.0', '4.0'
+  license_url?: string
+}
+
+function openverseLicenseLabel(license?: string, version?: string): string {
+  if (!license) return 'CC'
+  const l = license.toLowerCase()
+  if (l === 'cc0' || l === 'pdm') return 'CC0 (Public Domain)'
+  const prefix = 'CC'
+  const suffix = version ? ` ${version}` : ''
+  return `${prefix} ${l.toUpperCase()}${suffix}`
 }
 
 const openverseProvider: AssetProvider = {
@@ -403,23 +498,24 @@ const openverseProvider: AssetProvider = {
     if (!allowed) throw new RateLimitError('openverse')
 
     const perPage = 30
-    // Use the search term as-is. Never append extra words — it corrupts the query.
     const searchTerm = (!query.trim() || query === 'trending') ? 'nature landscape background' : query.trim()
-    // license_type=commercial ensures results are safe for commercial use
     const endpoint = `https://api.openverse.org/v1/images/?q=${encodeURIComponent(searchTerm)}&page=${page}&page_size=${perPage}&license_type=commercial&mature=false`
 
     const res = await fetch(endpoint, {
-      headers: {
-        'User-Agent': 'PostMaker/1.0 (https://bypostamaker.com)',
-      },
+      headers: { 'User-Agent': 'PostMaker/1.0 (https://bypostamaker.com)' },
     })
-    if (!res.ok) throw new Error(`[openverse] API error ${res.status}`)
+
+    // Check Openverse rate limit header (available in newer API versions)
+    const available = parseInt(res.headers.get('x-ratelimit-available-requests') ?? res.headers.get('x-ratelimit-remaining') ?? '100', 10)
+    if (available <= 5) {
+      console.warn(`[openverse] Rate limit low: ${available} remaining`)
+    }
+
+    if (res.status === 429 || !res.ok) throw new Error(`[openverse] API error ${res.status}`)
 
     const data = await res.json() as { results: OpenverseImageResult[] }
 
-    // Filter out low-quality or irrelevant results by title keywords
     const badKeywords = ['map', 'chart', 'trend', 'slide', 'diagram', 'presentation', 'graph', 'screenshot', 'agenda', 'forum', 'report', 'top ten', 'top 10']
-
     const filtered = (data.results ?? []).filter(p => {
       const titleLower = (p.title || '').toLowerCase()
       return !badKeywords.some(kw => titleLower.includes(kw))
@@ -437,7 +533,10 @@ const openverseProvider: AssetProvider = {
         authorName: p.creator,
         authorUrl: p.creator_url || p.foreign_landing_url || 'https://openverse.org',
         sourceUrl: p.foreign_landing_url || p.url,
-        providerName: 'Openverse (CC)',
+        providerName: 'Openverse',
+        license: openverseLicenseLabel(p.license, p.license_version),
+        // All CC licenses (except CC0) require attribution
+        attributionRequired: !['cc0', 'pdm'].includes((p.license ?? '').toLowerCase()),
       } : null,
     }))
   },

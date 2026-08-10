@@ -20,6 +20,10 @@ interface MediaItem {
     authorUrl: string
     sourceUrl: string
     providerName: string
+    // License type — displayed as a badge on each card
+    license: string
+    // true = Unsplash/CC licenses that legally require crediting the author
+    attributionRequired: boolean
   } | null
 }
 
@@ -363,15 +367,25 @@ export default function AssetsPage() {
                       )}
                     </div>
                     <div className="media-card-details">
-                      <span
-                        className="media-card-name truncate"
-                        onClick={() => setPreviewItem(item)}
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={e => e.key === 'Enter' && setPreviewItem(item)}
-                      >
-                        {item.title}
-                      </span>
+                      <div className="media-card-top-row">
+                        <span
+                          className="media-card-name truncate"
+                          onClick={() => setPreviewItem(item)}
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={e => e.key === 'Enter' && setPreviewItem(item)}
+                        >
+                          {item.title}
+                        </span>
+                        {item.attribution?.license && (
+                          <span
+                            className={`license-badge ${item.attribution.attributionRequired ? 'license-badge--required' : 'license-badge--free'}`}
+                            title={item.attribution.attributionRequired ? 'Attribution required by license' : 'Free to use — no attribution required'}
+                          >
+                            {item.attribution.attributionRequired ? '⚠ ' : '✓ '}{item.attribution.license}
+                          </span>
+                        )}
+                      </div>
                       {item.attribution ? (
                         <a
                           href={item.attribution.sourceUrl}
@@ -493,6 +507,9 @@ export default function AssetsPage() {
               <div className="lightbox-attribution">
                 {previewItem.attribution ? (
                   <>
+                    {previewItem.attribution.attributionRequired && (
+                      <span className="lightbox-attr-required-badge">Attribution Required</span>
+                    )}
                     <span>By </span>
                     <a
                       href={previewItem.attribution.authorUrl}
@@ -503,6 +520,11 @@ export default function AssetsPage() {
                       {previewItem.attribution.authorName}
                     </a>
                     <span> on {previewItem.attribution.providerName}</span>
+                    {previewItem.attribution.license && (
+                      <span className={`lightbox-license-chip ${previewItem.attribution.attributionRequired ? 'lightbox-license-chip--required' : 'lightbox-license-chip--free'}`}>
+                        {previewItem.attribution.license}
+                      </span>
+                    )}
                   </>
                 ) : (
                   <span>Free Stock Media</span>
@@ -898,6 +920,35 @@ export default function AssetsPage() {
           border-radius: 4px;
         }
 
+        .media-card-top-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 6px;
+        }
+
+        .license-badge {
+          font-size: 10px;
+          font-weight: 700;
+          padding: 2px 6px;
+          border-radius: 4px;
+          letter-spacing: -0.01em;
+          white-space: nowrap;
+          flex-shrink: 0;
+        }
+
+        .license-badge--free {
+          background: rgba(16, 185, 129, 0.12);
+          color: #059669;
+          border: 1px solid rgba(16, 185, 129, 0.25);
+        }
+
+        .license-badge--required {
+          background: rgba(245, 158, 11, 0.12);
+          color: #d97706;
+          border: 1px solid rgba(245, 158, 11, 0.25);
+        }
+
         .media-att-link {
           font-size: 11px;
           color: var(--color-text-muted);
@@ -1059,6 +1110,38 @@ export default function AssetsPage() {
           font-size: 12px;
           color: var(--color-text-secondary);
           flex: 1;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+
+        .lightbox-attr-required-badge {
+          font-size: 10px;
+          font-weight: 800;
+          padding: 2px 6px;
+          border-radius: 4px;
+          background: rgba(239, 68, 68, 0.12);
+          color: #dc2626;
+          border: 1px solid rgba(239, 68, 68, 0.25);
+          letter-spacing: -0.01em;
+        }
+
+        .lightbox-license-chip {
+          font-size: 11px;
+          font-weight: 700;
+          padding: 2px 8px;
+          border-radius: 12px;
+        }
+
+        .lightbox-license-chip--free {
+          background: rgba(16, 185, 129, 0.12);
+          color: #059669;
+        }
+
+        .lightbox-license-chip--required {
+          background: rgba(245, 158, 11, 0.12);
+          color: #d97706;
         }
 
         .lightbox-credit-link {

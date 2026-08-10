@@ -67,6 +67,29 @@ export class GroqRateLimiter {
       })
     }
 
+    if (url.pathname === '/consume') {
+      const body = await request.json() as { limit?: number }
+      const limit = body.limit ?? 50
+      const now = Date.now()
+      if (now - this.windowStart >= 60_000) {
+        this.windowStart = now
+        this.requestsInWindow = 0
+      }
+
+      if (this.requestsInWindow >= limit) {
+        const retryAfter = Math.ceil((60_000 - (now - this.windowStart)) / 1000)
+        return new Response(JSON.stringify({ allowed: false, retryAfter }), {
+          status: 429,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      }
+
+      this.requestsInWindow++
+      return new Response(JSON.stringify({ allowed: true }), {
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
+
     return new Response('Not found', { status: 404 })
   }
 
@@ -180,4 +203,50 @@ export async function releaseGroqSlot(env: Env): Promise<void> {
     }
   }
   releaseFallbackSlot()
+}
+
+// ── Asset Provider Rate Limiting Helper ────────────────────────
+const assetFallbackCounts = new Map<string, { count: number; resetAt: number }>()
+
+export async function consumeAssetSlot(
+  env: Env,
+  userId: string,
+  providerId: string,
+  limit: number
+): Promise<{ allowed: boolean; retryAfter?: number }> {
+  const key = `assets:${providerId}:${userId}`
+  if (env.GROQ_LIMITER) {
+    try {
+      const id = env.GROQ_LIMITER.idFromName(key)
+      const stub = env.GROQ_LIMITER.get(id)
+      const res = await stub.fetch('http://do/consume', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ limit }),
+      })
+      if (res.status === 429) {
+        const data = await res.json() as { retryAfter: number }
+        return { allowed: false, retryAfter: data.retryAfter }
+      }
+      if (res.ok) {
+        return { allowed: true }
+      }
+    } catch (err) {
+      console.warn('[Limiter] Durable Object asset rate consume failed, using fallback:', err)
+    }
+  }
+
+  // Fallback to isolate-local in-memory tracking
+  const now = Date.now()
+  let entry = assetFallbackCounts.get(key)
+  if (!entry || now > entry.resetAt) {
+    entry = { count: 0, resetAt: now + 60_000 }
+    assetFallbackCounts.set(key, entry)
+  }
+  if (entry.count >= limit) {
+    const retryAfter = Math.ceil((entry.resetAt - now) / 1000)
+    return { allowed: false, retryAfter }
+  }
+  entry.count++
+  return { allowed: true }
 }

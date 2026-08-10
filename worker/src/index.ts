@@ -18,6 +18,7 @@ import { handlePromos } from './routes/promos'
 import { handleDirectUploadRoute, handlePresignRoute, handlePresignBatchRoute, handleCleanupRoute } from './routes/upload'
 import { handleImageRoute } from './routes/image'
 import { handleBrandKit } from './routes/brand-kit'
+import { handleAssetsRoute } from './routes/assets'
 import { runCronJobs, runDataRetention } from './services/cron'
 
 
@@ -757,6 +758,9 @@ export default {
 
         if (path.startsWith('/api/brand-kit'))
           return withCors(await handleBrandKit(request, env, userId), env)
+
+        if (path.startsWith('/api/assets'))
+          return withCors(await handleAssetsRoute(request, env, userId), env)
 
         if (path.startsWith('/api/image/') && request.method === 'GET')
           return withCors(await handleImageRoute(request, env, userId), env)

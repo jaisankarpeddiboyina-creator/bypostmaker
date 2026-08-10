@@ -10,6 +10,7 @@ import { Toasts } from './components/Toasts'
 import { UpgradeModal } from './components/UpgradeModal'
 import { VerifyEmailScreen } from './components/VerifyEmailScreen'
 import { ExportModal } from './components/ExportModal'
+import { AssetPickerModal } from './components/AssetPickerModal'
 
 const AppPage = lazy(() => import('./pages/AppPage'))
 const LandingPage = lazy(() => import('./pages/LandingPage'))
@@ -25,6 +26,7 @@ const VsPage = lazy(() => import('./pages/VsPage'))
 const ForPage = lazy(() => import('./pages/ForPage'))
 const BrandKitPage = lazy(() => import('./pages/BrandKitPage'))
 const PlatformPage = lazy(() => import('./pages/PlatformPage'))
+const AssetsPage = lazy(() => import('./pages/AssetsPage'))
 
 const SentryRoutes = Routes
 
@@ -76,8 +78,9 @@ function AppShell({ children }: { children: React.ReactNode }) {
 
         .app-shell-main {
           flex: 1;
-          overflow: hidden;
+          overflow-y: auto;
           position: relative;
+          height: calc(100vh - 64px);
         }
 
         @media (max-width: 768px) {
@@ -251,6 +254,9 @@ export default function App() {
           <Route path="/app/brand-kit" element={
             <AuthGuard><AppShell><BrandKitPage /></AppShell></AuthGuard>
           } />
+          <Route path="/app/assets" element={
+            <AuthGuard><AppShell><AssetsPage /></AppShell></AuthGuard>
+          } />
 
           <Route path="/admin" element={
             <AdminGuard><AppShell><AdminPage /></AppShell></AdminGuard>
@@ -269,6 +275,7 @@ export default function App() {
         </SentryRoutes>
       </Suspense>
       <Toasts />
+      <AssetPickerModal />
     </>
   )
 }
