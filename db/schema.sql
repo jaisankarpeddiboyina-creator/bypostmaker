@@ -234,6 +234,7 @@ CREATE TABLE IF NOT EXISTS assets (
   attr_author     TEXT,
   attr_author_url TEXT,
   attr_source_url TEXT,
+  attr_provider_name TEXT,
   is_favorite     INTEGER NOT NULL DEFAULT 0,
   is_trashed      INTEGER NOT NULL DEFAULT 0,
   created_at      INTEGER NOT NULL DEFAULT (unixepoch()),
