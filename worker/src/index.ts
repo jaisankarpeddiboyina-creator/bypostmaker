@@ -18,6 +18,7 @@ import { handlePromos } from './routes/promos'
 import { handleDirectUploadRoute, handlePresignRoute, handlePresignBatchRoute, handleCleanupRoute } from './routes/upload'
 import { handleImageRoute } from './routes/image'
 import { handleBrandKit } from './routes/brand-kit'
+import { handleOmnipost } from './routes/omnipost'
 import { runCronJobs, runDataRetention } from './services/cron'
 
 
@@ -760,6 +761,9 @@ export default {
 
         if (path.startsWith('/api/image/') && request.method === 'GET')
           return withCors(await handleImageRoute(request, env, userId), env)
+
+        if (path.startsWith('/api/omnipost'))
+          return withCors(await handleOmnipost(request, env, userId), env)
 
         if (path.startsWith('/api/admin'))
           return withCors(await handleAdmin(request, env, userId, userRole), env)

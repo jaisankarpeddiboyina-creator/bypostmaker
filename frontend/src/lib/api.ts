@@ -263,6 +263,28 @@ export const api = {
         method: 'DELETE',
       }),
   },
+
+  // ── Omnipost (Social Media Publishing) ──────────────────────
+  omnipost: {
+    getConnections: () =>
+      request<{ success: boolean; data: Array<{ id: string; platform: string; label: string; status: string; created_at: number }> }>('/omnipost/connections'),
+
+    createConnection: (platform: string, webhookUrl: string, label?: string) =>
+      request<{ success: boolean; data?: { id: string; platform: string; label: string; status: string; created_at: number }; error?: string }>('/omnipost/connections', {
+        method: 'POST',
+        body: JSON.stringify({ platform, webhookUrl, label }),
+      }),
+
+    publish: (connectionId: string, text: string, mediaUrls?: string[], idempotencyKey?: string) =>
+      request<{ success: boolean; data?: { connectionId: string; status: string; platformPostId?: string; url?: string }; error?: string }>('/omnipost/publish', {
+        method: 'POST',
+        body: JSON.stringify({
+          connectionId,
+          idempotencyKey: idempotencyKey || crypto.randomUUID(),
+          content: { text, mediaUrls },
+        }),
+      }),
+  },
 }
 
 
