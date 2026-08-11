@@ -22,3 +22,6 @@ TEXT_MODEL=google-ai-studio/gemini-1.5-flash
 # Explicit override for Stage 2 text generation fallback provider ("groq" | "gemini"). Only affects Stage 2 text, not vision.
 TEXT_FALLBACK_PROVIDER=
 
+# Omnipost Vault Encryption Key (64-character hex string / 256-bit key)
+OMNIPOST_MASTER_KEY=
+

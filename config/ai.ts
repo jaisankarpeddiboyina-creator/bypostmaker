@@ -50,6 +50,8 @@ export interface Env {
   STAGE1_MOCK_SUCCESS?: string
   STAGE2_MOCK_FAIL_GROUP?: string
   STAGE2_MOCK_SUCCESS?: string
+  OMNIPOST_MASTER_KEY?: string
+  OMNIPOST_MASTER_KEY_V2?: string
 }
 
 export interface ModelCapabilities {
