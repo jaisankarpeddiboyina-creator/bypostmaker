@@ -193,3 +193,8 @@ Shows the form dynamically transitioning to a thank you checkmark panel on a suc
 The newly added Feedback tab in the Admin Operations dashboard successfully queries, merges, and displays submitted entries with their formatted timestamps, categories, rating stars, name/email headers, and messages:
 
 ![Admin Feedback Tab View](admin_feedback_view.png)
+
+### D. End-to-End Demo Video
+We recorded a continuous session of the complete feedback submission and admin check flow:
+
+![Continuous Recording of Feedback Flow](feedback-demo.webm)
