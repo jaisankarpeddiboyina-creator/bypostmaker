@@ -116,6 +116,9 @@ interface AppStore {
   exportPayload: ExportPayload | null
   openExport: (payload: ExportPayload) => void
   closeExport: () => void
+
+  showFeedbackModal: boolean
+  setShowFeedbackModal: (v: boolean) => void
 }
 
 export const useAppStore = create<AppStore>((set, get) => ({
@@ -212,4 +215,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   exportPayload: null,
   openExport: (payload) => set({ exportPayload: payload, showExportModal: true }),
   closeExport: () => set({ exportPayload: null, showExportModal: false }),
+
+  showFeedbackModal: false,
+  setShowFeedbackModal: (v) => set({ showFeedbackModal: v }),
 }))
