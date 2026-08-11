@@ -241,6 +241,14 @@ All routes are defined in [`worker/src/routes/omnipost.ts`](file:///home/jaisank
 - **Card Component**: [`frontend/src/components/PublishControl.tsx`](file:///home/jaisankar/Documents/projects/bypostmaker/bypostmaker/frontend/src/components/PublishControl.tsx) (embedded inside `DiscordCard.tsx`).
 - **Design Tokens**: Styled using pure Vanilla CSS tokens from [`frontend/src/styles/globals.css`](file:///home/jaisankar/Documents/projects/bypostmaker/bypostmaker/frontend/src/styles/globals.css) (VisionOS Liquid Glass, backdrop-blur `36px`, Plus Jakarta Sans font).
 
+### 🎯 Brand Kit Platform Picker UX Standard
+The `/app/connections` page directly adopts PostMaker's established Brand Kit platform selection UX:
+1. **`+ Add Connection` Action**: Clicking `+ Add Connection` triggers a searchable platform picker.
+2. **Searchable 33+ Platform Grid**: Features real-time search input (`Search platforms...`) and 33+ platform tiles featuring official SVG brand icons, names, and tags (`Shortform`, `Professional`, `Community`, `Video`).
+3. **Tailored Auth Handshake**:
+   - **Webhook Platforms (Discord, Webhooks)**: Opens inline webhook configuration form.
+   - **OAuth Platforms (X/Twitter, LinkedIn, Instagram, TikTok, YouTube, Threads, Bluesky, Mastodon)**: Triggers instant OAuth redirect flow and encrypted token exchange.
+
 ---
 
 ## 🧪 6. Evidence & Verification Matrix
