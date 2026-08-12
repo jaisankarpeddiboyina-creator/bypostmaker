@@ -982,7 +982,7 @@ export default function AdminPage() {
                   </span>
                   <span>
                     {fb.rating ? (
-                      <span className="feedback-stars-display" style={{ color: '#f59e0b', display: 'inline-flex', gap: 2 }}>
+                      <span className="feedback-stars-display" style={{ color: 'var(--color-warning)', display: 'inline-flex', gap: 2 }}>
                         {Array.from({ length: fb.rating }).map((_, i) => (
                           <Star key={i} size={13} fill="currentColor" />
                         ))}
@@ -1026,9 +1026,9 @@ export default function AdminPage() {
         .feedback-grid-header { display: grid; grid-template-columns: 1.2fr 1fr 1fr 2fr 4fr; gap: 12px; padding: 10px 16px; background: rgba(255,255,255,0.25); border-bottom: 1px solid var(--color-border); font-size: 11px; font-weight: 700; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.06em; }
         .feedback-grid-row { display: grid; grid-template-columns: 1.2fr 1fr 1fr 2fr 4fr; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--color-border); align-items: start; }
         
-        .badge-category-bug { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 1px 6px; border-radius: 4px; background: rgba(239, 68, 68, 0.15); color: #EF4444; border: 1px solid rgba(239, 68, 68, 0.3); }
-        .badge-category-general { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 1px 6px; border-radius: 4px; background: rgba(148, 163, 184, 0.15); color: #94A3B8; border: 1px solid rgba(148, 163, 184, 0.3); }
-        .badge-category-feature-request { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 1px 6px; border-radius: 4px; background: rgba(59, 130, 246, 0.15); color: #3B82F6; border: 1px solid rgba(59, 130, 246, 0.3); }
+        .badge-category-bug { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 2px 8px; border-radius: var(--radius-pill); background: var(--color-error-bg); color: var(--color-error); border: 1px solid var(--color-error-border); }
+        .badge-category-general { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 2px 8px; border-radius: var(--radius-pill); background: rgba(148, 163, 184, 0.08); color: var(--color-text-muted); border: 1px solid rgba(148, 163, 184, 0.2); }
+        .badge-category-feature-request { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 2px 8px; border-radius: var(--radius-pill); background: var(--color-processing-bg); color: var(--color-processing); border: 1px solid var(--color-processing-border); }
 
         .admin-page { height: 100%; overflow-y: auto; padding: 32px 24px; }
         .admin-inner { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
