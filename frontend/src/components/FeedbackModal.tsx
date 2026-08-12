@@ -155,14 +155,16 @@ export function FeedbackModal() {
                 <label className="feedback-field-label" htmlFor="feedback-email">
                   Your Email Address <span className="feedback-label-optional">(Optional)</span>
                 </label>
-                <input
-                  id="feedback-email"
-                  type="email"
-                  placeholder="name@example.com"
-                  className="feedback-text-input"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                />
+                <div className="feedback-input-wrapper">
+                  <input
+                    id="feedback-email"
+                    type="email"
+                    placeholder="name@example.com"
+                    className="feedback-text-input"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                  />
+                </div>
               </div>
             )}
 
@@ -174,21 +176,23 @@ export function FeedbackModal() {
                   {message.length} / 1000
                 </span>
               </div>
-              <textarea
-                id="feedback-message"
-                required
-                maxLength={1000}
-                placeholder={
-                  category === 'bug'
-                    ? 'What went wrong? Describe how to reproduce the issue...'
-                    : category === 'feature-request'
-                    ? 'What would you like to see? Describe the feature details...'
-                    : 'Tell us what you think or share your ideas...'
-                }
-                className="feedback-textarea-input"
-                value={message}
-                onChange={e => setMessage(e.target.value)}
-              />
+              <div className="feedback-input-wrapper">
+                <textarea
+                  id="feedback-message"
+                  required
+                  maxLength={1000}
+                  placeholder={
+                    category === 'bug'
+                      ? 'What went wrong? Describe how to reproduce the issue...'
+                      : category === 'feature-request'
+                      ? 'What would you like to see? Describe the feature details...'
+                      : 'Tell us what you think or share your ideas...'
+                  }
+                  className="feedback-textarea-input"
+                  value={message}
+                  onChange={e => setMessage(e.target.value)}
+                />
+              </div>
             </div>
 
             <button type="submit" className="feedback-submit-btn" disabled={loading}>
@@ -201,67 +205,78 @@ export function FeedbackModal() {
       <style>{`
         .feedback-modal-overlay {
           position: fixed;
-          top: 0;
-          left: 0;
-          width: 100vw;
-          height: 100vh;
-          background: rgba(15, 23, 42, 0.4);
-          backdrop-filter: blur(8px);
-          z-index: 1000;
+          inset: 0;
+          background: rgba(15, 23, 42, 0.30);
+          backdrop-filter: var(--backdrop-blur);
+          -webkit-backdrop-filter: var(--backdrop-blur);
+          z-index: 9999;
           display: grid;
           place-items: center;
-          padding: 16px;
+          padding: var(--space-4);
+          animation: feedbackFadeIn 0.2s ease-out;
         }
 
         .feedback-modal-card {
           width: 100%;
-          max-width: 480px;
+          max-width: 460px;
           padding: 28px;
           position: relative;
           display: flex;
           flex-direction: column;
           gap: 24px;
-          background: var(--surface);
-          border: 1px solid var(--border);
-          border-radius: var(--radius-lg);
-          box-shadow: var(--shadow-xl);
-          animation: feedbackModalFadeIn 0.25s ease-out;
+          background: var(--color-surface);
+          backdrop-filter: var(--backdrop-blur);
+          -webkit-backdrop-filter: var(--backdrop-blur);
+          border: 1px solid var(--color-border);
+          border-radius: var(--radius-card);
+          box-shadow: var(--shadow-modal);
+          animation: feedbackModalFadeIn 220ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes feedbackFadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
         }
 
         @keyframes feedbackModalFadeIn {
-          from { opacity: 0; transform: translateY(12px); }
-          to { opacity: 1; transform: translateY(0); }
+          from { opacity: 0; transform: scale(0.97) translateY(8px); }
+          to { opacity: 1; transform: scale(1) translateY(0); }
         }
 
         .feedback-close-btn {
           position: absolute;
           top: 16px;
           right: 16px;
-          color: var(--text-3);
-          background: none;
-          border: none;
+          background: rgba(255, 255, 255, 0.20);
+          border: 1px solid var(--color-border);
+          color: var(--color-text-muted);
+          border-radius: 50%;
+          width: 30px;
+          height: 30px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
           cursor: pointer;
-          padding: 6px;
-          border-radius: 99px;
-          transition: background 0.2s, color 0.2s;
+          transition: all var(--transition);
         }
         .feedback-close-btn:hover {
-          background: var(--border);
-          color: var(--text-1);
+          color: var(--color-text-primary);
+          background: rgba(255, 255, 255, 0.50);
+          border-color: var(--color-border-hover);
         }
 
         .feedback-title {
           font-family: var(--font-display);
-          font-size: 22px;
+          font-size: 20px;
           font-weight: 700;
-          color: var(--text-1);
+          color: var(--color-text-primary);
           letter-spacing: -0.02em;
           margin: 0;
         }
 
         .feedback-subtitle {
-          font-size: 13.5px;
-          color: var(--text-3);
+          font-size: 13px;
+          color: var(--color-text-secondary);
           line-height: 1.5;
           margin: 6px 0 0 0;
         }
@@ -270,9 +285,9 @@ export function FeedbackModal() {
           display: flex;
           align-items: center;
           gap: 8px;
-          background: rgba(239, 68, 68, 0.08);
-          border: 1px solid rgba(239, 68, 68, 0.2);
-          color: #ef4444;
+          background: var(--color-error-bg);
+          border: 1px solid var(--color-error-border);
+          color: var(--color-error);
           padding: 10px 14px;
           border-radius: var(--radius-md);
           font-size: 13px;
@@ -285,25 +300,29 @@ export function FeedbackModal() {
         }
 
         .feedback-field-label {
-          font-size: 12.5px;
-          font-weight: 600;
-          color: var(--text-2);
+          font-size: 12px;
+          font-weight: 700;
+          color: var(--color-text-secondary);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
         }
 
         .feedback-label-optional {
           font-weight: 400;
-          color: var(--text-3);
+          color: var(--color-text-muted);
           font-size: 11px;
+          text-transform: none;
+          letter-spacing: normal;
         }
 
         .feedback-category-buttons {
           display: grid;
           grid-template-columns: repeat(3, 1fr);
           gap: 8px;
-          border: 1px solid var(--border);
+          border: 1px solid var(--color-border);
           padding: 4px;
-          border-radius: var(--radius-md);
-          background: rgba(15, 23, 42, 0.02);
+          border-radius: var(--radius-input);
+          background: var(--color-surface-inset);
         }
 
         .feedback-category-btn {
@@ -311,20 +330,20 @@ export function FeedbackModal() {
           background: none;
           padding: 8px;
           font-size: 12px;
-          font-weight: 500;
-          color: var(--text-3);
-          border-radius: var(--radius-sm);
+          font-weight: 600;
+          color: var(--color-text-secondary);
+          border-radius: var(--radius);
           cursor: pointer;
-          transition: background 0.2s, color 0.2s;
+          transition: background var(--transition), color var(--transition);
         }
         .feedback-category-btn:hover {
-          color: var(--text-1);
+          color: var(--color-text-primary);
         }
         .feedback-category-btn.active {
-          background: var(--surface);
-          color: var(--accent);
-          box-shadow: var(--shadow-sm);
-          font-weight: 600;
+          background: var(--gradient-primary);
+          color: var(--color-text-inverse);
+          box-shadow: var(--shadow-btn);
+          font-weight: 800;
         }
 
         .feedback-rating-stars {
@@ -337,28 +356,37 @@ export function FeedbackModal() {
           background: none;
           padding: 4px;
           cursor: pointer;
-          color: var(--text-3);
-          transition: transform 0.15s, color 0.15s;
+          color: var(--color-text-placeholder);
+          transition: transform var(--transition), color var(--transition);
         }
         .feedback-star-btn:hover {
           transform: scale(1.15);
         }
         .feedback-star-btn.active {
-          color: #f59e0b; /* Amber 500 */
+          color: var(--color-warning);
+        }
+
+        .feedback-input-wrapper {
+          position: relative;
+          background: var(--color-surface-inset);
+          border: 1px solid var(--color-border);
+          border-radius: var(--radius-input);
+          transition: border-color var(--transition);
+        }
+        .feedback-input-wrapper:focus-within {
+          border-color: var(--color-border-hover);
+          box-shadow: 0 0 0 1px var(--color-border-hover);
         }
 
         .feedback-text-input {
+          width: 100%;
           padding: 10px 14px;
-          border: 1px solid var(--border);
-          border-radius: var(--radius-md);
-          background: var(--surface);
-          color: var(--text-1);
-          font-size: 13.5px;
+          background: transparent;
+          border: none;
           outline: none;
-          transition: border-color 0.2s;
-        }
-        .feedback-text-input:focus {
-          border-color: var(--accent);
+          color: var(--color-text-primary);
+          font-family: var(--font-body);
+          font-size: 13.5px;
         }
 
         .feedback-textarea-label-row {
@@ -369,52 +397,52 @@ export function FeedbackModal() {
 
         .feedback-char-counter {
           font-size: 11px;
-          color: var(--text-3);
+          color: var(--color-text-muted);
         }
         .feedback-char-counter.limit-warning {
-          color: #f59e0b;
+          color: var(--color-warning);
         }
 
         .feedback-textarea-input {
+          width: 100%;
           padding: 12px 14px;
-          border: 1px solid var(--border);
-          border-radius: var(--radius-md);
-          background: var(--surface);
-          color: var(--text-1);
+          background: transparent;
+          border: none;
+          outline: none;
+          color: var(--color-text-primary);
           font-size: 13.5px;
           min-height: 100px;
           resize: vertical;
-          outline: none;
           font-family: inherit;
           line-height: 1.5;
-          transition: border-color 0.2s;
-        }
-        .feedback-textarea-input:focus {
-          border-color: var(--accent);
         }
 
         .feedback-submit-btn {
-          background: var(--accent);
-          color: #ffffff;
+          background: var(--gradient-primary);
+          color: var(--color-text-inverse);
           padding: 12px;
           border: none;
           border-radius: var(--radius-md);
           font-size: 13.5px;
-          font-weight: 600;
+          font-weight: 700;
           cursor: pointer;
-          transition: opacity 0.2s, background 0.2s;
+          box-shadow: var(--shadow-btn);
+          transition: all var(--transition);
           display: flex;
           justify-content: center;
           align-items: center;
         }
         .feedback-submit-btn:hover {
-          opacity: 0.9;
+          filter: brightness(1.15);
+          transform: translateY(-1px);
         }
         .feedback-submit-btn:disabled {
-          background: var(--border);
-          color: var(--text-3);
+          background: var(--color-border) !important;
+          color: var(--color-text-muted) !important;
+          box-shadow: none !important;
           cursor: not-allowed;
-          opacity: 1;
+          filter: none;
+          transform: none;
         }
 
         .feedback-success-state {
@@ -427,7 +455,7 @@ export function FeedbackModal() {
         }
 
         .feedback-success-icon {
-          color: var(--success);
+          color: var(--color-success);
           animation: feedbackPopIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
@@ -440,13 +468,13 @@ export function FeedbackModal() {
           font-family: var(--font-display);
           font-size: 24px;
           font-weight: 700;
-          color: var(--text-1);
+          color: var(--color-text-primary);
           margin: 0;
         }
 
         .feedback-success-desc {
           font-size: 14px;
-          color: var(--text-2);
+          color: var(--color-text-secondary);
           line-height: 1.6;
           max-width: 320px;
           margin: 0;
