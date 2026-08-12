@@ -267,12 +267,12 @@ export const api = {
   // ── Omnipost (Social Media Publishing) ──────────────────────
   omnipost: {
     getConnections: () =>
-      request<{ success: boolean; data: Array<{ id: string; platform: string; label: string; status: string; created_at: number }> }>('/omnipost/connections'),
+      request<{ success: boolean; data: Array<{ id: string; platform: string; label: string; username?: string | null; status: string; created_at: number }> }>('/omnipost/connections'),
 
-    createConnection: (platform: string, webhookUrl: string, label?: string) =>
-      request<{ success: boolean; data?: { id: string; platform: string; label: string; status: string; created_at: number }; error?: string }>('/omnipost/connections', {
+    createConnection: (platform: string, webhookUrl?: string, label?: string, handle?: string, appPassword?: string) =>
+      request<{ success: boolean; data?: { id: string; platform: string; label: string; username?: string | null; status: string; created_at: number }; error?: string }>('/omnipost/connections', {
         method: 'POST',
-        body: JSON.stringify({ platform, webhookUrl, label }),
+        body: JSON.stringify({ platform, webhookUrl, label, handle, appPassword }),
       }),
 
     publish: (connectionId: string, text: string, mediaUrls?: string[], idempotencyKey?: string) =>

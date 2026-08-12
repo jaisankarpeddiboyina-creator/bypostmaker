@@ -1,24 +1,34 @@
 import { useState, useEffect } from 'react'
-import { Plus, Trash2, CheckCircle2, AlertCircle, Loader2, Link2, ShieldCheck, Zap } from 'lucide-react'
+import { Plus, Trash2, CheckCircle2, AlertCircle, Loader2, Link2, ShieldCheck, Search, X, ChevronRight } from 'lucide-react'
 import { api } from '../lib/api'
 import { useAppStore } from '../store/app'
+import { PlatformIcon } from '../components/PlatformIcon'
+import { PLATFORM_MAP } from '@@config/platforms'
 
 interface Connection {
   id: string
   platform: string
   label: string
+  username?: string | null
   status: string
   created_at: number
 }
 
-// Official Discord Brand Icon Mark
-function DiscordIcon({ size = 22, color = '#5865F2' }: { size?: number; color?: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={color} xmlns="http://www.w3.org/2000/svg">
-      <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
-    </svg>
-  )
-}
+const PLATFORM_GRID_ITEMS = [
+  { id: 'twitter', name: 'X / Twitter', category: 'oauth', color: '#1D9BF0' },
+  { id: 'linkedin', name: 'LinkedIn', category: 'oauth', color: '#0A66C2' },
+  { id: 'mastodon', name: 'Mastodon', category: 'oauth', color: '#6364FF' },
+  { id: 'threads', name: 'Threads', category: 'oauth', color: '#000000' },
+  { id: 'reddit', name: 'Reddit', category: 'oauth', color: '#FF4500' },
+  { id: 'youtube', name: 'YouTube', category: 'oauth', color: '#FF0000' },
+  { id: 'pinterest', name: 'Pinterest', category: 'oauth', color: '#E60023' },
+  { id: 'facebook', name: 'Facebook', category: 'oauth', color: '#1877F2' },
+  { id: 'instagram', name: 'Instagram', category: 'oauth', color: '#E1306C' },
+  { id: 'bluesky', name: 'Bluesky', category: 'credentials', color: '#0085FF' },
+  { id: 'discord', name: 'Discord Webhook', category: 'webhook', color: '#5865F2' },
+  { id: 'slack', name: 'Slack Webhook', category: 'webhook', color: '#4A154B' },
+  { id: 'webhooks', name: 'Generic Webhook', category: 'webhook', color: '#64748B' },
+]
 
 export default function ConnectionsPage() {
   const { addToast } = useAppStore()
@@ -28,9 +38,16 @@ export default function ConnectionsPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
-  // Form State
+  // Search & Filter
+  const [searchQuery, setSearchQuery] = useState('')
+  const [activeTab, setActiveTab] = useState<'all' | 'oauth' | 'webhook' | 'credentials'>('all')
+  const [selectedPlatform, setSelectedPlatform] = useState<typeof PLATFORM_GRID_ITEMS[0] | null>(null)
+
+  // Form States
   const [label, setLabel] = useState('')
   const [webhookUrl, setWebhookUrl] = useState('')
+  const [handle, setHandle] = useState('')
+  const [appPassword, setAppPassword] = useState('')
   const [formError, setFormError] = useState<string | null>(null)
 
   const fetchConnections = async () => {
@@ -51,29 +68,70 @@ export default function ConnectionsPage() {
     fetchConnections()
   }, [])
 
+  const handleTileClick = (plat: typeof PLATFORM_GRID_ITEMS[0]) => {
+    setFormError(null)
+    setLabel('')
+    setWebhookUrl('')
+    setHandle('')
+    setAppPassword('')
+
+    if (plat.category === 'oauth') {
+      window.location.href = `/api/omnipost/oauth/connect?platform=${plat.id}`
+    } else {
+      setSelectedPlatform(plat)
+    }
+  }
+
   const handleAddConnection = async (e: React.FormEvent) => {
     e.preventDefault()
     setFormError(null)
 
-    if (!webhookUrl.trim()) {
+    if (!selectedPlatform) return
+
+    const platform = selectedPlatform.id
+
+    if (selectedPlatform.category === 'webhook' && !webhookUrl.trim()) {
       setFormError('Webhook URL is required')
+      return
+    }
+
+    if (platform === 'bluesky' && (!handle.trim() || !appPassword.trim())) {
+      setFormError('Bluesky Handle and App Password are required')
       return
     }
 
     try {
       setAdding(true)
-      const res = await api.omnipost.createConnection('discord', webhookUrl.trim(), label.trim() || undefined)
-      
+      let res
+      if (platform === 'bluesky') {
+        res = await api.omnipost.createConnection(
+          platform,
+          undefined,
+          label.trim() || undefined,
+          handle.trim(),
+          appPassword.trim()
+        )
+      } else {
+        res = await api.omnipost.createConnection(
+          platform,
+          webhookUrl.trim(),
+          label.trim() || undefined
+        )
+      }
+
       if (res.success && res.data) {
-        addToast('Discord webhook connected successfully!', 'success')
+        addToast(`${selectedPlatform.name} connected successfully!`, 'success')
+        setSelectedPlatform(null)
         setLabel('')
         setWebhookUrl('')
+        setHandle('')
+        setAppPassword('')
         fetchConnections()
       } else {
-        setFormError(res.error || 'Failed to connect webhook')
+        setFormError(res.error || 'Failed to connect account')
       }
     } catch (err: any) {
-      setFormError(err?.message || 'Failed to connect webhook')
+      setFormError(err?.message || 'Failed to connect account')
     } finally {
       setAdding(false)
     }
@@ -97,6 +155,17 @@ export default function ConnectionsPage() {
     }
   }
 
+  const getPlatformName = (platformId: string) => {
+    if (platformId === 'webhooks') return 'Generic Webhook'
+    return PLATFORM_MAP[platformId]?.name || platformId
+  }
+
+  const filteredPlatforms = PLATFORM_GRID_ITEMS.filter(plat => {
+    const matchesSearch = plat.name.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesTab = activeTab === 'all' || plat.category === activeTab
+    return matchesSearch && matchesTab
+  })
+
   return (
     <div className="connections-page-container">
       {/* Header Banner */}
@@ -107,188 +176,314 @@ export default function ConnectionsPage() {
         </div>
       </div>
 
-      {/* Overview Stat Cards */}
-      <div className="stat-cards-grid">
-        <div className="glass-card stat-card">
-          <div className="stat-icon-wrapper primary">
-            <Link2 size={20} />
-          </div>
-          <div>
-            <span className="stat-value">{connections.length}</span>
-            <span className="stat-label">Connected Webhooks</span>
-          </div>
-        </div>
-
-        <div className="glass-card stat-card">
-          <div className="stat-icon-wrapper success">
-            <CheckCircle2 size={20} />
-          </div>
-          <div>
-            <span className="stat-value">100%</span>
-            <span className="stat-label">Delivery Health</span>
-          </div>
-        </div>
-
-        <div className="glass-card stat-card">
-          <div className="stat-icon-wrapper info">
-            <ShieldCheck size={20} />
-          </div>
-          <div>
-            <span className="stat-value">Secure</span>
-            <span className="stat-label">Isolated Auth Scope</span>
-          </div>
-        </div>
-      </div>
-
       {/* Main Content Layout */}
       <div className="connections-content-grid">
-        {/* Left Column: Connected Channels List */}
-        <div className="glass-card connections-list-card">
-          <div className="list-header">
-            <h2 className="section-title">Your Connected Accounts</h2>
-            <span className="channel-count-badge">{connections.length} Active</span>
-          </div>
-
-          {loading ? (
-            <div className="loading-state">
-              <Loader2 size={28} className="animate-spin text-primary" />
-              <span>Loading saved channels...</span>
+        {/* Left Column: Explorer Grid & Active Connections */}
+        <div className="left-column-container">
+          
+          {/* Active Connections List */}
+          <div className="glass-card connections-list-card">
+            <div className="list-header">
+              <h2 className="section-title">Your Connected Accounts</h2>
+              <span className="channel-count-badge">{connections.length} Active</span>
             </div>
-          ) : connections.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-icon-circle">
-                <DiscordIcon size={32} color="#5865F2" />
+
+            {loading ? (
+              <div className="loading-state">
+                <Loader2 size={28} className="animate-spin text-primary" />
+                <span>Loading saved channels...</span>
               </div>
-              <h3>No Channels Connected Yet</h3>
-              <p>Add a Discord Webhook URL on the right to start publishing directly from PostMaker.</p>
-            </div>
-          ) : (
-            <div className="connections-list">
-              {connections.map(item => (
-                <div key={item.id} className="connection-row-item">
-                  <div className="connection-platform-info">
-                    <div className="platform-icon-badge discord">
-                      <DiscordIcon size={24} color="#ffffff" />
-                    </div>
-                    <div className="connection-text-details">
-                      <div className="connection-title-row">
-                        <span className="connection-platform-name">Discord</span>
-                        <span className="connection-status-tag connected">Connected</span>
-                      </div>
-                      <span className="connection-label-text">{item.label || 'Discord Channel'}</span>
-                      <span className="connection-date-text">
-                        Added {new Date(item.created_at * 1000).toLocaleDateString()}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Actions / Confirmation */}
-                  <div className="connection-actions">
-                    {confirmDeleteId === item.id ? (
-                      <div className="confirm-delete-group">
-                        <span className="confirm-text">Remove?</span>
-                        <button
-                          type="button"
-                          className="btn-danger-xs"
-                          disabled={deletingId === item.id}
-                          onClick={() => handleDeleteConnection(item.id)}
-                        >
-                          {deletingId === item.id ? <Loader2 size={12} className="animate-spin" /> : 'Yes, Delete'}
-                        </button>
-                        <button
-                          type="button"
-                          className="btn-secondary-xs"
-                          onClick={() => setConfirmDeleteId(null)}
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        className="btn-icon-remove"
-                        title="Remove connection"
-                        onClick={() => setConfirmDeleteId(item.id)}
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    )}
-                  </div>
+            ) : connections.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-icon-circle">
+                  <Link2 size={32} className="text-secondary" />
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+                <h3>No Channels Connected Yet</h3>
+                <p>Select a platform below or add a Webhook on the right to start publishing directly from PostMaker.</p>
+              </div>
+            ) : (
+              <div className="connections-list">
+                {connections.map(item => {
+                  const brandColor = PLATFORM_MAP[item.platform]?.brandColor || '#64748B'
+                  return (
+                    <div key={item.id} className="connection-row-item">
+                      <div className="connection-platform-info">
+                        <div className="platform-icon-badge" style={{ backgroundColor: brandColor }}>
+                          <PlatformIcon id={item.platform} size={20} color="#ffffff" useBrandColor={false} />
+                        </div>
+                        <div className="connection-text-details">
+                          <div className="connection-title-row">
+                            <span className="connection-platform-name">{getPlatformName(item.platform)}</span>
+                            <span className="connection-status-tag connected">Connected</span>
+                          </div>
+                          {item.username && (
+                            <span className="connection-handle-text">{item.username}</span>
+                          )}
+                          <span className="connection-label-text">{item.label}</span>
+                          <span className="connection-date-text">
+                            Added {new Date(item.created_at * 1000).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
 
-        {/* Right Column: Add Webhook Form */}
-        <div className="glass-card add-connection-card">
-          <div className="form-card-header">
-            <div className="form-header-icon">
-              <DiscordIcon size={22} color="#ffffff" />
-            </div>
-            <div>
-              <h2 className="section-title">Add Discord Webhook</h2>
-              <p className="form-subtitle">Connect a channel using a Discord Webhook URL.</p>
-            </div>
-          </div>
-
-          <form onSubmit={handleAddConnection} className="add-connection-form">
-            {formError && (
-              <div className="form-error-alert">
-                <AlertCircle size={16} className="error-icon" />
-                <span>{formError}</span>
+                      {/* Actions / Confirmation */}
+                      <div className="connection-actions">
+                        {confirmDeleteId === item.id ? (
+                          <div className="confirm-delete-group">
+                            <span className="confirm-text">Remove?</span>
+                            <button
+                              type="button"
+                              className="btn-danger-xs"
+                              disabled={deletingId === item.id}
+                              onClick={() => handleDeleteConnection(item.id)}
+                            >
+                              {deletingId === item.id ? <Loader2 size={12} className="animate-spin" /> : 'Yes, Delete'}
+                            </button>
+                            <button
+                              type="button"
+                              className="btn-secondary-xs"
+                              onClick={() => setConfirmDeleteId(null)}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            className="btn-icon-remove"
+                            title="Remove connection"
+                            onClick={() => setConfirmDeleteId(item.id)}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             )}
-
-            <div className="form-group">
-              <label htmlFor="conn-label" className="form-label">Channel Label (Optional)</label>
-              <input
-                id="conn-label"
-                type="text"
-                className="form-input"
-                placeholder="e.g. #announcements or Production Channel"
-                value={label}
-                onChange={e => setLabel(e.target.value)}
-                disabled={adding}
-                maxLength={50}
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="webhook-url" className="form-label">Discord Webhook URL *</label>
-              <input
-                id="webhook-url"
-                type="url"
-                className="form-input"
-                placeholder="https://discord.com/api/webhooks/..."
-                value={webhookUrl}
-                onChange={e => setWebhookUrl(e.target.value)}
-                disabled={adding}
-                required
-              />
-              <span className="form-hint">Obtain from Discord Channel Settings → Integrations → Webhooks</span>
-            </div>
-
-            <button type="submit" className="btn btn-primary w-full btn-connect" disabled={adding}>
-              {adding ? (
-                <>
-                  <Loader2 size={16} className="animate-spin" />
-                  <span>Validating Webhook...</span>
-                </>
-              ) : (
-                <>
-                  <Plus size={16} />
-                  <span>Connect Channel</span>
-                </>
-              )}
-            </button>
-          </form>
-
-          {/* Help Teaser */}
-          <div className="security-notice-footer">
-            <ShieldCheck size={14} className="text-primary" />
-            <span>Webhook URLs are stored securely and SSRF-validated on Cloudflare D1.</span>
           </div>
+
+          {/* Platform Explorer Grid Card */}
+          <div className="glass-card explorer-card">
+            <div className="explorer-header">
+              <h2 className="section-title">Add New Connection</h2>
+              <p className="explorer-subtitle">Choose a platform to authenticate via OAuth, Webhook, or Credentials.</p>
+            </div>
+
+            {/* Filter controls */}
+            <div className="controls-row">
+              <div className="search-box-wrapper">
+                <Search size={16} className="search-icon" />
+                <input
+                  type="text"
+                  placeholder="Search platforms..."
+                  className="search-input-field"
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                />
+                {searchQuery && (
+                  <button className="search-clear-btn" onClick={() => setSearchQuery('')}>
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+
+              <div className="category-tabs-row">
+                <button
+                  type="button"
+                  className={`tab-btn ${activeTab === 'all' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('all')}
+                >
+                  All
+                </button>
+                <button
+                  type="button"
+                  className={`tab-btn ${activeTab === 'oauth' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('oauth')}
+                >
+                  OAuth
+                </button>
+                <button
+                  type="button"
+                  className={`tab-btn ${activeTab === 'webhook' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('webhook')}
+                >
+                  Webhooks
+                </button>
+                <button
+                  type="button"
+                  className={`tab-btn ${activeTab === 'credentials' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('credentials')}
+                >
+                  Credentials
+                </button>
+              </div>
+            </div>
+
+            {/* Platforms Grid */}
+            <div className="platforms-grid">
+              {filteredPlatforms.map(plat => (
+                <button
+                  key={plat.id}
+                  type="button"
+                  className="platform-tile-btn"
+                  onClick={() => handleTileClick(plat)}
+                >
+                  <div className="tile-icon-badge" style={{ backgroundColor: plat.color }}>
+                    <PlatformIcon id={plat.id} size={22} color="#ffffff" useBrandColor={false} />
+                  </div>
+                  <span className="tile-platform-name">{plat.name}</span>
+                  <ChevronRight size={14} className="tile-arrow" />
+                </button>
+              ))}
+              {filteredPlatforms.length === 0 && (
+                <div className="no-platforms-found">
+                  No platforms match "{searchQuery}"
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Connection Configuration form */}
+        <div className="right-column-container">
+          {selectedPlatform ? (
+            <div className="glass-card add-connection-card">
+              <div className="form-card-header">
+                <div className="form-header-icon" style={{ backgroundColor: selectedPlatform.color }}>
+                  <PlatformIcon id={selectedPlatform.id} size={22} color="#ffffff" useBrandColor={false} />
+                </div>
+                <div>
+                  <h2 className="section-title">Connect {selectedPlatform.name}</h2>
+                  <p className="form-subtitle">
+                    {selectedPlatform.category === 'webhook'
+                      ? 'Configure a direct push channel integration.'
+                      : 'Provide your account login credentials.'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="btn-close-form"
+                  onClick={() => setSelectedPlatform(null)}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <form onSubmit={handleAddConnection} className="add-connection-form">
+                {formError && (
+                  <div className="form-error-alert">
+                    <AlertCircle size={16} className="error-icon" />
+                    <span>{formError}</span>
+                  </div>
+                )}
+
+                <div className="form-group">
+                  <label htmlFor="conn-label" className="form-label">Connection Name / Label *</label>
+                  <input
+                    id="conn-label"
+                    type="text"
+                    className="form-input"
+                    placeholder={`e.g. My ${selectedPlatform.name}`}
+                    value={label}
+                    onChange={e => setLabel(e.target.value)}
+                    disabled={adding}
+                    maxLength={50}
+                    required
+                  />
+                </div>
+
+                {selectedPlatform.category === 'webhook' && (
+                  <div className="form-group">
+                    <label htmlFor="webhook-url" className="form-label">Webhook URL *</label>
+                    <input
+                      id="webhook-url"
+                      type="url"
+                      className="form-input"
+                      placeholder="https://..."
+                      value={webhookUrl}
+                      onChange={e => setWebhookUrl(e.target.value)}
+                      disabled={adding}
+                      required
+                    />
+                    <span className="form-hint">
+                      {selectedPlatform.id === 'discord'
+                        ? 'Discord Settings → Integrations → Webhooks'
+                        : selectedPlatform.id === 'slack'
+                        ? 'Slack App Directory → Incoming Webhooks'
+                        : 'Specify any target webhook HTTP POST URL.'}
+                    </span>
+                  </div>
+                )}
+
+                {selectedPlatform.id === 'bluesky' && (
+                  <>
+                    <div className="form-group">
+                      <label htmlFor="bsky-handle" className="form-label">Bluesky Handle *</label>
+                      <input
+                        id="bsky-handle"
+                        type="text"
+                        className="form-input"
+                        placeholder="username.bsky.social"
+                        value={handle}
+                        onChange={e => setHandle(e.target.value)}
+                        disabled={adding}
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor="bsky-password" className="form-label">App Password *</label>
+                      <input
+                        id="bsky-password"
+                        type="password"
+                        className="form-input"
+                        placeholder="xxxx-xxxx-xxxx-xxxx"
+                        value={appPassword}
+                        onChange={e => setAppPassword(e.target.value)}
+                        disabled={adding}
+                        required
+                      />
+                      <span className="form-hint">
+                        Bluesky Settings → App Passwords → Generate App Password.
+                      </span>
+                    </div>
+                  </>
+                )}
+
+                <button type="submit" className="btn btn-primary w-full btn-connect" disabled={adding}>
+                  {adding ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      <span>Validating credentials...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Plus size={16} />
+                      <span>Connect Integration</span>
+                    </>
+                  )}
+                </button>
+              </form>
+
+              {/* Help & Vault Info */}
+              <div className="security-notice-footer">
+                <ShieldCheck size={16} className="text-success-icon" />
+                <span className="notice-text">
+                  Vault secrets are envelope-encrypted with WebCrypto AES-GCM and stored securely on Cloudflare D1.
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="glass-card configure-placeholder-card">
+              <ShieldCheck size={48} className="placeholder-shield-icon" />
+              <h3>Secure Connections</h3>
+              <p>
+                Select any platform on the left to begin configuring its webhook or credentials integrations. OAuth connections will authenticate securely through their provider screens.
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -323,70 +518,40 @@ export default function ConnectionsPage() {
           margin-top: 4px;
         }
 
-        /* Stat Cards Grid */
-        .stat-cards-grid {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 16px;
-        }
-
-        .stat-card {
-          padding: 16px 20px;
-          display: flex;
-          align-items: center;
-          gap: 16px;
-        }
-
-        .stat-icon-wrapper {
-          width: 42px;
-          height: 42px;
-          border-radius: var(--radius-md);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-        }
-
-        .stat-icon-wrapper.primary {
-          background: rgba(56, 189, 248, 0.12);
-          color: #38BDF8;
-        }
-
-        .stat-icon-wrapper.success {
-          background: rgba(34, 197, 94, 0.12);
-          color: #22C55E;
-        }
-
-        .stat-icon-wrapper.info {
-          background: rgba(168, 85, 247, 0.12);
-          color: #A855F7;
-        }
-
-        .stat-value {
-          display: block;
-          font-size: 20px;
-          font-weight: 800;
-          color: var(--color-text-primary);
-        }
-
-        .stat-label {
-          font-size: 12px;
-          color: var(--color-text-secondary);
-        }
-
-        /* Main Content Grid */
+        /* Main Content Layout Grid */
         .connections-content-grid {
           display: grid;
-          grid-template-columns: 1fr 400px;
+          grid-template-columns: 1fr 420px;
           gap: 24px;
           align-items: start;
         }
 
-        .connections-list-card, .add-connection-card {
-          padding: 24px;
+        .left-column-container {
+          display: flex;
+          flex-direction: column;
+          gap: 24px;
         }
 
-        .list-header {
+        .right-column-container {
+          position: sticky;
+          top: 24px;
+        }
+
+        .glass-card {
+          background: rgba(255, 255, 255, 0.03);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border: 1px solid var(--color-border);
+          border-radius: var(--radius-lg);
+          padding: 24px;
+          transition: border-color var(--transition);
+        }
+
+        .glass-card:hover {
+          border-color: var(--color-border-hover);
+        }
+
+        .list-header, .explorer-header {
           display: flex;
           align-items: center;
           justify-content: space-between;
@@ -421,7 +586,7 @@ export default function ConnectionsPage() {
         }
 
         .empty-state {
-          padding: 48px 24px;
+          padding: 40px 20px;
           text-align: center;
           display: flex;
           flex-direction: column;
@@ -433,14 +598,14 @@ export default function ConnectionsPage() {
           width: 56px;
           height: 56px;
           border-radius: 50%;
-          background: rgba(88, 101, 242, 0.12);
+          background: rgba(255, 255, 255, 0.05);
           display: flex;
           align-items: center;
           justify-content: center;
         }
 
         .empty-state h3 {
-          font-size: 16px;
+          font-size: 15px;
           font-weight: 700;
           color: var(--color-text-primary);
         }
@@ -448,11 +613,11 @@ export default function ConnectionsPage() {
         .empty-state p {
           font-size: 13px;
           color: var(--color-text-secondary);
-          max-width: 340px;
+          max-width: 380px;
           line-height: 1.5;
         }
 
-        /* Connections List Rows */
+        /* Connections List */
         .connections-list {
           display: flex;
           flex-direction: column;
@@ -464,14 +629,14 @@ export default function ConnectionsPage() {
           align-items: center;
           justify-content: space-between;
           padding: 14px 16px;
-          background: rgba(255, 255, 255, 0.04);
+          background: rgba(255, 255, 255, 0.02);
           border: 1px solid var(--color-border);
           border-radius: var(--radius-md);
           transition: all var(--transition);
         }
 
         .connection-row-item:hover {
-          background: rgba(255, 255, 255, 0.08);
+          background: rgba(255, 255, 255, 0.06);
           border-color: var(--color-border-hover);
         }
 
@@ -479,6 +644,7 @@ export default function ConnectionsPage() {
           display: flex;
           align-items: center;
           gap: 14px;
+          min-width: 0;
         }
 
         .platform-icon-badge {
@@ -491,15 +657,11 @@ export default function ConnectionsPage() {
           flex-shrink: 0;
         }
 
-        .platform-icon-badge.discord {
-          background: #5865F2;
-          box-shadow: 0 4px 12px rgba(88, 101, 242, 0.3);
-        }
-
         .connection-text-details {
           display: flex;
           flex-direction: column;
           gap: 2px;
+          min-width: 0;
         }
 
         .connection-title-row {
@@ -526,18 +688,33 @@ export default function ConnectionsPage() {
           color: #22C55E;
         }
 
+        .connection-handle-text {
+          font-size: 12px;
+          font-weight: 600;
+          color: var(--color-primary-start);
+          margin-top: 1px;
+        }
+
         .connection-label-text {
           font-size: 13px;
-          font-weight: 600;
-          color: var(--color-text-primary);
+          font-weight: 500;
+          color: var(--color-text-secondary);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
 
         .connection-date-text {
-          font-size: 11.5px;
+          font-size: 11px;
           color: var(--color-text-secondary);
+          opacity: 0.7;
         }
 
-        /* Actions & Confirm Delete */
+        .connection-actions {
+          flex-shrink: 0;
+          margin-left: 12px;
+        }
+
         .btn-icon-remove {
           background: transparent;
           border: none;
@@ -560,7 +737,7 @@ export default function ConnectionsPage() {
         }
 
         .confirm-text {
-          font-size: 12px;
+          font-size: 11.5px;
           font-weight: 600;
           color: #EF4444;
         }
@@ -571,7 +748,7 @@ export default function ConnectionsPage() {
           border: none;
           padding: 4px 10px;
           border-radius: 4px;
-          font-size: 11.5px;
+          font-size: 11px;
           font-weight: 600;
           cursor: pointer;
         }
@@ -582,11 +759,162 @@ export default function ConnectionsPage() {
           border: 1px solid var(--color-border);
           padding: 4px 8px;
           border-radius: 4px;
-          font-size: 11.5px;
+          font-size: 11px;
           cursor: pointer;
         }
 
-        /* Add Webhook Form Card */
+        /* Explorer Grid Controls */
+        .explorer-subtitle {
+          font-size: 12.5px;
+          color: var(--color-text-secondary);
+          margin-top: 2px;
+        }
+
+        .controls-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          margin-bottom: 20px;
+        }
+
+        .search-box-wrapper {
+          position: relative;
+          flex: 1;
+        }
+
+        .search-icon {
+          position: absolute;
+          left: 12px;
+          top: 50%;
+          transform: translateY(-50%);
+          color: var(--color-text-secondary);
+        }
+
+        .search-input-field {
+          width: 100%;
+          padding: 8px 36px 8px 36px;
+          background: rgba(15, 23, 42, 0.4);
+          border: 1px solid var(--color-border);
+          border-radius: var(--radius-md);
+          color: var(--color-text-primary);
+          font-size: 13px;
+          outline: none;
+          transition: all var(--transition);
+        }
+
+        .search-input-field:focus {
+          border-color: var(--color-primary-start);
+        }
+
+        .search-clear-btn {
+          position: absolute;
+          right: 12px;
+          top: 50%;
+          transform: translateY(-50%);
+          background: transparent;
+          border: none;
+          color: var(--color-text-secondary);
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .category-tabs-row {
+          display: flex;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid var(--color-border);
+          border-radius: var(--radius-md);
+          padding: 3px;
+          gap: 2px;
+        }
+
+        .tab-btn {
+          background: transparent;
+          border: none;
+          color: var(--color-text-secondary);
+          padding: 6px 14px;
+          font-size: 12px;
+          font-weight: 600;
+          border-radius: 4px;
+          cursor: pointer;
+          transition: all var(--transition);
+        }
+
+        .tab-btn:hover {
+          color: var(--color-text-primary);
+        }
+
+        .tab-btn.active {
+          background: rgba(255, 255, 255, 0.08);
+          color: var(--color-text-primary);
+        }
+
+        /* Platforms Grid */
+        .platforms-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+          gap: 12px;
+        }
+
+        .platform-tile-btn {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 12px 14px;
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid var(--color-border);
+          border-radius: var(--radius-md);
+          cursor: pointer;
+          text-align: left;
+          transition: all var(--transition);
+          width: 100%;
+        }
+
+        .platform-tile-btn:hover {
+          background: rgba(255, 255, 255, 0.06);
+          border-color: var(--color-border-hover);
+          transform: translateY(-1px);
+        }
+
+        .tile-icon-badge {
+          width: 32px;
+          height: 32px;
+          border-radius: var(--radius-sm);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+
+        .tile-platform-name {
+          font-size: 13px;
+          font-weight: 600;
+          color: var(--color-text-primary);
+          flex: 1;
+        }
+
+        .tile-arrow {
+          color: var(--color-text-secondary);
+          opacity: 0.5;
+          transition: transform var(--transition);
+        }
+
+        .platform-tile-btn:hover .tile-arrow {
+          opacity: 1;
+          transform: translateX(2px);
+        }
+
+        .no-platforms-found {
+          grid-column: 1 / -1;
+          text-align: center;
+          padding: 30px;
+          color: var(--color-text-secondary);
+          font-size: 13px;
+        }
+
+        /* Add connection card configuration */
         .form-card-header {
           display: flex;
           align-items: center;
@@ -594,23 +922,35 @@ export default function ConnectionsPage() {
           padding-bottom: 16px;
           border-bottom: 1px solid var(--color-border);
           margin-bottom: 20px;
+          position: relative;
         }
 
         .form-header-icon {
           width: 36px;
           height: 36px;
           border-radius: var(--radius-md);
-          background: #5865F2;
           display: flex;
           align-items: center;
           justify-content: center;
           flex-shrink: 0;
         }
 
-        .form-subtitle {
-          font-size: 12.5px;
+        .btn-close-form {
+          position: absolute;
+          right: 0;
+          top: 0;
+          background: transparent;
+          border: none;
           color: var(--color-text-secondary);
-          margin-top: 2px;
+          cursor: pointer;
+          padding: 4px;
+          border-radius: var(--radius-sm);
+          transition: all var(--transition);
+        }
+
+        .btn-close-form:hover {
+          color: var(--color-text-primary);
+          background: rgba(255, 255, 255, 0.05);
         }
 
         .add-connection-form {
@@ -644,6 +984,7 @@ export default function ConnectionsPage() {
         }
 
         .form-input {
+          width: 100%;
           padding: 10px 14px;
           background: rgba(15, 23, 42, 0.4);
           border: 1px solid var(--color-border);
@@ -662,31 +1003,72 @@ export default function ConnectionsPage() {
         .form-hint {
           font-size: 11px;
           color: var(--color-text-secondary);
-          line-height: 1.3;
+          line-height: 1.4;
+          margin-top: 2px;
         }
 
         .btn-connect {
           margin-top: 6px;
         }
 
+        /* Security footer */
         .security-notice-footer {
           margin-top: 20px;
           padding-top: 14px;
           border-top: 1px solid var(--color-border);
           display: flex;
-          align-items: center;
+          align-items: flex-start;
           gap: 8px;
+        }
+
+        .text-success-icon {
+          color: #22C55E;
+          flex-shrink: 0;
+          margin-top: 1px;
+        }
+
+        .notice-text {
           font-size: 11.5px;
           color: var(--color-text-secondary);
           line-height: 1.4;
+        }
+
+        /* Configure placeholder */
+        .configure-placeholder-card {
+          padding: 48px 24px;
+          text-align: center;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 16px;
+          min-height: 320px;
+        }
+
+        .placeholder-shield-icon {
+          color: var(--color-text-secondary);
+          opacity: 0.3;
+        }
+
+        .configure-placeholder-card h3 {
+          font-size: 16px;
+          font-weight: 700;
+          color: var(--color-text-primary);
+        }
+
+        .configure-placeholder-card p {
+          font-size: 13px;
+          color: var(--color-text-secondary);
+          line-height: 1.6;
+          max-width: 320px;
         }
 
         @media (max-width: 1024px) {
           .connections-content-grid {
             grid-template-columns: 1fr;
           }
-          .stat-cards-grid {
-            grid-template-columns: 1fr;
+          .right-column-container {
+            position: static;
           }
         }
       `}</style>
