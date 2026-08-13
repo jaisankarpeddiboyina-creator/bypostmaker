@@ -170,6 +170,7 @@ export function ResultsView() {
                     imageFiles={imageFiles}
                     videoFile={videoFile}
                     onOpenRefinement={() => setActivePlatformId(activePlatformId === id ? null : id)}
+                    isRefining={activePlatformId === id}
                   />
                 )
               })}
