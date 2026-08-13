@@ -219,3 +219,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
   showFeedbackModal: false,
   setShowFeedbackModal: (v) => set({ showFeedbackModal: v }),
 }))
+
+// Dev-only: expose store to window so test/reproduction scripts can inject state.
+// Vite strips this block entirely in production builds (import.meta.env.DEV = false → dead code).
+if (import.meta.env.DEV) {
+  ;(window as any).__useAppStore__ = useAppStore
+}

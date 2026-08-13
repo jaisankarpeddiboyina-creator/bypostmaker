@@ -84,7 +84,11 @@ if (typeof window !== 'undefined' && window.URL && !((window.URL as any).__postm
   ;(window.URL as any).__postmakerPatched = true
 }
 
-function PostCardBase(props: CardProps) {
+interface PostCardProps extends CardProps {
+  isRefining?: boolean
+}
+
+function PostCardBase(props: PostCardProps) {
   const { updatePost, addToast } = useAppStore()
   const retryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -157,15 +161,18 @@ function PostCardBase(props: CardProps) {
       })
 
   return (
-    <Suspense fallback={<CardFallback />}>
-      <CardComponent {...props} imageFiles={imageFiles} />
-    </Suspense>
+    <div className={`post-card ${props.isRefining ? 'is-refining' : ''}`}>
+      <Suspense fallback={<CardFallback />}>
+        <CardComponent {...props} imageFiles={imageFiles} />
+      </Suspense>
+    </div>
   )
 }
 
 export const PostCard = memo(PostCardBase, (prev, next) => {
   return (
     prev.platformId === next.platformId &&
+    prev.isRefining === next.isRefining &&
     prev.post.content === next.post.content &&
     prev.post.edited === next.post.edited &&
     prev.post.status === next.post.status &&
@@ -177,3 +184,4 @@ export const PostCard = memo(PostCardBase, (prev, next) => {
     (prev.imageUrls || []).join(',') === (next.imageUrls || []).join(',')
   )
 })
+
