@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react'
 import {
   Search, Loader2, Video, Sparkles, ChevronLeft, ChevronRight,
   Copy, Info, X, AlertCircle, RefreshCw, Image as ImageIcon,
-  Music, Type, Grid3X3, Shield, ExternalLink
+  Music, Type, Grid3X3, Shield, ExternalLink, Volume2, VolumeX
 } from 'lucide-react'
 import { useAppStore } from '../store/app'
 
@@ -62,8 +62,42 @@ function setCache(key: string, data: ApiResponse): void {
 
 // ── Robust Cross-Browser Video Player ─────────────────────────
 function StockVideoPlayer({ src, poster, title }: { src: string; poster?: string; title: string }) {
+  const videoRef = useRef<HTMLVideoElement>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
+  const [isMuted, setIsMuted] = useState(false)
+  const [showUnmuteHint, setShowUnmuteHint] = useState(false)
+
+  const handleLoadedData = () => {
+    setLoading(false)
+    const video = videoRef.current
+    if (!video) return
+
+    // Attempt unmuted playback first since user clicked to open lightbox
+    video.muted = false
+    setIsMuted(false)
+    const playPromise = video.play()
+
+    if (playPromise !== undefined) {
+      playPromise.catch(() => {
+        // Browser blocked unmuted autoplay policy — mute and retry
+        if (videoRef.current) {
+          videoRef.current.muted = true
+          setIsMuted(true)
+          setShowUnmuteHint(true)
+          videoRef.current.play().catch(() => {})
+        }
+      })
+    }
+  }
+
+  const toggleMute = () => {
+    if (!videoRef.current) return
+    const nextState = !videoRef.current.muted
+    videoRef.current.muted = nextState
+    setIsMuted(nextState)
+    if (!nextState) setShowUnmuteHint(false)
+  }
 
   return (
     <div className="stock-video-player-container">
@@ -73,6 +107,28 @@ function StockVideoPlayer({ src, poster, title }: { src: string; poster?: string
           <span>Loading video stream...</span>
         </div>
       )}
+
+      {/* Floating Audio Controls */}
+      {!loading && !error && (
+        <div className="stock-video-audio-controls">
+          {showUnmuteHint && isMuted && (
+            <button className="stock-unmute-chip glass-card" onClick={toggleMute} type="button">
+              <VolumeX size={14} />
+              <span>Click to Unmute Audio</span>
+            </button>
+          )}
+
+          <button
+            className="stock-video-mute-btn glass-card"
+            onClick={toggleMute}
+            type="button"
+            title={isMuted ? 'Unmute Audio' : 'Mute Audio'}
+          >
+            {isMuted ? <VolumeX size={15} /> : <Volume2 size={15} />}
+          </button>
+        </div>
+      )}
+
       {error ? (
         <div className="stock-video-error glass-card">
           <AlertCircle size={28} className="error-icon" />
@@ -92,18 +148,17 @@ function StockVideoPlayer({ src, poster, title }: { src: string; poster?: string
         </div>
       ) : (
         <video
+          ref={videoRef}
           poster={poster}
           controls
-          autoPlay
           loop
-          muted
           playsInline
           preload="auto"
           {...({ referrerPolicy: 'no-referrer' } as any)}
           className="lightbox-video"
           onLoadStart={() => setLoading(true)}
           onCanPlay={() => setLoading(false)}
-          onLoadedData={() => setLoading(false)}
+          onLoadedData={handleLoadedData}
           onError={() => {
             setLoading(false)
             setError(true)
@@ -1341,6 +1396,56 @@ export default function AssetsPage() {
           background: rgba(0, 0, 0, 0.25);
           border-radius: var(--radius-sm);
           overflow: hidden;
+        }
+
+        .stock-video-audio-controls {
+          position: absolute;
+          top: 14px;
+          right: 14px;
+          z-index: 5;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .stock-unmute-chip {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 6px 12px;
+          font-size: 12px;
+          font-weight: 700;
+          color: white;
+          background: rgba(56, 189, 248, 0.9) !important;
+          border: 1px solid rgba(255, 255, 255, 0.4);
+          border-radius: var(--radius-pill);
+          cursor: pointer;
+          transition: all 160ms ease;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        }
+
+        .stock-unmute-chip:hover {
+          background: #0284C7 !important;
+          transform: translateY(-1px);
+        }
+
+        .stock-video-mute-btn {
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          background: rgba(15, 23, 42, 0.6) !important;
+          border: 1px solid rgba(255, 255, 255, 0.25);
+          cursor: pointer;
+          transition: all 160ms ease;
+        }
+
+        .stock-video-mute-btn:hover {
+          background: rgba(15, 23, 42, 0.85) !important;
+          transform: scale(1.05);
         }
 
         .stock-video-loading {
