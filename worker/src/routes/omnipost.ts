@@ -1,4 +1,14 @@
 import type { Env } from '../../../config/ai'
+import { Dispatcher } from '../omnipost/core/dispatcher'
+import { AdapterRegistry } from '../omnipost/core/registry'
+import { EventBus } from '../omnipost/core/events'
+import { D1VaultStorage } from '../omnipost/storage/d1Vault'
+import { D1IdempotencyStore } from '../omnipost/storage/d1Idempotency'
+import { D1RateLimiter } from '../omnipost/storage/d1RateLimiter'
+import { MemoryClaimStore } from '../omnipost/storage/d1ClaimStore'
+import { DiscordAdapter } from '../omnipost/adapters/discord/DiscordAdapter'
+import { MastodonAdapter } from '../omnipost/adapters/mastodon/MastodonAdapter'
+
 
 const DISCORD_WEBHOOK_REGEX = /^https:\/\/(discord\.com|discordapp\.com)\/api\/webhooks\/\d+\/[A-Za-z0-9_-]+$/;
 const SLACK_WEBHOOK_REGEX = /^https:\/\/hooks\.slack\.com\/services\/[A-Za-z0-9_]+\/[A-Za-z0-9_]+\/[A-Za-z0-9_]+$/;
@@ -768,11 +778,70 @@ export async function handleOmnipost(request: Request, env: Env, userId: string)
         return Response.json({ success: false, error: 'Failed to decrypt connection credentials', code: 'DECRYPTION_ERROR' }, { status: 500 });
       }
 
-      // ── Webhook Bypass (Immediate routing) ──────────────────────
-      const WEBHOOK_PLATFORMS = ['discord', 'slack', 'webhooks'];
+      // ── Dispatch via Omnipost Engine (Discord & Mastodon) ────────
+      if (connection.platform === 'discord' || connection.platform === 'mastodon') {
+        const registry = new AdapterRegistry();
+        registry.register(new DiscordAdapter());
+        registry.register(new MastodonAdapter());
+        const bus = new EventBus();
+
+        const vault = new D1VaultStorage(env.DB, masterKey);
+        const idempotencyStore = new D1IdempotencyStore(env.DB);
+        const rateLimiter = new D1RateLimiter(env.DB);
+        const claimStore = new MemoryClaimStore();
+
+        const dispatcher = new Dispatcher(registry, bus, vault, idempotencyStore, rateLimiter, claimStore);
+
+        const unifiedPost = {
+          id: idempotencyKey,
+          userId,
+          text: textContent,
+          media: content?.mediaUrls?.map((url, index) => ({
+            id: `media-${index}`,
+            url,
+            type: 'image' as const,
+          })),
+        };
+
+        const result = await dispatcher.dispatch(unifiedPost, connection.platform);
+
+        const updateNow = Math.floor(Date.now() / 1000);
+        if (result.success) {
+          await env.DB.prepare(
+            `UPDATE omnipost_deliveries SET status = 'success', platform_post_id = ?, url = ?, updated_at = ? WHERE id = ?`
+          ).bind(result.platformPostId || null, result.url || null, updateNow, targetDeliveryId).run();
+
+          return Response.json({
+            success: true,
+            data: {
+              deliveryId: targetDeliveryId,
+              connectionId,
+              status: 'success',
+              platformPostId: result.platformPostId,
+              url: result.url,
+            }
+          });
+        } else {
+          const errCode = result.error?.code || 'DISPATCH_FAILED';
+          const errMsg = result.error?.message || 'Publishing failed';
+          await env.DB.prepare(
+            `UPDATE omnipost_deliveries SET status = 'failed', error_code = ?, error_message = ?, updated_at = ? WHERE id = ?`
+          ).bind(errCode, errMsg, updateNow, targetDeliveryId).run();
+
+          return Response.json({
+            success: false,
+            error: errMsg,
+            code: errCode,
+          }, { status: 500 });
+        }
+      }
+
+      // ── Webhook Bypass (Fallback for remaining webhooks) ─────────
+      const WEBHOOK_PLATFORMS = ['slack', 'webhooks'];
       if (WEBHOOK_PLATFORMS.includes(connection.platform)) {
         return await dispatchWebhook(connection.platform, decryptedSecret, textContent, content?.mediaUrls || [], targetDeliveryId, connectionId, env);
       }
+
 
       // ── Bluesky Bypass (Direct dispatch) ────────────────────────
       if (connection.platform === 'bluesky') {

@@ -24,6 +24,39 @@ export interface ClaimStore {
 const DEFAULT_TIMEOUT_MS = 15_000;
 const CLAIM_TTL_MS = 30_000;
 
+export function isPrivateOrReservedIP(ipStr: string): boolean {
+  const cleanIp = ipStr.replace(/^::ffff:/i, '');
+  
+  const ipv4Match = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(cleanIp);
+  if (ipv4Match) {
+    const [, a, b] = ipv4Match.map(Number);
+    if (
+      a === 127 || // Loopback (127.0.0.0/8)
+      a === 10 || // Private Class A (10.0.0.0/8)
+      (a === 172 && b >= 16 && b <= 31) || // Private Class B (172.16.0.0/12)
+      (a === 192 && b === 168) || // Private Class C (192.168.0.0/16)
+      (a === 169 && b === 254) || // Link-local / Cloud Metadata (169.254.0.0/16)
+      a === 0 || // 0.0.0.0/8
+      a >= 224 // Multicast/Reserved
+    ) {
+      return true;
+    }
+  }
+
+  const lowerIp = cleanIp.toLowerCase();
+  if (
+    lowerIp === '::1' ||
+    lowerIp === '::' ||
+    lowerIp.startsWith('fe80:') || // Link-local IPv6
+    lowerIp.startsWith('fc') || // Unique Local IPv6 (fc00::/7)
+    lowerIp.startsWith('fd')
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
 export function validateSSRF(urlStr: string): void {
   let parsed: URL;
   try {
@@ -37,24 +70,30 @@ export function validateSSRF(urlStr: string): void {
   }
 
   const hostname = parsed.hostname.toLowerCase();
-  
-  // Reject IPv4 numeric addresses matching private/loopback/link-local ranges
-  const ipv4Match = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(hostname);
-  if (ipv4Match) {
-    const [, a, b] = ipv4Match.map(Number);
-    if (
-      a === 127 || // Loopback
-      a === 10 || // Private Class A
-      (a === 172 && b >= 16 && b <= 31) || // Private Class B
-      (a === 192 && b === 168) || // Private Class C
-      (a === 169 && b === 254) // Link-local / Cloud Metadata
-    ) {
-      throw new Error('SSRF_REJECTED: Direct IP targeting of private/loopback space is forbidden');
-    }
+
+  // 1. Block wildcard DNS bypass domains and local hostnames
+  const forbiddenBypassDomains = ['nip.io', 'sslip.io', 'xip.io', 'localtest.me', 'vcap.me', 'lvh.me'];
+  if (
+    hostname === 'localhost' ||
+    hostname.endsWith('.local') ||
+    hostname.endsWith('.internal') ||
+    forbiddenBypassDomains.some((domain) => hostname === domain || hostname.endsWith('.' + domain))
+  ) {
+    throw new Error(`SSRF_REJECTED: Target hostname "${hostname}" is a forbidden internal or wildcard bypass domain`);
   }
 
-  if (hostname === 'localhost' || hostname.endsWith('.local') || hostname.endsWith('.internal')) {
-    throw new Error('SSRF_REJECTED: Internal hostname target is forbidden');
+  // 2. Direct numeric IP check
+  if (isPrivateOrReservedIP(hostname)) {
+    throw new Error(`SSRF_REJECTED: Direct IP targeting of private/loopback/metadata space (${hostname}) is forbidden`);
+  }
+
+  // 3. Extract embedded IP addresses from hostnames (e.g. 127.0.0.1 or 127-0-0-1 in subdomains)
+  const embeddedIpMatch = /(?:^|\.)(?:(\d{1,3})[-.](\d{1,3})[-.](\d{1,3})[-.](\d{1,3}))(?:\.|$)/.exec(hostname);
+  if (embeddedIpMatch) {
+    const extractedIp = `${embeddedIpMatch[1]}.${embeddedIpMatch[2]}.${embeddedIpMatch[3]}.${embeddedIpMatch[4]}`;
+    if (isPrivateOrReservedIP(extractedIp)) {
+      throw new Error(`SSRF_REJECTED: Hostname "${hostname}" resolves to embedded private IP (${extractedIp})`);
+    }
   }
 }
 
