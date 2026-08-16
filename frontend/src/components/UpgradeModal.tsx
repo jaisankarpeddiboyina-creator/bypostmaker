@@ -4,12 +4,7 @@ import { useAppStore } from '../store/app'
 import { api, ApiError } from '../lib/api'
 import { trackEvent } from '../lib/monitoring'
 import { trackBeginCheckout, trackPurchase } from '../lib/analytics'
-
-const PLANS = {
-  starter:  { name: 'Starter',  usd: 9,   inr: 299,   gens: 50,  platforms: 33, features: ['50 generations/month','All 30+ platforms','30-day history','AI refinement'] },
-  pro:      { name: 'Pro',      usd: 19,  inr: 799,   gens: 200, platforms: 33, features: ['200 generations/month','All 30+ platforms','90-day history','Priority generation'] },
-  business: { name: 'Business', usd: 49,  inr: 1999,  gens: 1000, platforms: 33, features: ['1,000 generations/month','All 30+ platforms','1-year history','API access (v2)'] },
-}
+import { PLANS } from '../config/pricing'
 
 const PLAN_ORDER = ['free', 'starter', 'pro', 'business']
 
@@ -43,8 +38,10 @@ export function UpgradeModal() {
     }
   }
 
-  const getPrice = (plan: keyof typeof PLANS) => {
-    const base = currency === 'inr' ? PLANS[plan].inr : PLANS[plan].usd
+  const getPrice = (planKey: string) => {
+    const plan = PLANS.find(p => p.key === planKey)
+    if (!plan) return 0
+    const base = currency === 'inr' ? plan.priceVal.inr : plan.priceVal.usd
     if (!promoApplied) return base
     return Math.round(base * (1 - promoApplied.discount_pct / 100))
   }
@@ -58,14 +55,14 @@ export function UpgradeModal() {
     setLoading(plan)
     trackEvent('checkout_started', { plan, currency })
     try {
-      const price = getPrice(plan as keyof typeof PLANS)
+      const price = getPrice(plan)
       trackBeginCheckout(plan, price, currency.toUpperCase())
       const res = await api.payments.subscribe(plan, currency, promoApplied?.code)
       const rzp = new window.Razorpay({
         key: res.keyId,
         subscription_id: res.subscriptionId,
         name: 'PostMaker',
-        description: `${PLANS[plan as keyof typeof PLANS]?.name} Plan`,
+        description: `${PLANS.find(p => p.key === plan)?.name || plan} Plan`,
         theme: { color: '#7c3aed' },
         handler: () => {
           trackEvent('subscription_created', { plan, currency })
@@ -158,35 +155,22 @@ export function UpgradeModal() {
           <button className="btn-icon" onClick={() => setShowUpgradeModal(false)}><X size={16} /></button>
         </div>
 
-        <div style={{
-          background: 'var(--warning-bg)',
-          border: '1px solid var(--color-warning-border)',
-          borderRadius: 'var(--radius)',
-          padding: '10px 14px',
-          fontSize: '12px',
-          color: 'var(--warning)',
-          marginBottom: '16px',
-          lineHeight: '1.4'
-        }}>
-          <strong>INR payments only:</strong> USD billing is temporarily unavailable. Displayed prices and payments are in INR (₹).
-        </div>
-
         <div className="upgrade-plans">
-          {Object.entries(PLANS)
-            .filter(([key]) => {
+          {PLANS.filter(p => p.key !== 'free')
+            .filter((plan) => {
               const userPlanIndex = PLAN_ORDER.indexOf(user?.plan ?? 'free')
-              const thisPlanIndex = PLAN_ORDER.indexOf(key)
+              const thisPlanIndex = PLAN_ORDER.indexOf(plan.key)
               return thisPlanIndex > userPlanIndex
             })
-            .map(([key, plan]) => (
-            <div key={key} className={`upgrade-plan ${key === 'pro' ? 'featured' : ''}`}>
-              {key === 'pro' && <div className="upgrade-badge">Most popular</div>}
+            .map((plan) => (
+            <div key={plan.key} className={`upgrade-plan ${plan.key === 'pro' ? 'featured' : ''}`}>
+              {plan.key === 'pro' && <div className="upgrade-badge">Most popular</div>}
               <div className="up-name">{plan.name}</div>
               <div className="up-price">
-                {currency === 'inr' ? '₹' : '$'}{getPrice(key as keyof typeof PLANS)}
+                {currency === 'inr' ? '₹' : '$'}{getPrice(plan.key)}
                 {promoApplied && (
                   <span className="up-original">
-                    {currency === 'inr' ? '₹' : '$'}{currency === 'inr' ? plan.inr : plan.usd}
+                    {currency === 'inr' ? '₹' : '$'}{currency === 'inr' ? plan.priceVal.inr : plan.priceVal.usd}
                   </span>
                 )}
                 <span className="up-period">/mo</span>
@@ -197,12 +181,12 @@ export function UpgradeModal() {
                 ))}
               </ul>
               <button
-                className={`btn ${key === 'pro' ? 'btn-primary' : 'btn-ghost'}`}
+                className={`btn ${plan.key === 'pro' ? 'btn-primary' : 'btn-ghost'}`}
                 style={{ width: '100%', justifyContent: 'center', marginTop: 12 }}
-                onClick={() => handleSubscribe(key)}
+                onClick={() => handleSubscribe(plan.key)}
                 disabled={!!loading}
               >
-                {loading === key ? 'Opening…' : `Get ${plan.name}`}
+                {loading === plan.key ? 'Opening…' : `Get ${plan.name}`}
               </button>
             </div>
           ))}

@@ -41,7 +41,8 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
     imageFiles, setImageFiles, addImageFiles, removeImageFile,
     videoFile, setVideoFile,
     isGenerating, addToast,
-    useBrandKit, setUseBrandKit
+    useBrandKit, setUseBrandKit,
+    openAssetPicker
   } = useAppStore()
 
   const [categoryFilter, setCategoryFilter] = useState<string>('all')
@@ -52,6 +53,19 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
 
   const imageInputRef = useRef<HTMLInputElement>(null)
   const videoInputRef = useRef<HTMLInputElement>(null)
+
+  const handleOpenAssetPicker = () => {
+    openAssetPicker({
+      accept: ['image'],
+      onSelect: (file) => {
+        if (file.size > MAX_IMAGE_SIZE_BYTES) {
+          addToast(`Image "${file.name}" exceeds the 15MB limit.`, 'error')
+        } else {
+          addImageFiles([file])
+        }
+      }
+    })
+  }
 
   useEffect(() => {
     api.brandKit.get()
@@ -383,7 +397,7 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
                   <button
                     type="button"
                     className="gallery-add-tile"
-                    onClick={() => imageInputRef.current?.click()}
+                    onClick={handleOpenAssetPicker}
                     disabled={isGenerating}
                   >
                     <Plus size={18} />
@@ -407,7 +421,7 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
                 <button
                   type="button"
                   className="btn-attach-pill"
-                  onClick={() => imageInputRef.current?.click()}
+                  onClick={handleOpenAssetPicker}
                   disabled={isGenerating}
                 >
                   + Add Images (up to 4)

@@ -203,7 +203,13 @@ async function executeRealHandlerTests() {
   // Invoke exported handleRetry function directly!
   console.log('Invoking exported handleRetry() route function...')
   try {
-    const retryRes = await handleRetry(retryReq, mockEnv, testUserId, 'pro')
+    const mockCtx = {
+      waitUntil(promise: Promise<any>) {
+        // Mock implementation that simply ignores/awaits the promise
+        promise.catch(err => console.error('[mockCtx] waitUntil promise failed:', err))
+      }
+    } as any
+    const retryRes = await handleRetry(retryReq, mockEnv, testUserId, 'pro', mockCtx)
     console.log('handleRetry Response Status:', retryRes.status)
   } catch (err: any) {
     // Expected if streaming client / network fetch hits mock key during Groq stream stage

@@ -48,9 +48,6 @@ export async function handlePayments(
     if (!['starter','pro','business'].includes(plan)) return jsonError('Invalid plan', 400)
     if (!['usd','inr'].includes(currency)) return jsonError('Invalid currency', 400)
 
-    if (currency === 'usd') {
-      return jsonError('USD payments are temporarily disabled. Please pay in INR.', 400)
-    }
 
     // BUG-2: Actively cancel any stale 'created' (abandoned checkout) row before
     // running the guard check. This replaces the old passive 1-hour time-gate,
@@ -80,7 +77,12 @@ export async function handlePayments(
     }
 
     const planId = getRazorpayPlanId(env, plan, currency)
-    if (!planId) return jsonError(`Missing Razorpay plan ID for ${plan}/${currency}`, 500)
+    if (!planId || !planId.startsWith('plan_')) {
+      if (currency === 'usd') {
+        return jsonError(`USD payments for the ${plan} plan are temporarily unavailable. Please try again later or pay in INR.`, 400)
+      }
+      return jsonError(`Missing Razorpay plan ID for ${plan}/${currency}`, 500)
+    }
 
     // BUG-1: Guard only blocks 'active' and 'authenticated' subscriptions.
     // 'created' is intentionally excluded: it means only a Razorpay object exists,
@@ -189,7 +191,7 @@ export async function handlePayments(
   return jsonError('Not found', 404)
 }
 
-function getRazorpayPlanId(env: Env, plan: PaidPlan, currency: Currency): string {
+export function getRazorpayPlanId(env: Env, plan: PaidPlan, currency: Currency): string {
   const planIds: Record<PaidPlan, Record<Currency, string>> = {
     starter: {
       usd: env.RAZORPAY_PLAN_STARTER_USD,

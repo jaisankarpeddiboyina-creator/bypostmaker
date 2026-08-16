@@ -20,8 +20,22 @@ CF_AIG_GATEWAY_NAME=
 CLOUDFLARE_API_TOKEN=
 TEXT_MODEL=google-ai-studio/gemini-1.5-flash
 # Explicit override for Stage 2 text generation fallback provider ("groq" | "gemini"). Only affects Stage 2 text, not vision.
-TEXT_FALLBACK_PROVIDER=
+TEXT_FALLBACK_PROVIDER= 
 
 # Omnipost Vault Encryption Key (64-character hex string / 256-bit key)
 OMNIPOST_MASTER_KEY=
 
+# assets page media providers — paste keys here, restart `npm run dev`
+# At minimum add PEXELS_API_KEY (free). Openverse + Iconify work with NO keys.
+
+# Pexels — https://www.pexels.com/api/ (free, instant access)
+PEXELS_API_KEY=
+
+# Pixabay — https://pixabay.com/api/docs/ (free, requires registration)
+PIXABAY_API_KEY=
+
+# Unsplash — https://unsplash.com/developers (free, requires app creation)
+UNSPLASH_ACCESS_KEY=
+
+# Google Fonts — https://developers.google.com/fonts/docs/developer_api (optional)
+GOOGLE_FONTS_API_KEY=

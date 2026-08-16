@@ -25,7 +25,7 @@ Root index for all 43 execution tasks, derived from `PostMaker_Product_Vision_Ro
 ## Overall Roadmap Status
 
 - **Overall Progress**: `4 / 43 tasks completed (9.3%)`
-- **Phase 1 — Launch Gate**: `[█████░░░░░░░] 4/10 (40%)`
+- **Phase 1 — Launch Gate**: `[██████░░░░░░] 5/10 (50%)`
 - **Current Active Sprint Focus**: Phase 1 — Launch Gate (`P1-01` through `P1-10`)
 - **Recently Completed**: [`P1-10: Set up production monitoring & logging`](file:///home/jaisankar/Documents/projects/bypostmaker/bypostmaker/docs/tasks/phases/phase-1-launch/core/P1-10-set-up-production-monitoring-logging.md) (Commit `3e34d01`)
 - **Next Actionable Task**: [`P1-01: Stabilize core product`](file:///home/jaisankar/Documents/projects/bypostmaker/bypostmaker/docs/tasks/phases/phase-1-launch/core/P1-01-stabilize-core-product.md)
@@ -36,7 +36,7 @@ Root index for all 43 execution tasks, derived from `PostMaker_Product_Vision_Ro
 
 | Phase | Focus Area | Core | Optional | Progress | Link |
 |---|---|:---:|:---:|:---:|---|
-| **Phase 1 — Launch** | Launch Readiness & AI Engine Polish | 10 | 0 | **4 / 10 (40%)** | [phases/phase-1-launch/README.md](file:///home/jaisankar/Documents/projects/bypostmaker/bypostmaker/docs/tasks/phases/phase-1-launch/README.md) |
+| **Phase 1 — Launch** | Launch Readiness & AI Engine Polish | 10 | 0 | **5 / 10 (50%)** | [phases/phase-1-launch/README.md](file:///home/jaisankar/Documents/projects/bypostmaker/bypostmaker/docs/tasks/phases/phase-1-launch/README.md) |
 | **Phase 2 — Creator Experience** | Assets, Tools Marketplace & Workspaces | 10 | 7 | **0 / 17 (0%)** | [phases/phase-2-creator-experience/README.md](file:///home/jaisankar/Documents/projects/bypostmaker/bypostmaker/docs/tasks/phases/phase-2-creator-experience/README.md) |
 | **Phase 3 — Automation** | Scheduling, Drafts & Auto-Publishing | 4 | 0 | **0 / 4 (0%)** | [phases/phase-3-automation/README.md](file:///home/jaisankar/Documents/projects/bypostmaker/bypostmaker/docs/tasks/phases/phase-3-automation/README.md) |
 | **Phase 4 — Business** | Analytics, Team Workspaces & Agency Features | 7 | 0 | **0 / 7 (0%)** | [phases/phase-4-business/README.md](file:///home/jaisankar/Documents/projects/bypostmaker/bypostmaker/docs/tasks/phases/phase-4-business/README.md) |
@@ -53,7 +53,7 @@ Root index for all 43 execution tasks, derived from `PostMaker_Product_Vision_Ro
 | **P1-01** | Stabilize core product | Core | Critical | ⏳ `Not Started` | [P1-01-stabilize-core-product.md](file:///home/jaisankar/Documents/projects/bypostmaker/bypostmaker/docs/tasks/phases/phase-1-launch/core/P1-01-stabilize-core-product.md) |
 | **P1-02** | Improve UI/UX polish | Core | High | ⏳ `Not Started` | [P1-02-improve-ui-ux-polish.md](file:///home/jaisankar/Documents/projects/bypostmaker/bypostmaker/docs/tasks/phases/phase-1-launch/core/P1-02-improve-ui-ux-polish.md) |
 | **P1-03** | Performance optimization pass | Core | High | ⏳ `Not Started` | [P1-03-performance-optimization-pass.md](file:///home/jaisankar/Documents/projects/bypostmaker/bypostmaker/docs/tasks/phases/phase-1-launch/core/P1-03-performance-optimization-pass.md) |
-| **P1-04** | Complete Razorpay international payments | Core | Critical | ⏳ `Not Started` | [P1-04-complete-razorpay-international-payments.md](file:///home/jaisankar/Documents/projects/bypostmaker/bypostmaker/docs/tasks/phases/phase-1-launch/core/P1-04-complete-razorpay-international-payments.md) |
+| **P1-04** | **Complete Razorpay international payments** | Core | Critical | ✅ **`Completed`** | [P1-04-complete-razorpay-international-payments.md](file:///home/jaisankar/Documents/projects/bypostmaker/bypostmaker/docs/tasks/phases/phase-1-launch/core/P1-04-complete-razorpay-international-payments.md) |
 | **P1-05** | Build subscription flow | Core | Critical | ⏳ `Not Started` | [P1-05-build-subscription-flow.md](file:///home/jaisankar/Documents/projects/bypostmaker/bypostmaker/docs/tasks/phases/phase-1-launch/core/P1-05-build-subscription-flow.md) |
 | **P1-06** | **Improve AI provider reliability/routing** | Core | High | ✅ **`Completed`** | [P1-06-improve-ai-provider-reliability-routing.md](file:///home/jaisankar/Documents/projects/bypostmaker/bypostmaker/docs/tasks/phases/phase-1-launch/core/P1-06-improve-ai-provider-reliability-routing.md) |
 | **P1-07** | **Support higher AI rate limits** | Core | Medium | ✅ **`Completed`** | [P1-07-support-higher-ai-rate-limits.md](file:///home/jaisankar/Documents/projects/bypostmaker/bypostmaker/docs/tasks/phases/phase-1-launch/core/P1-07-support-higher-ai-rate-limits.md) |

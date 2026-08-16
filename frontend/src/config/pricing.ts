@@ -17,6 +17,7 @@ export interface PricingPlan {
   key: string
   name: string
   price: { usd: string; inr: string }
+  priceVal: { usd: number; inr: number }
   gens: number
   platforms: number
   features: string[]
@@ -28,6 +29,7 @@ export const PLANS: PricingPlan[] = [
     key: 'free',
     name: 'Free',
     price: { usd: '$0', inr: '₹0' },
+    priceVal: { usd: 0, inr: 0 },
     gens: TIER_LIMITS.free.generations,
     platforms: TIER_LIMITS.free.platforms,
     features: [`${TIER_LIMITS.free.generations} generations/month`, `${TIER_LIMITS.free.platforms} platforms`, 'Full content kit download', 'Image resizing (beta)'],
@@ -36,6 +38,7 @@ export const PLANS: PricingPlan[] = [
     key: 'starter',
     name: 'Starter',
     price: { usd: '$9', inr: '₹299' },
+    priceVal: { usd: 9, inr: 299 },
     gens: TIER_LIMITS.starter.generations,
     platforms: TIER_LIMITS.starter.platforms,
     features: [`${TIER_LIMITS.starter.generations} generations/month`, 'All 30+ platforms', '30-day history', 'AI refinement'],
@@ -44,6 +47,7 @@ export const PLANS: PricingPlan[] = [
     key: 'pro',
     name: 'Pro',
     price: { usd: '$19', inr: '₹799' },
+    priceVal: { usd: 19, inr: 799 },
     gens: TIER_LIMITS.pro.generations,
     platforms: TIER_LIMITS.pro.platforms,
     features: [`${TIER_LIMITS.pro.generations} generations/month`, 'All 30+ platforms', '90-day history', 'Priority generation'],
@@ -53,6 +57,7 @@ export const PLANS: PricingPlan[] = [
     key: 'business',
     name: 'Business',
     price: { usd: '$49', inr: '₹1,999' },
+    priceVal: { usd: 49, inr: 1999 },
     gens: TIER_LIMITS.business.generations,
     platforms: TIER_LIMITS.business.platforms,
     features: [`${TIER_LIMITS.business.generations.toLocaleString()} generations/month`, 'All 30+ platforms', '1-year history', 'API access (coming soon)'],

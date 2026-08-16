@@ -13,6 +13,8 @@
       "@ai-sdk/google": ["node_modules/@ai-sdk/google"]
     },
     "skipLibCheck": true,
+    "incremental": true,
+    "tsBuildInfoFile": "node_modules/.cache/tsbuildinfo",
     "noEmit": true,
     "strict": true,
     "noUnusedLocals": false,
