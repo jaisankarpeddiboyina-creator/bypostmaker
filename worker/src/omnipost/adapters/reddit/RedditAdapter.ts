@@ -64,20 +64,17 @@ export class RedditAdapter extends BaseAdapter {
     let title = post.title?.trim();
     let bodyText = post.text.trim();
 
-    if (!title) {
-      const lines = bodyText.split('\n').filter((l) => l.trim().length > 0);
-      title = lines.length > 0 ? lines[0] : 'Post';
-      if (lines.length > 1) {
-        bodyText = lines.slice(1).join('\n').trim();
-      }
-    }
-
-    title = this.truncate(title, 300);
-
     const firstMedia = post.media && post.media.length > 0 ? post.media[0] : undefined;
     const hasExternalLink = firstMedia && (firstMedia.url.startsWith('http://') || firstMedia.url.startsWith('https://'));
 
-    if (hasExternalLink && !bodyText) {
+    // Option (a): When a post has both text and media/link URL, convert to link post ('kind: link')
+    // and fold the text caption into the title (truncated to 300 chars), preserving the media link URL.
+    if (hasExternalLink) {
+      if (!title) {
+        title = bodyText || 'Link Post';
+      }
+      title = this.truncate(title, 300);
+
       return {
         sr,
         kind: 'link',
@@ -87,6 +84,17 @@ export class RedditAdapter extends BaseAdapter {
         resubmit: true,
       };
     }
+
+    // Text-only self post ('kind: self')
+    if (!title) {
+      const lines = bodyText.split('\n').filter((l) => l.trim().length > 0);
+      title = lines.length > 0 ? lines[0] : 'Post';
+      if (lines.length > 1) {
+        bodyText = lines.slice(1).join('\n').trim();
+      }
+    }
+
+    title = this.truncate(title, 300);
 
     return {
       sr,
@@ -190,12 +198,23 @@ export class RedditAdapter extends BaseAdapter {
     }
   }
 
-  async healthCheck(): Promise<{ ok: boolean; latencyMs?: number }> {
+  async healthCheck(credentials?: AdapterCredentials): Promise<{ ok: boolean; latencyMs?: number }> {
     const start = Date.now();
-    try {
+    if (!credentials?.accessToken) {
       return { ok: true, latencyMs: Date.now() - start };
+    }
+
+    try {
+      const response = await fetch('https://oauth.reddit.com/api/v1/me', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${credentials.accessToken}`,
+          'User-Agent': (credentials.userAgent as string) || REDDIT_USER_AGENT,
+        },
+      });
+      return { ok: response.ok, latencyMs: Date.now() - start };
     } catch {
-      return { ok: false };
+      return { ok: false, latencyMs: Date.now() - start };
     }
   }
 

@@ -19,8 +19,35 @@ async function runRedditTests() {
   const conformancePass = conformanceResults.every((r) => r.passed);
   console.log(`RESULT: ${conformancePass ? 'PASS' : 'FAIL'}\n`);
 
-  // 2. HTTP Boundary Mock Test: Submit Request Wire Format Verification
-  console.log('--- TEST 2: HTTP Boundary Wire Format Verification ---');
+  // 2. Format Test: Media Preservation with Caption Text
+  console.log('--- TEST 2: format() Media Preservation (Text + Media URL) ---');
+  const textAndMediaPost: UnifiedPost = {
+    id: 'post-reddit-media-1',
+    userId: 'user-1',
+    targetId: 'r/technology',
+    text: 'Awesome AI Tool Release Caption',
+    media: [
+      {
+        id: 'media-1',
+        url: 'https://example.com/demo-link',
+        type: 'image',
+      },
+    ],
+  };
+
+  const formattedMediaPayload = adapter.format(textAndMediaPost);
+  console.log(`  Formatted Payload:`, JSON.stringify(formattedMediaPayload, null, 2));
+
+  const mediaPreservedPass =
+    formattedMediaPayload.kind === 'link' &&
+    formattedMediaPayload.url === 'https://example.com/demo-link' &&
+    formattedMediaPayload.title === 'Awesome AI Tool Release Caption' &&
+    formattedMediaPayload.sr === 'technology';
+
+  console.log(`RESULT: ${mediaPreservedPass ? 'PASS' : 'FAIL'}\n`);
+
+  // 3. HTTP Boundary Mock Test: Submit Request Wire Format Verification
+  console.log('--- TEST 3: HTTP Boundary Wire Format Verification ---');
   let capturedUrl = '';
   let capturedHeaders: Record<string, string> = {};
   let capturedBody = '';
@@ -39,7 +66,6 @@ async function runRedditTests() {
     }
     capturedBody = String(init?.body || '');
 
-    // Return realistic Reddit JSON success response
     return new Response(
       JSON.stringify({
         json: {
@@ -87,8 +113,8 @@ async function runRedditTests() {
 
     console.log(`RESULT: ${wireFormatPass ? 'PASS' : 'FAIL'}\n`);
 
-    // 3. Error Mapping Test 1: RATELIMIT
-    console.log('--- TEST 3A: Error Mapping (RATELIMIT Error Response) ---');
+    // 4. Error Mapping Tests
+    console.log('--- TEST 4A: Error Mapping (RATELIMIT Error Response) ---');
     globalThis.fetch = (async () =>
       new Response(
         JSON.stringify({
@@ -104,8 +130,7 @@ async function runRedditTests() {
     const ratelimitPass = ratelimitResult.success === false && ratelimitResult.error?.code === 'RATE_LIMITED' && ratelimitResult.error?.retryable === true;
     console.log(`RESULT: ${ratelimitPass ? 'PASS' : 'FAIL'}\n`);
 
-    // 3. Error Mapping Test 2: REQUIRES_FLAIR
-    console.log('--- TEST 3B: Error Mapping (REQUIRES_FLAIR Error Response) ---');
+    console.log('--- TEST 4B: Error Mapping (REQUIRES_FLAIR Error Response) ---');
     globalThis.fetch = (async () =>
       new Response(
         JSON.stringify({
@@ -121,8 +146,7 @@ async function runRedditTests() {
     const flairPass = flairResult.success === false && flairResult.error?.code === 'VALIDATION_ERROR' && flairResult.error?.retryable === false;
     console.log(`RESULT: ${flairPass ? 'PASS' : 'FAIL'}\n`);
 
-    // 3. Error Mapping Test 3: SUBREDDIT_NOTALLOWED
-    console.log('--- TEST 3C: Error Mapping (SUBREDDIT_NOTALLOWED Error Response) ---');
+    console.log('--- TEST 4C: Error Mapping (SUBREDDIT_NOTALLOWED Error Response) ---');
     globalThis.fetch = (async () =>
       new Response(
         JSON.stringify({
@@ -138,9 +162,9 @@ async function runRedditTests() {
     const forbiddenPass = forbiddenResult.success === false && forbiddenResult.error?.code === 'FORBIDDEN' && forbiddenResult.error?.retryable === false;
     console.log(`RESULT: ${forbiddenPass ? 'PASS' : 'FAIL'}\n`);
 
-    // 4. OAuth Code Exchange Test
-    console.log('--- TEST 4: exchangeRedditCode OAuth Exchange ---');
-    globalThis.fetch = (async (url: string | URL | Request, init?: RequestInit) => {
+    // 5. OAuth Code Exchange Test
+    console.log('--- TEST 5: exchangeRedditCode OAuth Exchange ---');
+    globalThis.fetch = (async () => {
       return new Response(
         JSON.stringify({
           access_token: 'mock-access-token-999',
@@ -158,7 +182,7 @@ async function runRedditTests() {
     const oauthPass = exchangeCreds.accessToken === 'mock-access-token-999' && exchangeCreds.refreshToken === 'mock-refresh-token-888';
     console.log(`RESULT: ${oauthPass ? 'PASS' : 'FAIL'}\n`);
 
-    const allPassed = conformancePass && wireFormatPass && ratelimitPass && flairPass && forbiddenPass && oauthPass;
+    const allPassed = conformancePass && mediaPreservedPass && wireFormatPass && ratelimitPass && flairPass && forbiddenPass && oauthPass;
     console.log('=================================================');
     console.log(` OVERALL REDDIT ADAPTER SUITE: ${allPassed ? 'PASSED 100%' : 'FAILED'}`);
     console.log('=================================================');
