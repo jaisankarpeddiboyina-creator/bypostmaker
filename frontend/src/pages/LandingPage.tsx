@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useLayoutEffect } from 'react'
 import {
   Sparkles, Download, Zap, Globe, ArrowRight, Check, ChevronDown, Wand2, FolderOpen, CreditCard,
   Copy, Menu, X, Share2, Layers, RefreshCw, type LucideIcon
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { useScrollReveal } from '../lib/reveal'
 import { useAppStore } from '../store/app'
 import { PLANS } from '../config/pricing'
 import { faqEntries } from '../../../config/faq'
@@ -98,6 +99,45 @@ export default function LandingPage() {
   const [activePreset, setActivePreset] = useState(DEMO_PRESETS[0])
   const [activeTab, setActiveTab] = useState<PlatformTab>('linkedin')
   const [copied, setCopied] = useState(false)
+
+  // Motion Design scroll reveal hook
+  useScrollReveal()
+
+  const samplePrompt = "Launching our new Figma asset export plugin. Highlight top 3 benefits: 10x faster exports, automatic dark mode, one-click sharing.";
+  const [typedText, setTypedText] = useState(samplePrompt);
+  const [isHydrated, setIsHydrated] = useState(false);
+  const [isFanned, setIsFanned] = useState(false);
+
+  useLayoutEffect(() => {
+    const isPrerender = typeof window !== 'undefined' && navigator.webdriver;
+    const prefersReduced = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (isPrerender || prefersReduced) return;
+    setIsHydrated(true); // Collapses cards synchronously before first paint
+  }, []);
+
+  useEffect(() => {
+    const isPrerender = typeof window !== 'undefined' && navigator.webdriver;
+    const prefersReduced = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (isPrerender || prefersReduced) {
+      setIsFanned(true);
+      return;
+    }
+
+    setTypedText("");
+    let index = 0;
+    const interval = setInterval(() => {
+      setTypedText(samplePrompt.substring(0, index + 1));
+      index++;
+      if (index >= samplePrompt.length) {
+        clearInterval(interval);
+        setIsFanned(true);
+      }
+    }, 40);
+
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => { setBillingCurrency(currency) }, [currency])
 
@@ -198,6 +238,113 @@ export default function LandingPage() {
               <span className="hero-cta-note">⚡ 5 free generations · Instant ZIP download</span>
             </div>
 
+            {/* Interactive Prompt & Cards Fan-Out Showcase */}
+            <div className="hero-visual-showcase">
+              {/* Typewriter Prompt Container */}
+              <div className="hero-prompt-container">
+                <div className="hero-prompt-box">
+                  <div className="prompt-header">
+                    <Sparkles size={13} className="text-pink" />
+                    <span>PROMPT STUDIO</span>
+                  </div>
+                  <div className="prompt-body">
+                    <span className="prompt-text">{typedText}</span>
+                    {!isFanned && <span className="prompt-cursor">|</span>}
+                  </div>
+                </div>
+              </div>
+
+              {/* Fan-Out Social Cards (X, LinkedIn, Instagram, TikTok) */}
+              <div className={`hero-cards-fan ${isHydrated ? 'fan-init' : ''} ${isFanned ? 'fanned' : ''}`}>
+                {/* 1. X/Twitter Card */}
+                <div className="hero-card-wrapper">
+                  <div className="hero-card-inner twitter-mock">
+                    <div className="mock-card-header">
+                      <PlatformIcon id="twitter" size={16} useBrandColor />
+                      <div className="mock-author-info">
+                        <span className="mock-author-name">Design Craft</span>
+                        <span className="mock-author-handle">@designcraft · 2m</span>
+                      </div>
+                    </div>
+                    <div className="mock-card-body">
+                      🚀 Figma export plugin is LIVE!<br/><br/>
+                      10x faster exports ➔ Automatic dark mode ➔ 1-click sharing.<br/><br/>
+                      Design workflow solved. 👇 #figma #uidesign #webdev
+                    </div>
+                    <div className="mock-card-footer">
+                      <span>💬 12</span>
+                      <span>🔁 45</span>
+                      <span>❤️ 188</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. LinkedIn Card */}
+                <div className="hero-card-wrapper">
+                  <div className="hero-card-inner linkedin-mock">
+                    <div className="mock-card-header">
+                      <PlatformIcon id="linkedin" size={16} useBrandColor />
+                      <div className="mock-author-info">
+                        <span className="mock-author-name">PostMaker Team</span>
+                        <span className="mock-author-handle">Product Marketing @ PostMaker</span>
+                      </div>
+                    </div>
+                    <div className="mock-card-body">
+                      🚀 We just launched our Figma asset export plugin!<br/><br/>
+                      Stop spending hours manually exporting assets. PostMaker adapts and exports your designs in seconds:<br/><br/>
+                      • 10x faster exports<br/>
+                      • Automatic dark mode<br/>
+                      • One-click sharing<br/><br/>
+                      Try it free! #design #uiux #productivity
+                    </div>
+                    <div className="mock-card-footer">
+                      <span>👍 32</span>
+                      <span>💬 4 comments</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. Instagram Card */}
+                <div className="hero-card-wrapper">
+                  <div className="hero-card-inner instagram-mock">
+                    <div className="mock-card-header">
+                      <PlatformIcon id="instagram" size={16} useBrandColor />
+                      <div className="mock-author-info">
+                        <span className="mock-author-name">postmaker_studio</span>
+                      </div>
+                    </div>
+                    <div className="mock-card-body">
+                      ✨ BIG NEWS: Our Figma export plugin is here! ✨<br/><br/>
+                      Export 10x faster, switch to dark mode automatically, and share in 1-click.<br/><br/>
+                      Link in bio to try free! 🚀 #figma #uidesign #uxdesign
+                    </div>
+                    <div className="mock-card-footer">
+                      <span>❤️ 243 likes</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 4. TikTok Card */}
+                <div className="hero-card-wrapper">
+                  <div className="hero-card-inner tiktok-mock">
+                    <div className="mock-card-header">
+                      <PlatformIcon id="tiktok" size={16} useBrandColor />
+                      <div className="mock-author-info">
+                        <span className="mock-author-name">postmaker</span>
+                      </div>
+                    </div>
+                    <div className="mock-card-body">
+                      POV: You used to spend hours exporting Figma assets manually 😭 vs PostMaker doing it in 5 seconds ✨ #figma #design #productivityhack #uidesign
+                    </div>
+                    <div className="mock-card-footer">
+                      <span>❤️ 1.2K</span>
+                      <span>💬 45</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Marquee Social Network Ticker */}
             <div className="platform-ticker-container">
               <div className="ticker-label">SUPPORTED SOCIAL NETWORKS</div>
@@ -222,8 +369,8 @@ export default function LandingPage() {
           <div className="section-label">HOW IT WORKS</div>
           <h2 className="section-title">Three steps to your complete content kit</h2>
 
-          <div className="steps">
-            <div className="step glass-card">
+          <div className="steps" data-reveal-group>
+            <div className="step glass-card motion-lift" data-reveal="fade-up" style={{ '--reveal-item-index': 0 } as React.CSSProperties}>
               <div className="step-num">1</div>
               <h3 className="step-title">Pick your platforms</h3>
               <p className="step-desc">
@@ -233,7 +380,7 @@ export default function LandingPage() {
             </div>
             <div className="step-arrow"><ArrowRight size={20} /></div>
 
-            <div className="step glass-card">
+            <div className="step glass-card motion-lift" data-reveal="fade-up" style={{ '--reveal-item-index': 1 } as React.CSSProperties}>
               <div className="step-num">2</div>
               <h3 className="step-title">Write one prompt</h3>
               <p className="step-desc">
@@ -243,7 +390,7 @@ export default function LandingPage() {
             </div>
             <div className="step-arrow"><ArrowRight size={20} /></div>
 
-            <div className="step glass-card">
+            <div className="step glass-card motion-lift" data-reveal="fade-up" style={{ '--reveal-item-index': 2 } as React.CSSProperties}>
               <div className="step-num">3</div>
               <h3 className="step-title">Download your kit</h3>
               <p className="step-desc">
@@ -261,7 +408,7 @@ export default function LandingPage() {
           <div className="section-label">STUDIO FEATURES</div>
           <h2 className="section-title">Engineered for creators who post seriously</h2>
 
-          <div className="features-grid">
+          <div className="features-grid" data-reveal-group>
             {[
               {
                 icon: <Zap size={20} />,
@@ -294,7 +441,7 @@ export default function LandingPage() {
                 desc: 'Write prompts in Spanish, Hindi, German, or Japanese — AI produces native posts in your selected language.',
               },
             ].map((f, i) => (
-              <div key={i} className="feature-card glass-card">
+              <div key={i} className="feature-card glass-card motion-lift" data-reveal="fade-up" style={{ '--reveal-item-index': i } as React.CSSProperties}>
                 <div className="feature-icon">{f.icon}</div>
                 <h3 className="feature-title">{f.title}</h3>
                 <p className="feature-desc">{f.desc}</p>
@@ -310,9 +457,9 @@ export default function LandingPage() {
           <div className="section-label">WHY POSTMAKER</div>
           <h2 className="section-title">Built to eliminate tedious cross-posting busywork</h2>
 
-          <div className="why-grid">
-            {WHY_POINTS.map((point) => (
-              <div className="why-card glass-card" key={point.title}>
+          <div className="why-grid" data-reveal-group>
+            {WHY_POINTS.map((point, i) => (
+              <div className="why-card glass-card motion-lift" key={point.title} data-reveal="fade-up" style={{ '--reveal-item-index': i } as React.CSSProperties}>
                 <point.icon size={24} className="why-icon" />
                 <h3 className="why-title">{point.title}</h3>
                 <p className="why-desc">{point.description}</p>
@@ -371,9 +518,9 @@ export default function LandingPage() {
             <span className={billingCurrency === 'inr' ? 'active' : ''}>INR (₹)</span>
           </div>
 
-          <div className="pricing-grid">
-            {plans.map((plan) => (
-              <div key={plan.key} className={`pricing-card glass-card ${plan.featured ? 'featured' : ''}`}>
+          <div className="pricing-grid" data-reveal-group>
+            {plans.map((plan, i) => (
+              <div key={plan.key} className={`pricing-card glass-card motion-lift ${plan.featured ? 'featured' : ''}`} data-reveal="fade-up" style={{ '--reveal-item-index': i } as React.CSSProperties}>
                 {plan.featured && <div className="pricing-badge">Most Popular</div>}
                 <div className="pricing-name">{plan.name}</div>
                 <div className="pricing-price">
@@ -384,8 +531,8 @@ export default function LandingPage() {
                   {plan.key === 'free' ? plan.platforms : `${plan.platforms}+`} platforms · {plan.gens === -1 ? 'Unlimited' : plan.gens} gens/mo
                 </div>
                 <ul className="pricing-features">
-                  {plan.features.map((f, i) => (
-                    <li key={i}><Check size={13} />{f}</li>
+                  {plan.features.map((f, idx) => (
+                    <li key={idx}><Check size={13} />{f}</li>
                   ))}
                 </ul>
                 <button
@@ -455,11 +602,40 @@ export default function LandingPage() {
 
       {/* Landing Page Styles */}
       <style>{`
+        :root {
+          --reveal-duration: 0.6s;
+          --reveal-stagger: 0.1s;
+          --marquee-speed: 35s;
+          --hero-type-speed: 40ms;
+          --fan-duration: 0.8s;
+          --fan-stagger: 100ms;
+          --float-duration: 4s;
+        }
+
         .landing {
           min-height: 100vh;
           overflow-y: auto;
           overflow-x: hidden;
           background: transparent;
+        }
+
+        /* Scroll reveal base classes - safe for crawler */
+        .reveal-init {
+          opacity: 0;
+          transform: translateY(20px);
+          transition: opacity var(--reveal-duration) cubic-bezier(0.16, 1, 0.3, 1),
+                      transform var(--reveal-duration) cubic-bezier(0.16, 1, 0.3, 1);
+          will-change: opacity, transform;
+        }
+
+        .reveal-init.revealed {
+          opacity: 1;
+          transform: translateY(0);
+        }
+
+        /* Stagger delays under reveal groups */
+        [data-reveal-group] > [data-reveal] {
+          transition-delay: calc(var(--reveal-item-index, 0) * var(--reveal-stagger));
         }
 
         /* Nav */
@@ -613,6 +789,8 @@ export default function LandingPage() {
         /* Marquee Social Ticker */
         .platform-ticker-container {
           margin-top: 12px;
+          width: 100%;
+          max-width: 100%;
         }
         .ticker-label {
           font-size: 11px;
@@ -624,6 +802,8 @@ export default function LandingPage() {
         }
         .platform-ticker {
           overflow: hidden;
+          width: 100%;
+          max-width: 100%;
           mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
           -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
         }
@@ -646,10 +826,187 @@ export default function LandingPage() {
           white-space: nowrap;
           font-weight: 600;
         }
+        .platform-ticker:hover .ticker-track {
+          animation-play-state: paused;
+        }
         @keyframes ticker {
           from { transform: translateX(0); }
           to   { transform: translateX(-50%); }
         }
+
+        /* Hero Visual Showcase */
+        .hero-visual-showcase {
+          width: 100%;
+          max-width: 680px;
+          margin: 40px auto 20px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 24px;
+        }
+
+        /* Typewriter Prompt Box */
+        .hero-prompt-container {
+          width: 100%;
+          padding: 0 16px;
+        }
+        .hero-prompt-box {
+          background: rgba(255, 255, 255, 0.45);
+          backdrop-filter: var(--backdrop-blur);
+          -webkit-backdrop-filter: var(--backdrop-blur);
+          border: 1px solid var(--color-border);
+          border-radius: 16px;
+          padding: 16px 20px;
+          text-align: left;
+          box-shadow: var(--shadow-card);
+        }
+        .prompt-header {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 11px;
+          font-weight: 800;
+          color: var(--color-text-muted);
+          letter-spacing: 0.08em;
+          margin-bottom: 10px;
+          text-transform: uppercase;
+        }
+        .prompt-body {
+          font-size: 14.5px;
+          line-height: 1.5;
+          color: var(--color-text-primary);
+          font-weight: 500;
+          min-height: 66px;
+        }
+        .prompt-text {
+          white-space: pre-wrap;
+        }
+        .prompt-cursor {
+          display: inline-block;
+          font-weight: 100;
+          color: var(--color-primary-start);
+          animation: blinkCursor 0.8s steps(2, start) infinite;
+          margin-left: 2px;
+        }
+        @keyframes blinkCursor {
+          to { visibility: hidden; }
+        }
+        .text-pink {
+          color: var(--color-primary-start);
+        }
+
+        /* Cards Fan-Out positioning */
+        .hero-cards-fan {
+          position: relative;
+          width: 100%;
+          height: 340px;
+          margin-top: 20px;
+        }
+        .hero-card-wrapper {
+          position: absolute;
+          width: 290px;
+          left: calc(50% - 145px);
+          top: 0;
+          transition: transform var(--fan-duration) cubic-bezier(0.16, 1, 0.3, 1);
+          transform-origin: center center;
+          pointer-events: none;
+        }
+
+        /* 1. Default raw layout (fanned out positions for SEO snapshots) */
+        .hero-cards-fan .hero-card-wrapper:nth-child(1) { transform: translate(-165px, 25px) rotate(-6deg); z-index: 10; }
+        .hero-cards-fan .hero-card-wrapper:nth-child(2) { transform: translate(-55px, -10px) rotate(-2deg); z-index: 20; }
+        .hero-cards-fan .hero-card-wrapper:nth-child(3) { transform: translate(55px, -5px) rotate(3deg); z-index: 30; }
+        .hero-cards-fan .hero-card-wrapper:nth-child(4) { transform: translate(165px, 30px) rotate(7deg); z-index: 40; }
+
+        /* 2. Collapsed fanning card (applied synchronously on hydration) */
+        .hero-cards-fan.fan-init .hero-card-wrapper {
+          transform: translate(0, 0) rotate(0deg) !important;
+          transition: transform var(--fan-duration) cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* 3. Transition to Fanned state (triggered after typewriter) */
+        .hero-cards-fan.fan-init.fanned .hero-card-wrapper:nth-child(1) {
+          transform: translate(-165px, 25px) rotate(-6deg) !important;
+          transition-delay: calc(0 * var(--fan-stagger));
+        }
+        .hero-cards-fan.fan-init.fanned .hero-card-wrapper:nth-child(2) {
+          transform: translate(-55px, -10px) rotate(-2deg) !important;
+          transition-delay: calc(1 * var(--fan-stagger));
+        }
+        .hero-cards-fan.fan-init.fanned .hero-card-wrapper:nth-child(3) {
+          transform: translate(55px, -5px) rotate(3deg) !important;
+          transition-delay: calc(2 * var(--fan-stagger));
+        }
+        .hero-cards-fan.fan-init.fanned .hero-card-wrapper:nth-child(4) {
+          transform: translate(165px, 30px) rotate(7deg) !important;
+          transition-delay: calc(3 * var(--fan-stagger));
+        }
+
+        .hero-card-inner {
+          background: rgba(255, 255, 255, 0.7);
+          backdrop-filter: var(--backdrop-blur);
+          -webkit-backdrop-filter: var(--backdrop-blur);
+          border: 1px solid var(--color-border);
+          border-radius: 16px;
+          padding: 16px;
+          box-shadow: var(--shadow-card);
+          text-align: left;
+          animation: floatCard var(--float-duration) ease-in-out infinite;
+        }
+        .hero-card-wrapper:nth-child(1) .hero-card-inner { animation-delay: 0s; }
+        .hero-card-wrapper:nth-child(2) .hero-card-inner { animation-delay: 0.8s; }
+        .hero-card-wrapper:nth-child(3) .hero-card-inner { animation-delay: 1.6s; }
+        .hero-card-wrapper:nth-child(4) .hero-card-inner { animation-delay: 2.4s; }
+
+        @keyframes floatCard {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-6px); }
+        }
+
+        /* Mock Card Interior Styles */
+        .mock-card-header {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 10px;
+        }
+        .mock-author-info {
+          display: flex;
+          flex-direction: column;
+        }
+        .mock-author-name {
+          font-size: 11.5px;
+          font-weight: 700;
+          color: var(--color-text-primary);
+          line-height: 1.2;
+        }
+        .mock-author-handle {
+          font-size: 10px;
+          color: var(--color-text-muted);
+          line-height: 1.2;
+        }
+        .mock-card-body {
+          font-size: 11px;
+          line-height: 1.4;
+          color: var(--color-text-secondary);
+          margin-bottom: 12px;
+          word-break: break-word;
+        }
+        .mock-card-footer {
+          display: flex;
+          gap: 12px;
+          font-size: 9.5px;
+          color: var(--color-text-muted);
+          font-weight: 600;
+          border-top: 1px solid rgba(255, 255, 255, 0.4);
+          padding-top: 8px;
+        }
+
+        .twitter-mock { border-left: 3px solid #1DA1F2; }
+        .linkedin-mock { border-left: 3px solid #0A66C2; }
+        .instagram-mock { border-left: 3px solid #E1306C; }
+        .tiktok-mock { border-left: 3px solid #000000; }
+
         /* Sections */
         .section {
           padding: 80px 24px;
@@ -974,6 +1331,31 @@ export default function LandingPage() {
           .studio-card-footer { flex-direction: column; align-items: stretch; gap: 12px; }
           .studio-footer-note { justify-content: center; }
           .studio-card-footer .btn { justify-content: center; width: 100%; }
+
+          /* Showcase Mobile Optimizations */
+          .hero-visual-showcase {
+            max-width: 100%;
+            margin-top: 24px;
+          }
+          .hero-cards-fan {
+            height: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            align-items: center;
+          }
+          .hero-card-wrapper {
+            position: relative;
+            left: 0;
+            top: 0;
+            width: 100%;
+            max-width: 320px;
+            transform: none !important;
+            transition: none !important;
+          }
+          .hero-card-inner {
+            animation: none !important;
+          }
         }
         @media (max-width: ${BREAKPOINT_MOBILE_XS}) {
           .landing-nav-inner {
@@ -982,6 +1364,37 @@ export default function LandingPage() {
           }
           .landing-nav-cta .btn {
             display: none;
+          }
+        }
+
+        /* Prefers Reduced Motion Overrides */
+        @media (prefers-reduced-motion: reduce) {
+          .prompt-cursor {
+            display: none !important;
+          }
+          .hero-cards-fan.fan-init .hero-card-wrapper,
+          .hero-cards-fan .hero-card-wrapper {
+            transition: none !important;
+          }
+          .hero-cards-fan .hero-card-wrapper:nth-child(1) { transform: translate(-165px, 25px) rotate(-6deg) !important; }
+          .hero-cards-fan .hero-card-wrapper:nth-child(2) { transform: translate(-55px, -10px) rotate(-2deg) !important; }
+          .hero-cards-fan .hero-card-wrapper:nth-child(3) { transform: translate(55px, -5px) rotate(3deg) !important; }
+          .hero-cards-fan .hero-card-wrapper:nth-child(4) { transform: translate(165px, 30px) rotate(7deg) !important; }
+          .hero-card-inner {
+            animation: none !important;
+          }
+          .ticker-track {
+            animation: none !important;
+            transform: none !important;
+          }
+          .reveal-init {
+            opacity: 1 !important;
+            transform: none !important;
+            transition: none !important;
+          }
+          .glass-card.motion-lift:hover {
+            transform: none !important;
+            transition: none !important;
           }
         }
       `}</style>

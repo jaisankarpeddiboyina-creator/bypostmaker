@@ -80,6 +80,17 @@ export async function handleAdmin(
     })
   }
 
+  // ── GET /api/admin/feedback ───────────────────────────────
+  if (path === '/api/admin/feedback' && request.method === 'GET') {
+    const { results } = await env.DB.prepare(
+      `SELECT f.*, u.name as user_name, u.email as db_user_email
+       FROM feedback f
+       LEFT JOIN users u ON f.user_id = u.id
+       ORDER BY f.created_at DESC`
+    ).all()
+    return json({ feedback: results })
+  }
+
   // ── GET /api/admin/users/export ───────────────────────────
   if (path === '/api/admin/users/export') {
     const search = url.searchParams.get('search') ?? ''

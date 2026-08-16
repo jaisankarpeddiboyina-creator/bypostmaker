@@ -225,6 +225,16 @@ code, .mono {
   box-shadow: var(--shadow-card-hover);
 }
 
+.glass-card.motion-lift {
+  transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
+}
+
+.glass-card.motion-lift:hover {
+  transform: translateY(-4px);
+  border-color: var(--color-border-hover);
+  box-shadow: var(--shadow-card-hover);
+}
+
 /* ── Button Base: Real Clear Sky Blue ───────────────────────── */
 .btn {
   display: inline-flex;
@@ -419,6 +429,25 @@ code, .mono {
   text-overflow: ellipsis;
   white-space: nowrap;
   display: block;
+}
+
+/* ── Refinement Active Card Highlight Styling ────────────── */
+.post-card.is-refining {
+  position: relative;
+  z-index: 1300 !important;
+}
+
+.post-card.is-refining .uc-card-shell {
+  border-color: var(--color-primary-start) !important;
+  box-shadow: 0 0 0 3px rgba(255, 75, 145, 0.35), 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+}
+
+.post-card.is-refining .uc-card-shell,
+.post-card.is-refining .uc-header,
+.post-card.is-refining .uc-body,
+.post-card.is-refining .uc-footer,
+.post-card.is-refining [class*="-post-box"] {
+  background-color: var(--color-nav-active-bg) !important;
 }
 
 

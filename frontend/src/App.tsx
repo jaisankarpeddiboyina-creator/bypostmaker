@@ -11,6 +11,7 @@ import { UpgradeModal } from './components/UpgradeModal'
 import { VerifyEmailScreen } from './components/VerifyEmailScreen'
 import { ExportModal } from './components/ExportModal'
 import { AssetPickerModal } from './components/AssetPickerModal'
+import { FeedbackModal } from './components/FeedbackModal'
 
 const AppPage = lazy(() => import('./pages/AppPage'))
 const LandingPage = lazy(() => import('./pages/LandingPage'))
@@ -41,6 +42,11 @@ function ExportModalWrapper() {
   return showExportModal ? <ExportModal /> : null
 }
 
+function FeedbackModalWrapper() {
+  const showFeedbackModal = useAppStore(s => s.showFeedbackModal)
+  return showFeedbackModal ? <FeedbackModal /> : null
+}
+
 function AppShell({ children }: { children: React.ReactNode }) {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
 
@@ -56,6 +62,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
       </div>
       <UpgradeModalWrapper />
       <ExportModalWrapper />
+      <FeedbackModalWrapper />
 
       <style>{`
         .app-shell-container {

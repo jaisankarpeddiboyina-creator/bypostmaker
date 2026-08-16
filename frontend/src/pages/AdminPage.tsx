@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   Users, TrendingUp, Tag, Shield, Search, ChevronLeft, ChevronRight,
   BarChart2, Download, Activity, Sparkles, Copy, Check, Filter,
-  CheckSquare, ListTodo, BookOpen, Terminal, ArrowRight, FileText
+  CheckSquare, ListTodo, BookOpen, Terminal, ArrowRight, FileText, Star
 } from 'lucide-react'
 import { useAppStore } from '../store/app'
 import { BREAKPOINT_MOBILE } from '../config/breakpoints'
@@ -70,7 +70,7 @@ const PLATFORM_NAMES: Record<string, string> = {
 export default function AdminPage() {
   const { user, addToast } = useAppStore()
   const navigate = useNavigate()
-  const [tab, setTab] = useState<'stats'|'users'|'promos'|'tasks'|'logs'>('stats')
+  const [tab, setTab] = useState<'stats'|'users'|'promos'|'tasks'|'logs'|'feedback'>('stats')
   const [stats, setStats] = useState<Stats | null>(null)
   const [users, setUsers] = useState<AdminUser[]>([])
   const [userTotal, setUserTotal] = useState(0)
@@ -102,6 +102,21 @@ export default function AdminPage() {
   const [logsTypeFilter, setLogsTypeFilter] = useState('all')
   const [logsLevelFilter, setLogsLevelFilter] = useState('all')
 
+  interface FeedbackItem {
+    id: string
+    user_id: string | null
+    user_email: string | null
+    category: string
+    rating: number | null
+    message: string
+    created_at: number
+    user_name?: string | null
+    db_user_email?: string | null
+  }
+
+  const [feedbacks, setFeedbacks] = useState<FeedbackItem[]>([])
+  const [feedbackLoading, setFeedbackLoading] = useState(false)
+
   const [loading, setLoading] = useState(false)
   const [exportingCsv, setExportingCsv] = useState(false)
 
@@ -112,7 +127,25 @@ export default function AdminPage() {
     if (tab === 'promos') loadPromos()
     if (tab === 'tasks') loadTasks()
     if (tab === 'logs') loadLogs(true)
+    if (tab === 'feedback') loadFeedbacks()
   }, [tab, user, logsTypeFilter, logsLevelFilter])
+
+  const loadFeedbacks = async () => {
+    setFeedbackLoading(true)
+    try {
+      const res = await fetch('/api/admin/feedback', { credentials: 'include' })
+      if (!res.ok) {
+        addToast('Failed to load feedback list', 'error')
+        setFeedbackLoading(false)
+        return
+      }
+      const data = await res.json() as { feedback: FeedbackItem[] }
+      setFeedbacks(data.feedback)
+    } catch {
+      addToast('Failed to load feedback list', 'error')
+    }
+    setFeedbackLoading(false)
+  }
 
   const loadLogs = async (reset: boolean = false) => {
     setLogsLoading(true)
@@ -322,7 +355,7 @@ export default function AdminPage() {
             <h1 className="admin-title">Admin Operations</h1>
           </div>
           <div className="admin-tabs">
-            {(['stats','users','promos','tasks','logs'] as const).map(t => (
+            {(['stats','users','promos','tasks','logs','feedback'] as const).map(t => (
               <button key={t} className={`admin-tab ${tab === t ? 'active' : ''}`} onClick={() => setTab(t)}>
                 {t === 'tasks' ? 'Roadmap Tasks' : t === 'logs' ? 'System Logs' : t.charAt(0).toUpperCase() + t.slice(1)}
               </button>
@@ -929,9 +962,74 @@ export default function AdminPage() {
             )}
           </div>
         )}
+
+        {/* Feedback */}
+        {tab === 'feedback' && (
+          <div className="admin-feedback">
+            <div className="admin-table">
+              <div className="admin-table-header feedback-grid-header">
+                <span>Date</span><span>Category</span><span>Rating</span><span>User / Email</span><span>Message</span>
+              </div>
+              {feedbacks.map(fb => (
+                <div key={fb.id} className="admin-table-row feedback-grid-row">
+                  <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)' }} title={new Date(fb.created_at * 1000).toLocaleString()}>
+                    {new Date(fb.created_at * 1000).toISOString().replace('T', ' ').substring(0, 19)}
+                  </span>
+                  <span>
+                    <span className={`badge badge-category-${fb.category}`}>
+                      {fb.category === 'feature-request' ? 'Feature' : fb.category === 'bug' ? 'Bug' : 'General'}
+                    </span>
+                  </span>
+                  <span>
+                    {fb.rating ? (
+                      <span className="feedback-stars-display" style={{ color: 'var(--color-warning)', display: 'inline-flex', gap: 2 }}>
+                        {Array.from({ length: fb.rating }).map((_, i) => (
+                          <Star key={i} size={13} fill="currentColor" />
+                        ))}
+                      </span>
+                    ) : (
+                      <span style={{ color: 'var(--color-text-secondary)', fontSize: 12 }}>—</span>
+                    )}
+                  </span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {fb.user_name ? (
+                      <>
+                        <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--color-text-primary)' }}>{fb.user_name}</span>
+                        <span style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>{fb.db_user_email}</span>
+                        <span style={{ fontSize: 10, color: 'var(--color-primary-start)', fontFamily: 'var(--font-mono)' }}>Member ({fb.user_id?.substring(0, 8)})</span>
+                      </>
+                    ) : fb.user_email ? (
+                      <>
+                        <span style={{ fontWeight: 500, fontSize: 13, color: 'var(--color-text-primary)' }}>{fb.user_email}</span>
+                        <span style={{ fontSize: 10, color: 'var(--color-text-secondary)' }}>Guest User</span>
+                      </>
+                    ) : (
+                      <span style={{ color: 'var(--color-text-secondary)', fontSize: 12, fontStyle: 'italic' }}>Anonymous Guest</span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 13, whiteSpace: 'pre-wrap', wordBreak: 'break-word', color: 'var(--color-text-primary)', lineHeight: 1.4 }}>
+                    {fb.message}
+                  </div>
+                </div>
+              ))}
+              {feedbacks.length === 0 && !feedbackLoading && (
+                <div style={{ padding: 24, textAlign: 'center', color: 'var(--color-text-secondary)' }}>
+                  No feedback submissions found.
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       <style>{`
+        .feedback-grid-header { display: grid; grid-template-columns: 1.2fr 1fr 1fr 2fr 4fr; gap: 12px; padding: 10px 16px; background: rgba(255,255,255,0.25); border-bottom: 1px solid var(--color-border); font-size: 11px; font-weight: 700; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.06em; }
+        .feedback-grid-row { display: grid; grid-template-columns: 1.2fr 1fr 1fr 2fr 4fr; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--color-border); align-items: start; }
+        
+        .badge-category-bug { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 2px 8px; border-radius: var(--radius-pill); background: var(--color-error-bg); color: var(--color-error); border: 1px solid var(--color-error-border); }
+        .badge-category-general { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 2px 8px; border-radius: var(--radius-pill); background: rgba(148, 163, 184, 0.08); color: var(--color-text-muted); border: 1px solid rgba(148, 163, 184, 0.2); }
+        .badge-category-feature-request { display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; padding: 2px 8px; border-radius: var(--radius-pill); background: var(--color-processing-bg); color: var(--color-processing); border: 1px solid var(--color-processing-border); }
+
         .admin-page { height: 100%; overflow-y: auto; padding: 32px 24px; }
         .admin-inner { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
         .admin-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }

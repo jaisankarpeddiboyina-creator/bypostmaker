@@ -15,6 +15,7 @@ import { handleHistory } from './routes/history'
 import { handleHealth } from './routes/health'
 import { handleAdmin } from './routes/admin'
 import { handlePromos } from './routes/promos'
+import { handleFeedbackSubmit } from './routes/feedback'
 import { handleDirectUploadRoute, handlePresignRoute, handlePresignBatchRoute, handleCleanupRoute } from './routes/upload'
 import { handleImageRoute } from './routes/image'
 import { handleBrandKit } from './routes/brand-kit'
@@ -642,6 +643,7 @@ export default {
         }
         if (path === '/api/webhooks/razorpay') return withCors(await handleWebhook(request, env, ctx), env)
         if (path === '/api/health') return withCors(await handleHealth(env), env)
+        if (path === '/api/feedback' && request.method === 'POST') return withCors(await handleFeedbackSubmit(request, env), env)
 
         // ── Batch Monitoring Ingestion Endpoint ──
         if (path === '/api/monitoring/batch' && request.method === 'POST') {

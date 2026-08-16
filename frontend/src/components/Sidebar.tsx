@@ -1,6 +1,5 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
-  LayoutDashboard, PlusCircle, Bookmark, History, CreditCard, Settings, Zap, X, Shield, LogOut, Plug, Image
+  LayoutDashboard, PlusCircle, Bookmark, History, CreditCard, Settings, Zap, X, Shield, LogOut, Plug, Image, MessageSquare
 } from 'lucide-react'
 import { useAppStore } from '../store/app'
 import { api } from '../lib/api'
@@ -15,7 +14,7 @@ export function Sidebar({ isOpen, onClose, onUpgradeClick }: SidebarProps) {
   const location = useLocation()
   const navigate = useNavigate()
   const path = location.pathname
-  const { user, setUser, setUsage, addToast } = useAppStore()
+  const { user, setUser, setUsage, addToast, setShowFeedbackModal } = useAppStore()
 
   const userPlan = user?.plan ?? 'free'
 
@@ -101,6 +100,18 @@ export function Sidebar({ isOpen, onClose, onUpgradeClick }: SidebarProps) {
               </Link>
             )
           })}
+          <button
+            type="button"
+            className="nav-item-link"
+            style={{ border: 'none', background: 'none', width: '100%', textAlign: 'left', cursor: 'pointer' }}
+            onClick={() => {
+              onClose?.()
+              setShowFeedbackModal(true)
+            }}
+          >
+            <MessageSquare size={18} className="nav-item-icon" />
+            <span className="nav-item-label">Give Feedback</span>
+          </button>
         </nav>
 
         {/* Footer User Profile & Upgrade Card */}

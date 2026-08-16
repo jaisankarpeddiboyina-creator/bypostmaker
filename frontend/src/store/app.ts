@@ -163,6 +163,9 @@ interface AppStore {
   setAssets: (a: AssetItem[] | ((prev: AssetItem[]) => AssetItem[])) => void
   assetFolders: AssetFolder[]
   setAssetFolders: (f: AssetFolder[] | ((prev: AssetFolder[]) => AssetFolder[])) => void
+
+  showFeedbackModal: boolean
+  setShowFeedbackModal: (v: boolean) => void
 }
 
 export const useAppStore = create<AppStore>((set, get) => ({
@@ -273,4 +276,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
   setAssetFolders: (f) => set(state => ({
     assetFolders: typeof f === 'function' ? f(state.assetFolders) : f
   })),
+
+  showFeedbackModal: false,
+  setShowFeedbackModal: (v) => set({ showFeedbackModal: v }),
 }))
+
+// Dev-only: expose store to window so test/reproduction scripts can inject state.
+// Vite strips this block entirely in production builds (import.meta.env.DEV = false → dead code).
+if (import.meta.env.DEV) {
+  ;(window as any).__useAppStore__ = useAppStore
+}
