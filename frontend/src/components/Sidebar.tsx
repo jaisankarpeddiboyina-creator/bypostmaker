@@ -34,7 +34,7 @@ export function Sidebar({ isOpen, onClose, onUpgradeClick }: SidebarProps) {
   const navItems = [
     { label: 'Dashboard', path: '/app', icon: LayoutDashboard },
     { label: 'Create Post', path: '/app/create', icon: PlusCircle, highlight: true },
-    { label: 'Connections', path: '/app/connections', icon: Plug },
+    // { label: 'Connections', path: '/app/connections', icon: Plug }, // Hidden while under construction
     { label: 'Brand Kit', path: '/app/brand-kit', icon: Bookmark },
     { label: 'Media Studio', path: '/app/media', icon: Image },
     { label: 'My Generations', path: '/app/history', icon: History },
