@@ -258,9 +258,10 @@ export default function App() {
           <Route path="/app/connections" element={
             <AuthGuard><AppShell><ConnectionsPage /></AppShell></AuthGuard>
           } />
-          <Route path="/app/assets" element={
+          <Route path="/app/media" element={
             <AuthGuard><AppShell><AssetsPage /></AppShell></AuthGuard>
           } />
+          <Route path="/app/assets" element={<Navigate to="/app/media" replace />} />
 
           <Route path="/admin" element={
             <AdminGuard><AppShell><AdminPage /></AppShell></AdminGuard>

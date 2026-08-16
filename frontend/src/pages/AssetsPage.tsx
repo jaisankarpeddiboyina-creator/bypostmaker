@@ -146,6 +146,24 @@ export default function AssetsPage() {
     fetchMedia(committedQuery, mediaType, page, orientation)
   }, [committedQuery, mediaType, page, orientation, fetchMedia])
 
+  // ── Effect: Inject Google Font stylesheets into head for font previews ──
+  useEffect(() => {
+    if (mediaType === 'font' && results.length > 0) {
+      results.forEach(item => {
+        if (item.type === 'font' && item.previewUrl) {
+          const id = `gfont-link-${item.id}`
+          if (!document.getElementById(id)) {
+            const link = document.createElement('link')
+            link.id = id
+            link.rel = 'stylesheet'
+            link.href = item.previewUrl
+            document.head.appendChild(link)
+          }
+        }
+      })
+    }
+  }, [mediaType, results])
+
   // ── Handlers ───────────────────────────────────────────────
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value
@@ -226,8 +244,8 @@ export default function AssetsPage() {
         <div className="stock-header glass-card">
           <div className="stock-header-inner">
             <div>
-              <h1>Stock Media Explorer</h1>
-              <p>Discover and copy high-quality, professional assets from multiple free providers.</p>
+              <h1>Media Studio</h1>
+              <p>Discover and collect high-quality stock photos, videos, icons, and typography for your social media posts.</p>
             </div>
             <div className="stock-safesearch-badge">
               <Shield size={13} />

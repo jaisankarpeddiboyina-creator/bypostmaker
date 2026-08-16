@@ -36,7 +36,7 @@ export function Sidebar({ isOpen, onClose, onUpgradeClick }: SidebarProps) {
     { label: 'Create Post', path: '/app/create', icon: PlusCircle, highlight: true },
     { label: 'Connections', path: '/app/connections', icon: Plug },
     { label: 'Brand Kit', path: '/app/brand-kit', icon: Bookmark },
-    { label: 'Assets', path: '/app/assets', icon: Image },
+    { label: 'Media Studio', path: '/app/media', icon: Image },
     { label: 'My Generations', path: '/app/history', icon: History },
     { label: 'Billing', path: '/app/billing', icon: CreditCard },
     { label: 'Settings', path: '/app/settings', icon: Settings },

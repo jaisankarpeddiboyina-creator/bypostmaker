@@ -68,6 +68,24 @@ export function AssetPickerModal() {
     handleFreeSearch()
   }, [freeMediaPage, freeMediaType])
 
+  // Inject Google Font stylesheets into head for font previews in modal
+  useEffect(() => {
+    if (freeMediaType === 'font' && freeMediaResults.length > 0) {
+      freeMediaResults.forEach(item => {
+        if (item.type === 'font' && item.previewUrl) {
+          const id = `gfont-modal-link-${item.id}`
+          if (!document.getElementById(id)) {
+            const link = document.createElement('link')
+            link.id = id
+            link.rel = 'stylesheet'
+            link.href = item.previewUrl
+            document.head.appendChild(link)
+          }
+        }
+      })
+    }
+  }, [freeMediaType, freeMediaResults])
+
   const handleSelectFreeItem = async (item: any) => {
     setSubmitting(true)
     try {
@@ -104,7 +122,7 @@ export function AssetPickerModal() {
         {/* Header */}
         <div className="picker-header">
           <div className="picker-title-group">
-            <h2>{assetPickerContext.title || 'Explore Stock Media'}</h2>
+            <h2>{assetPickerContext.title || 'Explore Media Studio'}</h2>
             <p>Search and select premium stock assets directly into your post</p>
           </div>
           <button className="picker-close-btn" onClick={closeAssetPicker}>

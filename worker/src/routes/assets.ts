@@ -72,9 +72,6 @@ export async function handleAssetsRoute(
             return await provider.search(q, type, page, orientation, env, rateLimiter, userId)
           } catch (err: any) {
             console.error(`[free-media] Provider ${provider.id} search failed:`, err)
-            if (err instanceof RateLimitError) {
-              throw err
-            }
             hadProviderError = true
             return []
           }

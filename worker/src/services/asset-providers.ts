@@ -167,11 +167,11 @@ const pexelsProvider: AssetProvider = {
   rateLimitPerUserPerMinute: 50,
 
   async search(query, type, page, orientation, env, rateLimiter, userId) {
-    const allowed = await rateLimiter.consume(`pexels:${userId}`, this.rateLimitPerUserPerMinute)
-    if (!allowed) throw new RateLimitError('pexels')
-
     const apiKey = env.PEXELS_API_KEY
     if (!apiKey) return []
+
+    const allowed = await rateLimiter.consume(`pexels:${userId}`, this.rateLimitPerUserPerMinute)
+    if (!allowed) throw new RateLimitError('pexels')
 
     const perPage = 20
     const oriParam = orientation !== 'all' ? `&orientation=${orientation}` : ''
@@ -265,11 +265,11 @@ const pixabayProvider: AssetProvider = {
   rateLimitPerUserPerMinute: 50,
 
   async search(query, type, page, orientation, env, rateLimiter, userId) {
-    const allowed = await rateLimiter.consume(`pixabay:${userId}`, this.rateLimitPerUserPerMinute)
-    if (!allowed) throw new RateLimitError('pixabay')
-
     const apiKey = env.PIXABAY_API_KEY
     if (!apiKey) return []
+
+    const allowed = await rateLimiter.consume(`pixabay:${userId}`, this.rateLimitPerUserPerMinute)
+    if (!allowed) throw new RateLimitError('pixabay')
 
     const perPage = 20
     const oriMap: Record<string, string> = { landscape: 'horizontal', portrait: 'vertical' }
@@ -359,11 +359,11 @@ const unsplashProvider: AssetProvider = {
   rateLimitPerUserPerMinute: 60,
 
   async search(query, _type, page, orientation, env, rateLimiter, userId) {
-    const allowed = await rateLimiter.consume(`unsplash:${userId}`, this.rateLimitPerUserPerMinute)
-    if (!allowed) throw new RateLimitError('unsplash')
-
     const accessKey = env.UNSPLASH_ACCESS_KEY
     if (!accessKey) return []
+
+    const allowed = await rateLimiter.consume(`unsplash:${userId}`, this.rateLimitPerUserPerMinute)
+    if (!allowed) throw new RateLimitError('unsplash')
 
     const oriMap: Record<string, string> = { landscape: 'landscape', portrait: 'portrait', square: 'squarish' }
     const oriParam = orientation !== 'all' && oriMap[orientation] ? `&orientation=${oriMap[orientation]}` : ''
@@ -555,25 +555,37 @@ const googleFontsProvider: AssetProvider = {
     if (!allowed) throw new RateLimitError('google_fonts')
 
     const apiKey = env.GOOGLE_FONTS_API_KEY
-    if (apiKey) {
-      const res = await fetch(
-        `https://www.googleapis.com/webfonts/v1/webfonts?key=${apiKey}&sort=popularity`
-      )
-      if (res.ok) {
-        const data = await res.json() as { items: Array<{ family: string; category: string }> }
-        const q = query.toLowerCase()
-        const filtered = (data.items ?? []).filter(f => f.family.toLowerCase().includes(q))
-        const pageSize = 20
-        const pageItems = filtered.slice((page - 1) * pageSize, page * pageSize)
+    const q = query.toLowerCase().trim()
+    const isDefault = !q || q === 'trending' || q === 'all' || q === 'null'
 
-        return pageItems.map(f => ({
-          id: `gfont_${f.family.replace(/\s+/g, '_')}`,
-          type: 'font' as const,
-          title: f.family,
-          previewUrl: `https://fonts.googleapis.com/css2?family=${encodeURIComponent(f.family)}&display=swap`,
-          downloadUrl: `https://fonts.googleapis.com/css2?family=${encodeURIComponent(f.family)}&display=swap`,
-          attribution: null,
-        }))
+    if (apiKey) {
+      try {
+        console.log(`[google_fonts] Fetching live font catalog from Google Developer API with API key (query="${q}", page=${page})`)
+        const res = await fetch(
+          `https://www.googleapis.com/webfonts/v1/webfonts?key=${apiKey}&sort=popularity`
+        )
+        if (res.ok) {
+          const data = await res.json() as { items: Array<{ family: string; category: string }> }
+          const items = data.items ?? []
+          const filtered = isDefault
+            ? items
+            : items.filter(f => f.family.toLowerCase().includes(q) || f.category.toLowerCase().includes(q))
+          const pageSize = 20
+          const pageItems = filtered.slice((page - 1) * pageSize, page * pageSize)
+
+          return pageItems.map(f => ({
+            id: `gfont_${f.family.replace(/\s+/g, '_').toLowerCase()}`,
+            type: 'font' as const,
+            title: f.family,
+            previewUrl: `https://fonts.googleapis.com/css2?family=${encodeURIComponent(f.family)}&display=swap`,
+            downloadUrl: `https://fonts.googleapis.com/css2?family=${encodeURIComponent(f.family)}&display=swap`,
+            attribution: null,
+          }))
+        } else {
+          console.error(`[google_fonts] API error ${res.status}: ${await res.text()}`)
+        }
+      } catch (err) {
+        console.warn('[google_fonts] API fetch failed, falling back to keyless list:', err)
       }
     }
 
@@ -591,11 +603,16 @@ const googleFontsProvider: AssetProvider = {
       { family: 'JetBrains Mono', category: 'monospace' },
       { family: 'Fira Code', category: 'monospace' },
       { family: 'Space Grotesk', category: 'sans-serif' },
+      { family: 'Syne', category: 'sans-serif' },
+      { family: 'Cinzel', category: 'serif' },
+      { family: 'Cabin', category: 'sans-serif' },
+      { family: 'Arvo', category: 'serif' },
+      { family: 'Pacifico', category: 'handwriting' },
+      { family: 'Dancing Script', category: 'handwriting' },
     ]
 
-    const q = query.toLowerCase()
     const perPage = 20
-    const filtered = popularFonts.filter(f => f.family.toLowerCase().includes(q) || q === 'trending' || q === 'all')
+    const filtered = popularFonts.filter(f => isDefault || f.family.toLowerCase().includes(q) || f.category.toLowerCase().includes(q))
     const sliced = filtered.slice((page - 1) * perPage, page * perPage)
 
     return sliced.map(f => ({
