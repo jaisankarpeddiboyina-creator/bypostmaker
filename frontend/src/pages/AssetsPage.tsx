@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react'
 import {
   Search, Loader2, Video, Sparkles, ChevronLeft, ChevronRight,
   Copy, Info, X, AlertCircle, RefreshCw, Image as ImageIcon,
-  Music, Type, Grid3X3, Shield
+  Music, Type, Grid3X3, Shield, ExternalLink
 } from 'lucide-react'
 import { useAppStore } from '../store/app'
 
@@ -58,6 +58,65 @@ function setCache(key: string, data: ApiResponse): void {
     if (oldestKey) queryCache.delete(oldestKey)
   }
   queryCache.set(key, { data, timestamp: Date.now() })
+}
+
+// ── Robust Cross-Browser Video Player ─────────────────────────
+function StockVideoPlayer({ src, poster, title }: { src: string; poster?: string; title: string }) {
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
+
+  return (
+    <div className="stock-video-player-container">
+      {loading && !error && (
+        <div className="stock-video-loading">
+          <Loader2 size={24} className="animate-spin" />
+          <span>Loading video stream...</span>
+        </div>
+      )}
+      {error ? (
+        <div className="stock-video-error glass-card">
+          <AlertCircle size={28} className="error-icon" />
+          <h4>Video Stream Restricted</h4>
+          <p>The provider's media stream could not be decoded directly in this browser frame.</p>
+          <div className="stock-video-error-actions">
+            <a
+              href={src}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-primary btn-sm"
+            >
+              <ExternalLink size={14} />
+              <span>Open Video in New Tab</span>
+            </a>
+          </div>
+        </div>
+      ) : (
+        <video
+          poster={poster}
+          controls
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="auto"
+          {...({ referrerPolicy: 'no-referrer' } as any)}
+          className="lightbox-video"
+          onLoadStart={() => setLoading(true)}
+          onCanPlay={() => setLoading(false)}
+          onLoadedData={() => setLoading(false)}
+          onError={() => {
+            setLoading(false)
+            setError(true)
+          }}
+        >
+          <source src={src} type="video/mp4" />
+          <source src={src} type="video/webm" />
+          <source src={src} />
+          Your browser does not support HTML5 video.
+        </video>
+      )}
+    </div>
+  )
 }
 
 // ── Component ─────────────────────────────────────────────────
@@ -488,13 +547,10 @@ export default function AssetsPage() {
             </div>
             <div className="lightbox-body">
               {previewItem.type === 'video' ? (
-                <video
+                <StockVideoPlayer
                   src={previewItem.downloadUrl}
-                  controls
-                  autoPlay
-                  loop
-                  muted
-                  className="lightbox-video"
+                  poster={previewItem.previewUrl}
+                  title={previewItem.title}
                 />
               ) : previewItem.type === 'font' ? (
                 <div className="lightbox-font-demo">
@@ -1272,6 +1328,67 @@ export default function AssetsPage() {
             margin-top: 16px;
             padding: 10px 14px;
           }
+        }
+
+        /* ── Stock Video Player Styles ── */
+        .stock-video-player-container {
+          width: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+          min-height: 280px;
+          background: rgba(0, 0, 0, 0.25);
+          border-radius: var(--radius-sm);
+          overflow: hidden;
+        }
+
+        .stock-video-loading {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          color: white;
+          font-size: 13px;
+          font-weight: 600;
+          background: rgba(15, 23, 42, 0.5);
+          backdrop-filter: blur(6px);
+          z-index: 2;
+        }
+
+        .stock-video-error {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 32px 24px;
+          text-align: center;
+          gap: 12px;
+          max-width: 420px;
+          margin: 0 auto;
+        }
+
+        .stock-video-error h4 {
+          margin: 0;
+          font-size: 16px;
+          font-weight: 700;
+          color: var(--color-text-primary);
+        }
+
+        .stock-video-error p {
+          margin: 0;
+          font-size: 13px;
+          color: var(--color-text-secondary);
+          line-height: 1.4;
+        }
+
+        .stock-video-error-actions {
+          margin-top: 8px;
+          display: flex;
+          gap: 10px;
         }
 
         @media (max-width: 400px) {

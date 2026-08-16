@@ -103,7 +103,7 @@ interface PexelsVideo {
   height: number
   url: string
   user: { name: string; url: string }
-  video_files: { quality: string; link: string; width: number; height: number }[]
+  video_files: { quality: string; link: string; width: number; height: number; file_type?: string }[]
   image: string           // thumbnail
 }
 
@@ -207,9 +207,13 @@ const pexelsProvider: AssetProvider = {
     if (type === 'video') {
       const data = await res.json() as { videos: PexelsVideo[] }
       return (data.videos ?? []).map(v => {
-        const bestFile = v.video_files
-          .filter(f => f.quality === 'hd' || f.quality === 'sd')
-          .sort((a, b) => (b.width ?? 0) - (a.width ?? 0))[0]
+        const mp4Files = (v.video_files || []).filter(f => !f.file_type || f.file_type === 'video/mp4' || f.link.includes('.mp4'))
+        const candidates = mp4Files.length > 0 ? mp4Files : v.video_files || []
+        const bestFile = candidates.sort((a, b) => {
+          const wA = a.width ?? 0
+          const wB = b.width ?? 0
+          return Math.abs(wA - 1280) - Math.abs(wB - 1280)
+        })[0]
         return {
           id: `pexels_v_${v.id}`,
           type: 'video' as const,
