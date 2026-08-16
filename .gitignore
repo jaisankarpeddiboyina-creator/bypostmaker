@@ -19,6 +19,7 @@ npm-debug.log*
 
 # Local scratch scripts (one-off utilities, may contain test credentials)
 scratch/
+omnipost/
 
 # Large reference assets and local test logs/images
 postmaker design reference.pdf
