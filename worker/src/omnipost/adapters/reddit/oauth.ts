@@ -2,6 +2,54 @@ import { AdapterCredentials } from '../../sdk/PlatformAdapter';
 
 export const REDDIT_USER_AGENT = 'web:com.bypostmaker.app:v1.0.0 (by /u/PostMakerApp)';
 
+export async function exchangeRedditCode(
+  code: string,
+  redirectUri: string,
+  clientId: string,
+  clientSecret: string
+): Promise<AdapterCredentials> {
+  const basicAuth = btoa(`${clientId}:${clientSecret}`);
+  const body = new URLSearchParams({
+    grant_type: 'authorization_code',
+    code,
+    redirect_uri: redirectUri,
+  });
+
+  const response = await fetch('https://www.reddit.com/api/v1/access_token', {
+    method: 'POST',
+    headers: {
+      Authorization: `Basic ${basicAuth}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'User-Agent': REDDIT_USER_AGENT,
+    },
+    body: body.toString(),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`Reddit OAuth code exchange failed (${response.status}): ${text}`);
+  }
+
+  const data = (await response.json()) as {
+    access_token: string;
+    refresh_token?: string;
+    expires_in: number;
+    scope: string;
+    token_type: string;
+  };
+
+  const expiresAt = Math.floor(Date.now() / 1000) + data.expires_in;
+
+  return {
+    accessToken: data.access_token,
+    refreshToken: data.refresh_token,
+    expiresAt,
+    clientId,
+    clientSecret,
+    userAgent: REDDIT_USER_AGENT,
+  };
+}
+
 export async function refreshRedditToken(
   credentials: AdapterCredentials,
   clientId: string,

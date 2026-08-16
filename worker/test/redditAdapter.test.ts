@@ -1,4 +1,5 @@
 import { RedditAdapter } from '../src/omnipost/adapters/reddit/RedditAdapter';
+import { exchangeRedditCode } from '../src/omnipost/adapters/reddit/oauth';
 import { runConformanceSuite } from '../src/omnipost/sdk/conformance';
 import { UnifiedPost } from '../src/omnipost/core/types';
 
@@ -86,8 +87,8 @@ async function runRedditTests() {
 
     console.log(`RESULT: ${wireFormatPass ? 'PASS' : 'FAIL'}\n`);
 
-    // 3. Error Mapping Test (RATELIMIT error response)
-    console.log('--- TEST 3: Error Mapping (RATELIMIT Error Response) ---');
+    // 3. Error Mapping Test 1: RATELIMIT
+    console.log('--- TEST 3A: Error Mapping (RATELIMIT Error Response) ---');
     globalThis.fetch = (async () =>
       new Response(
         JSON.stringify({
@@ -98,12 +99,66 @@ async function runRedditTests() {
         { status: 200, headers: { 'Content-Type': 'application/json' } }
       )) as typeof fetch;
 
-    const errorResult = await adapter.post(payload, creds);
-    console.log(`  Mapped Error Result:`, JSON.stringify(errorResult, null, 2));
-    const errorPass = errorResult.success === false && errorResult.error?.code === 'RATE_LIMITED' && errorResult.error?.retryable === true;
-    console.log(`RESULT: ${errorPass ? 'PASS' : 'FAIL'}\n`);
+    const ratelimitResult = await adapter.post(payload, creds);
+    console.log(`  Mapped Error Result:`, JSON.stringify(ratelimitResult, null, 2));
+    const ratelimitPass = ratelimitResult.success === false && ratelimitResult.error?.code === 'RATE_LIMITED' && ratelimitResult.error?.retryable === true;
+    console.log(`RESULT: ${ratelimitPass ? 'PASS' : 'FAIL'}\n`);
 
-    const allPassed = conformancePass && wireFormatPass && errorPass;
+    // 3. Error Mapping Test 2: REQUIRES_FLAIR
+    console.log('--- TEST 3B: Error Mapping (REQUIRES_FLAIR Error Response) ---');
+    globalThis.fetch = (async () =>
+      new Response(
+        JSON.stringify({
+          json: {
+            errors: [['REQUIRES_FLAIR', 'Your post must contain post flair to submit to this subreddit.', 'flair']],
+          },
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      )) as typeof fetch;
+
+    const flairResult = await adapter.post(payload, creds);
+    console.log(`  Mapped Error Result:`, JSON.stringify(flairResult, null, 2));
+    const flairPass = flairResult.success === false && flairResult.error?.code === 'VALIDATION_ERROR' && flairResult.error?.retryable === false;
+    console.log(`RESULT: ${flairPass ? 'PASS' : 'FAIL'}\n`);
+
+    // 3. Error Mapping Test 3: SUBREDDIT_NOTALLOWED
+    console.log('--- TEST 3C: Error Mapping (SUBREDDIT_NOTALLOWED Error Response) ---');
+    globalThis.fetch = (async () =>
+      new Response(
+        JSON.stringify({
+          json: {
+            errors: [['SUBREDDIT_NOTALLOWED', 'You are not allowed to post in this subreddit.', 'sr']],
+          },
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      )) as typeof fetch;
+
+    const forbiddenResult = await adapter.post(payload, creds);
+    console.log(`  Mapped Error Result:`, JSON.stringify(forbiddenResult, null, 2));
+    const forbiddenPass = forbiddenResult.success === false && forbiddenResult.error?.code === 'FORBIDDEN' && forbiddenResult.error?.retryable === false;
+    console.log(`RESULT: ${forbiddenPass ? 'PASS' : 'FAIL'}\n`);
+
+    // 4. OAuth Code Exchange Test
+    console.log('--- TEST 4: exchangeRedditCode OAuth Exchange ---');
+    globalThis.fetch = (async (url: string | URL | Request, init?: RequestInit) => {
+      return new Response(
+        JSON.stringify({
+          access_token: 'mock-access-token-999',
+          refresh_token: 'mock-refresh-token-888',
+          expires_in: 86400,
+          scope: 'identity submit read',
+          token_type: 'bearer',
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    }) as typeof fetch;
+
+    const exchangeCreds = await exchangeRedditCode('mock-code-123', 'https://staging.bypostamaker.com/api/omnipost/oauth/callback', 'client-id-1', 'client-secret-1');
+    console.log(`  Exchanged Credentials:`, JSON.stringify(exchangeCreds, null, 2));
+    const oauthPass = exchangeCreds.accessToken === 'mock-access-token-999' && exchangeCreds.refreshToken === 'mock-refresh-token-888';
+    console.log(`RESULT: ${oauthPass ? 'PASS' : 'FAIL'}\n`);
+
+    const allPassed = conformancePass && wireFormatPass && ratelimitPass && flairPass && forbiddenPass && oauthPass;
     console.log('=================================================');
     console.log(` OVERALL REDDIT ADAPTER SUITE: ${allPassed ? 'PASSED 100%' : 'FAILED'}`);
     console.log('=================================================');
