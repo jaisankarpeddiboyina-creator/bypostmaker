@@ -269,10 +269,20 @@ export const api = {
     getConnections: () =>
       request<{ success: boolean; data: Array<{ id: string; platform: string; label: string; username?: string | null; status: string; created_at: number }> }>('/omnipost/connections'),
 
-    createConnection: (platform: string, webhookUrl?: string, label?: string, handle?: string, appPassword?: string) =>
+    createConnection: (payload: {
+      platform: string
+      webhookUrl?: string
+      label?: string
+      handle?: string
+      appPassword?: string
+      apiKey?: string
+      chatId?: string
+      publicationId?: string
+      personalToken?: string
+    }) =>
       request<{ success: boolean; data?: { id: string; platform: string; label: string; username?: string | null; status: string; created_at: number }; error?: string }>('/omnipost/connections', {
         method: 'POST',
-        body: JSON.stringify({ platform, webhookUrl, label, handle, appPassword }),
+        body: JSON.stringify(payload),
       }),
 
     publish: (connectionId: string, text: string, mediaUrls?: string[], idempotencyKey?: string) =>

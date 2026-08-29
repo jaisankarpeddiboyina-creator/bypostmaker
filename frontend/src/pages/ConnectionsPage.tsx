@@ -24,6 +24,10 @@ const PLATFORM_GRID_ITEMS = [
   { id: 'pinterest', name: 'Pinterest', category: 'oauth', color: '#E60023' },
   { id: 'facebook', name: 'Facebook', category: 'oauth', color: '#1877F2' },
   { id: 'instagram', name: 'Instagram', category: 'oauth', color: '#E1306C' },
+  { id: 'github', name: 'GitHub', category: 'oauth', color: '#24292E' },
+  { id: 'telegram', name: 'Telegram Bot', category: 'credentials', color: '#229ED9' },
+  { id: 'devto', name: 'dev.to', category: 'credentials', color: '#0A0A0A' },
+  { id: 'hashnode', name: 'Hashnode', category: 'credentials', color: '#2962FF' },
   { id: 'bluesky', name: 'Bluesky', category: 'credentials', color: '#0085FF' },
   { id: 'discord', name: 'Discord Webhook', category: 'webhook', color: '#5865F2' },
   { id: 'slack', name: 'Slack Webhook', category: 'webhook', color: '#4A154B' },
@@ -48,6 +52,10 @@ export default function ConnectionsPage() {
   const [webhookUrl, setWebhookUrl] = useState('')
   const [handle, setHandle] = useState('')
   const [appPassword, setAppPassword] = useState('')
+  const [apiKey, setApiKey] = useState('')
+  const [chatId, setChatId] = useState('')
+  const [publicationId, setPublicationId] = useState('')
+  const [personalToken, setPersonalToken] = useState('')
   const [formError, setFormError] = useState<string | null>(null)
 
   const fetchConnections = async () => {
@@ -74,6 +82,10 @@ export default function ConnectionsPage() {
     setWebhookUrl('')
     setHandle('')
     setAppPassword('')
+    setApiKey('')
+    setChatId('')
+    setPublicationId('')
+    setPersonalToken('')
 
     if (plat.category === 'oauth') {
       window.location.href = `/api/omnipost/oauth/connect?platform=${plat.id}`
@@ -100,23 +112,57 @@ export default function ConnectionsPage() {
       return
     }
 
+    if (platform === 'telegram' && (!apiKey.trim() || !chatId.trim())) {
+      setFormError('Telegram Bot Token and Chat ID are required')
+      return
+    }
+
+    if (platform === 'devto' && !apiKey.trim()) {
+      setFormError('dev.to API Key is required')
+      return
+    }
+
+    if (platform === 'hashnode' && (!personalToken.trim() || !publicationId.trim())) {
+      setFormError('Hashnode Personal Token and Publication ID are required')
+      return
+    }
+
     try {
       setAdding(true)
       let res
       if (platform === 'bluesky') {
-        res = await api.omnipost.createConnection(
+        res = await api.omnipost.createConnection({
           platform,
-          undefined,
-          label.trim() || undefined,
-          handle.trim(),
-          appPassword.trim()
-        )
+          label: label.trim() || undefined,
+          handle: handle.trim(),
+          appPassword: appPassword.trim(),
+        })
+      } else if (platform === 'telegram') {
+        res = await api.omnipost.createConnection({
+          platform,
+          label: label.trim() || undefined,
+          apiKey: apiKey.trim(),
+          chatId: chatId.trim(),
+        })
+      } else if (platform === 'devto') {
+        res = await api.omnipost.createConnection({
+          platform,
+          label: label.trim() || undefined,
+          apiKey: apiKey.trim(),
+        })
+      } else if (platform === 'hashnode') {
+        res = await api.omnipost.createConnection({
+          platform,
+          label: label.trim() || undefined,
+          personalToken: personalToken.trim(),
+          publicationId: publicationId.trim(),
+        })
       } else {
-        res = await api.omnipost.createConnection(
+        res = await api.omnipost.createConnection({
           platform,
-          webhookUrl.trim(),
-          label.trim() || undefined
-        )
+          webhookUrl: webhookUrl.trim(),
+          label: label.trim() || undefined,
+        })
       }
 
       if (res.success && res.data) {
@@ -448,6 +494,87 @@ export default function ConnectionsPage() {
                       <span className="form-hint">
                         Bluesky Settings → App Passwords → Generate App Password.
                       </span>
+                    </div>
+                  </>
+                )}
+
+                {selectedPlatform.id === 'telegram' && (
+                  <>
+                    <div className="form-group">
+                      <label htmlFor="telegram-token" className="form-label">Bot Token *</label>
+                      <input
+                        id="telegram-token"
+                        type="password"
+                        className="form-input"
+                        placeholder="123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ"
+                        value={apiKey}
+                        onChange={e => setApiKey(e.target.value)}
+                        disabled={adding}
+                        required
+                      />
+                      <span className="form-hint">Obtained from Telegram @BotFather</span>
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor="telegram-chatid" className="form-label">Target Channel / Chat ID *</label>
+                      <input
+                        id="telegram-chatid"
+                        type="text"
+                        className="form-input"
+                        placeholder="@mychannel or -100123456789"
+                        value={chatId}
+                        onChange={e => setChatId(e.target.value)}
+                        disabled={adding}
+                        required
+                      />
+                    </div>
+                  </>
+                )}
+
+                {selectedPlatform.id === 'devto' && (
+                  <div className="form-group">
+                    <label htmlFor="devto-key" className="form-label">dev.to API Key *</label>
+                    <input
+                      id="devto-key"
+                      type="password"
+                      className="form-input"
+                      placeholder="dev_api_key_xxx"
+                      value={apiKey}
+                      onChange={e => setApiKey(e.target.value)}
+                      disabled={adding}
+                      required
+                    />
+                    <span className="form-hint">dev.to Settings → Extensions → Forem API Keys</span>
+                  </div>
+                )}
+
+                {selectedPlatform.id === 'hashnode' && (
+                  <>
+                    <div className="form-group">
+                      <label htmlFor="hashnode-token" className="form-label">Personal Access Token *</label>
+                      <input
+                        id="hashnode-token"
+                        type="password"
+                        className="form-input"
+                        placeholder="hn_pat_xxx"
+                        value={personalToken}
+                        onChange={e => setPersonalToken(e.target.value)}
+                        disabled={adding}
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor="hashnode-pubid" className="form-label">Publication ID *</label>
+                      <input
+                        id="hashnode-pubid"
+                        type="text"
+                        className="form-input"
+                        placeholder="60a1234567890abcdef"
+                        value={publicationId}
+                        onChange={e => setPublicationId(e.target.value)}
+                        disabled={adding}
+                        required
+                      />
+                      <span className="form-hint">Hashnode Dashboard → Account Settings → Developer Tokens & Publication ID</span>
                     </div>
                   </>
                 )}

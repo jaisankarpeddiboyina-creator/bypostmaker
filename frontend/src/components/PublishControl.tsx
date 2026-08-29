@@ -61,11 +61,11 @@ export function PublishControl({ text, mediaUrls = [] }: PublishControlProps) {
 
     try {
       setAddingWebhook(true)
-      const res = await api.omnipost.createConnection(
-        'discord',
-        webhookUrlInput.trim(),
-        webhookLabelInput.trim() || 'Discord Channel'
-      )
+      const res = await api.omnipost.createConnection({
+        platform: 'discord',
+        webhookUrl: webhookUrlInput.trim(),
+        label: webhookLabelInput.trim() || 'Discord Channel'
+      })
 
       if (res.success && res.data) {
         addToast('Discord webhook connected successfully!', 'success')

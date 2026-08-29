@@ -320,6 +320,14 @@ const PROVIDERS: Record<string, ProviderConfig> = {
     clientIdKey: 'OMNIPOST_META_CLIENT_ID' as any,
     clientSecretKey: 'OMNIPOST_META_CLIENT_SECRET' as any,
     profileEndpoint: 'https://graph.instagram.com/me'
+  },
+  github: {
+    authEndpoint: 'https://github.com/login/oauth/authorize',
+    tokenEndpoint: 'https://github.com/login/oauth/access_token',
+    scopes: 'repo public_repo write:discussion',
+    clientIdKey: 'OMNIPOST_GITHUB_CLIENT_ID' as any,
+    clientSecretKey: 'OMNIPOST_GITHUB_CLIENT_SECRET' as any,
+    profileEndpoint: 'https://api.github.com/user'
   }
 };
 
@@ -522,8 +530,12 @@ export async function handleOmnipost(request: Request, env: Env, userId: string)
         label?: string;
         handle?: string;
         appPassword?: string;
+        apiKey?: string;
+        chatId?: string;
+        publicationId?: string;
+        personalToken?: string;
       };
-      const { platform, webhookUrl, label, handle, appPassword } = body;
+      const { platform, webhookUrl, label, handle, appPassword, apiKey, chatId, publicationId, personalToken } = body;
 
       if (!platform || typeof platform !== 'string') {
         return Response.json({ success: false, error: 'platform is required' }, { status: 400 });
@@ -558,6 +570,35 @@ export async function handleOmnipost(request: Request, env: Env, userId: string)
         plaintextCredentials = JSON.stringify({ handle, appPassword });
         defaultLabel = 'Bluesky Channel';
         displayUsername = handle.startsWith('@') ? handle : `@${handle}`;
+      } else if (platform === 'telegram') {
+        const botToken = apiKey || appPassword;
+        if (!botToken || !chatId) {
+          return Response.json({ success: false, error: 'Telegram Bot Token and Chat ID are required' }, { status: 400 });
+        }
+        plaintextCredentials = JSON.stringify({ accessToken: botToken, targetId: chatId });
+        defaultLabel = 'Telegram Channel';
+        displayUsername = chatId;
+      } else if (platform === 'devto') {
+        if (!apiKey) {
+          return Response.json({ success: false, error: 'dev.to API key is required' }, { status: 400 });
+        }
+        plaintextCredentials = JSON.stringify({ accessToken: apiKey });
+        defaultLabel = 'dev.to Account';
+      } else if (platform === 'hashnode') {
+        const token = personalToken || apiKey;
+        if (!token || !publicationId) {
+          return Response.json({ success: false, error: 'Hashnode Personal Token and Publication ID are required' }, { status: 400 });
+        }
+        plaintextCredentials = JSON.stringify({ accessToken: token, targetId: publicationId });
+        defaultLabel = 'Hashnode Publication';
+        displayUsername = publicationId;
+      } else if (platform === 'github') {
+        if (!apiKey) {
+          return Response.json({ success: false, error: 'GitHub Personal Access Token is required' }, { status: 400 });
+        }
+        plaintextCredentials = JSON.stringify({ accessToken: apiKey, targetId: handle || 'owner/repo' });
+        defaultLabel = 'GitHub Repository';
+        displayUsername = handle || 'GitHub';
       } else {
         return Response.json({ success: false, error: 'Unsupported connection credentials platform' }, { status: 400 });
       }
