@@ -6,8 +6,58 @@ import { D1VaultStorage } from '../omnipost/storage/d1Vault'
 import { D1IdempotencyStore } from '../omnipost/storage/d1Idempotency'
 import { D1RateLimiter } from '../omnipost/storage/d1RateLimiter'
 import { MemoryClaimStore } from '../omnipost/storage/d1ClaimStore'
+
 import { DiscordAdapter } from '../omnipost/adapters/discord/DiscordAdapter'
 import { MastodonAdapter } from '../omnipost/adapters/mastodon/MastodonAdapter'
+import { RedditAdapter } from '../omnipost/adapters/reddit/RedditAdapter'
+import { TwitterAdapter } from '../omnipost/adapters/twitter/TwitterAdapter'
+import { LinkedInAdapter } from '../omnipost/adapters/linkedin/LinkedInAdapter'
+import { PinterestAdapter } from '../omnipost/adapters/pinterest/PinterestAdapter'
+import { TelegramAdapter } from '../omnipost/adapters/telegram/TelegramAdapter'
+import { SlackAdapter } from '../omnipost/adapters/slack/SlackAdapter'
+import { DevToAdapter } from '../omnipost/adapters/devto/DevToAdapter'
+import { HashnodeAdapter } from '../omnipost/adapters/hashnode/HashnodeAdapter'
+import { GitHubAdapter } from '../omnipost/adapters/github/GitHubAdapter'
+import { InstagramAdapter } from '../omnipost/adapters/instagram/InstagramAdapter'
+import { FacebookAdapter } from '../omnipost/adapters/facebook/FacebookAdapter'
+import { YouTubeAdapter } from '../omnipost/adapters/youtube/YouTubeAdapter'
+import { TikTokAdapter } from '../omnipost/adapters/tiktok/TikTokAdapter'
+import { YouTubeShortsAdapter } from '../omnipost/adapters/youtubeshorts/YouTubeShortsAdapter'
+import { SnapchatAdapter } from '../omnipost/adapters/snapchat/SnapchatAdapter'
+import { MediumAdapter } from '../omnipost/adapters/medium/MediumAdapter'
+import { ProductHuntAdapter } from '../omnipost/adapters/producthunt/ProductHuntAdapter'
+import { WhatsAppAdapter } from '../omnipost/adapters/whatsapp/WhatsAppAdapter'
+import { SubstackAdapter } from '../omnipost/adapters/substack/SubstackAdapter'
+import { HackerNewsAdapter } from '../omnipost/adapters/hackernews/HackerNewsAdapter'
+import { QuoraAdapter } from '../omnipost/adapters/quora/QuoraAdapter'
+
+export function createStandardAdapterRegistry(): AdapterRegistry {
+  const registry = new AdapterRegistry();
+  registry.register(new DiscordAdapter());
+  registry.register(new MastodonAdapter());
+  registry.register(new RedditAdapter());
+  registry.register(new TwitterAdapter());
+  registry.register(new LinkedInAdapter());
+  registry.register(new PinterestAdapter());
+  registry.register(new TelegramAdapter());
+  registry.register(new SlackAdapter());
+  registry.register(new DevToAdapter());
+  registry.register(new HashnodeAdapter());
+  registry.register(new GitHubAdapter());
+  registry.register(new InstagramAdapter());
+  registry.register(new FacebookAdapter());
+  registry.register(new YouTubeAdapter());
+  registry.register(new TikTokAdapter());
+  registry.register(new YouTubeShortsAdapter());
+  registry.register(new SnapchatAdapter());
+  registry.register(new MediumAdapter());
+  registry.register(new ProductHuntAdapter());
+  registry.register(new WhatsAppAdapter());
+  registry.register(new SubstackAdapter());
+  registry.register(new HackerNewsAdapter());
+  registry.register(new QuoraAdapter());
+  return registry;
+}
 
 
 const DISCORD_WEBHOOK_REGEX = /^https:\/\/(discord\.com|discordapp\.com)\/api\/webhooks\/\d+\/[A-Za-z0-9_-]+$/;
@@ -819,11 +869,9 @@ export async function handleOmnipost(request: Request, env: Env, userId: string)
         return Response.json({ success: false, error: 'Failed to decrypt connection credentials', code: 'DECRYPTION_ERROR' }, { status: 500 });
       }
 
-      // ── Dispatch via Omnipost Engine (Discord & Mastodon) ────────
-      if (connection.platform === 'discord' || connection.platform === 'mastodon') {
-        const registry = new AdapterRegistry();
-        registry.register(new DiscordAdapter());
-        registry.register(new MastodonAdapter());
+      // ── Dispatch via Omnipost Engine (All 23 Registered Adapters) ────────
+      const registry = createStandardAdapterRegistry();
+      if (registry.has(connection.platform)) {
         const bus = new EventBus();
 
         const vault = new D1VaultStorage(env.DB, masterKey);
