@@ -19,6 +19,7 @@ import { handleFeedbackSubmit } from './routes/feedback'
 import { handleDirectUploadRoute, handlePresignRoute, handlePresignBatchRoute, handleCleanupRoute } from './routes/upload'
 import { handleImageRoute } from './routes/image'
 import { handleBrandKit } from './routes/brand-kit'
+import { handleCreateShare, handleDeleteShare, handleGetShare, handleShareImage } from './routes/share'
 import { runCronJobs, runDataRetention } from './services/cron'
 
 
@@ -571,6 +572,110 @@ async function handleStaticPageSEO(request: Request, env: Env): Promise<Response
   }
 }
 
+async function handleSharePageSEO(request: Request, env: Env): Promise<Response> {
+  const url = new URL(request.url)
+  const path = url.pathname
+  const domain = 'https://bypostamaker.com'
+  const segments = path.replace(/^\/+/, '').split('/')
+  const shareId = segments[1]?.trim()
+
+  let title = 'Shared Content Expired | PostMaker'
+  let description = 'This shared content link has expired or was removed by the creator.'
+  let ogImage = `${domain}/og-image.png`
+  let canonicalUrl = `${domain}${path}`
+  let is404 = true
+
+  if (shareId) {
+    try {
+      const row = await env.DB.prepare(
+        `SELECT id, title, content_snapshot, media_keys, expires_at FROM shares WHERE id = ? AND expires_at > unixepoch()`
+      ).bind(shareId).first<{
+        id: string
+        title: string
+        content_snapshot: string
+        media_keys: string | null
+        expires_at: number
+      }>()
+
+      if (row) {
+        is404 = false
+        title = 'Shared Content Kit ✨ | PostMaker'
+        let parsedPosts: any[] = []
+        try {
+          parsedPosts = JSON.parse(row.content_snapshot)
+        } catch {
+          parsedPosts = []
+        }
+        const firstPost = parsedPosts[0]?.content || ''
+        if (firstPost) {
+          description = firstPost.slice(0, 120).replace(/\s+/g, ' ').trim()
+        } else {
+          description = 'View this shared AI content kit on PostMaker.'
+        }
+        let mediaKeys: string[] = []
+        if (row.media_keys) {
+          try {
+            mediaKeys = JSON.parse(row.media_keys)
+          } catch {
+            mediaKeys = []
+          }
+        }
+        ogImage = mediaKeys.length > 0 ? `${domain}/api/share/${shareId}/image/0` : `${domain}/og-image.png`
+      }
+    } catch (err) {
+      console.error('[handleSharePageSEO] Failed to query share row:', err)
+    }
+  }
+
+  // Fetch SPA shell index.html
+  let assetResponse: Response | null = null
+  try {
+    const indexRequest = new Request(new URL('/index.html', request.url))
+    assetResponse = await env.ASSETS.fetch(indexRequest)
+    if (!assetResponse.ok) {
+      throw new Error(`ASSETS.fetch returned status ${assetResponse.status}`)
+    }
+  } catch (err) {
+    console.error('Failed to fetch SPA shell index.html for share page:', err)
+    return new Response('Asset Not Found', { status: 404 })
+  }
+
+  // Apply HTMLRewriter transformations (meta tags + structured data)
+  try {
+    const headInjector = new HeadInjector(path, domain)
+    const rewriter = new HTMLRewriter()
+      .on('title', new MetaRewriter(title, description, canonicalUrl, ogImage))
+      .on('meta', new MetaRewriter(title, description, canonicalUrl, ogImage))
+      .on('link', new MetaRewriter(title, description, canonicalUrl, ogImage))
+      .on('head', headInjector)
+
+    const transformedResponse = rewriter.transform(assetResponse)
+    const newHeaders = new Headers(transformedResponse.headers)
+    newHeaders.set('Cache-Control', is404 ? 'no-cache' : 'public, max-age=3600')
+    newHeaders.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload')
+    newHeaders.set('X-Content-Type-Options', 'nosniff')
+    newHeaders.set('X-Frame-Options', 'SAMEORIGIN')
+    newHeaders.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+    newHeaders.set('Content-Security-Policy',
+      "default-src 'self'; " +
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com https://www.googletagmanager.com; " +
+      "connect-src 'self' https://api.razorpay.com https://*.sentry.io https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://app.posthog.com https://www.google-analytics.com https://analytics.google.com; " +
+      "frame-src 'self' https://checkout.razorpay.com https://www.googletagmanager.com; " +
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+      "font-src 'self' https://fonts.gstatic.com data:; " +
+      "img-src 'self' data: blob: https://lh3.googleusercontent.com https://*.posthog.com https://www.google-analytics.com;"
+    )
+
+    return new Response(transformedResponse.body, {
+      status: is404 ? 404 : 200,
+      headers: newHeaders,
+    })
+  } catch (err) {
+    console.error('HTMLRewriter failed on share page:', err)
+    return assetResponse
+  }
+}
+
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const startTime = Date.now()
@@ -619,7 +724,36 @@ export default {
           return handleStaticPageSEO(request, env)
         }
 
+        if (path === '/share' || path.startsWith('/share/')) {
+          return handleSharePageSEO(request, env)
+        }
+
         // ── Public routes ───────────────────────────────────────
+        if (path.startsWith('/api/share/')) {
+          // GET /api/share/:id/image/:index (public image proxy)
+          if (path.includes('/image/') && request.method === 'GET') {
+            const ipRl = await withIpRateLimit(request, env, 60)
+            if (!ipRl.ok) {
+              return withCors(new Response(JSON.stringify({ error: 'Too many requests' }), {
+                status: 429,
+                headers: { 'Content-Type': 'application/json', 'Retry-After': String(ipRl.retryAfter ?? 60) },
+              }), env)
+            }
+            return withCors(await handleShareImage(request, env), env)
+          }
+          // GET /api/share/:id (public snapshot fetch)
+          if (request.method === 'GET') {
+            const ipRl = await withIpRateLimit(request, env, 20)
+            if (!ipRl.ok) {
+              return withCors(new Response(JSON.stringify({ error: 'Too many requests' }), {
+                status: 429,
+                headers: { 'Content-Type': 'application/json', 'Retry-After': String(ipRl.retryAfter ?? 60) },
+              }), env)
+            }
+            return withCors(await handleGetShare(request, env), env)
+          }
+        }
+
         if (path.startsWith('/api/auth')) {
           // Scoped IP rate limiting for sensitive email routes
           if (
@@ -759,6 +893,12 @@ export default {
 
         if (path.startsWith('/api/brand-kit'))
           return withCors(await handleBrandKit(request, env, userId), env)
+
+        if (path === '/api/share' && request.method === 'POST')
+          return withCors(await handleCreateShare(request, env, userId), env)
+
+        if (path.startsWith('/api/share/') && request.method === 'DELETE')
+          return withCors(await handleDeleteShare(request, env, userId), env)
 
         if (path.startsWith('/api/image/') && request.method === 'GET')
           return withCors(await handleImageRoute(request, env, userId), env)

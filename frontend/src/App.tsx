@@ -11,6 +11,7 @@ import { UpgradeModal } from './components/UpgradeModal'
 import { VerifyEmailScreen } from './components/VerifyEmailScreen'
 import { ExportModal } from './components/ExportModal'
 import { FeedbackModal } from './components/FeedbackModal'
+import { ShareModal } from './components/ShareModal'
 
 const AppPage = lazy(() => import('./pages/AppPage'))
 const LandingPage = lazy(() => import('./pages/LandingPage'))
@@ -26,6 +27,7 @@ const VsPage = lazy(() => import('./pages/VsPage'))
 const ForPage = lazy(() => import('./pages/ForPage'))
 const BrandKitPage = lazy(() => import('./pages/BrandKitPage'))
 const PlatformPage = lazy(() => import('./pages/PlatformPage'))
+const SharedViewPage = lazy(() => import('./pages/SharedViewPage'))
 
 const SentryRoutes = Routes
 
@@ -37,6 +39,11 @@ function UpgradeModalWrapper() {
 function ExportModalWrapper() {
   const showExportModal = useAppStore(s => s.showExportModal)
   return showExportModal ? <ExportModal /> : null
+}
+
+function ShareModalWrapper() {
+  const showShareModal = useAppStore(s => s.showShareModal)
+  return showShareModal ? <ShareModal /> : null
 }
 
 function FeedbackModalWrapper() {
@@ -59,6 +66,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
       </div>
       <UpgradeModalWrapper />
       <ExportModalWrapper />
+      <ShareModalWrapper />
       <FeedbackModalWrapper />
 
       <style>{`
@@ -224,6 +232,7 @@ export default function App() {
           <Route path="/for/:slug" element={<ForPage />} />
           <Route path="/tools" element={<PlatformPage />} />
           <Route path="/tools/:slug" element={<PlatformPage />} />
+          <Route path="/share/:id" element={<SharedViewPage />} />
 
           {/* Auth routes */}
           <Route path="/login" element={<AuthPage mode="login" />} />

@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Sparkles, Download, ArrowLeft, Loader2 } from 'lucide-react'
+import { Sparkles, Download, ArrowLeft, Loader2, Share2 } from 'lucide-react'
 import { useAppStore } from '../store/app'
 import { PostCard } from './PostCard'
 import { RefinementChat } from './RefinementChat'
@@ -18,11 +18,25 @@ export function ResultsView() {
     selectedPlatforms,
     addToast,
     openExport,
+    openShare,
   } = useAppStore()
 
   const postsList = campaign ? Object.values(campaign.posts) : []
   const completedPosts = postsList.filter(p => p.status === 'done')
   const totalPosts = selectedPlatforms.length || postsList.length
+
+  const handleShare = () => {
+    if (!campaign?.id) return
+    openShare({
+      campaignId: campaign.id,
+      posts: completedPosts.map(post => ({
+        platformId: post.platformId,
+        content: post.content,
+        edited: post.edited,
+        extraFields: post.extraFields,
+      })),
+    })
+  }
 
   const handleDownloadAll = () => {
     if (!campaign?.id) return
@@ -96,14 +110,27 @@ export function ResultsView() {
           </div>
 
           {completedPosts.length > 0 && campaign?.id && (
-            <button
-              type="button"
-              className="btn btn-primary btn-sm download-kit-btn"
-              onClick={handleDownloadAll}
-            >
-              <Download size={13} />
-              <span>Download Full Kit ({completedPosts.length})</span>
-            </button>
+            <>
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm share-kit-btn"
+                onClick={handleShare}
+                disabled={completedPosts.length === 0}
+                title="Share public read-only link"
+              >
+                <Share2 size={13} />
+                <span>Share</span>
+              </button>
+
+              <button
+                type="button"
+                className="btn btn-primary btn-sm download-kit-btn"
+                onClick={handleDownloadAll}
+              >
+                <Download size={13} />
+                <span>Download Full Kit ({completedPosts.length})</span>
+              </button>
+            </>
           )}
         </div>
       </div>
