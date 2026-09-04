@@ -54,6 +54,10 @@ async function processWebhookEvent(event: RazorpayWebhookEvent, env: Env, ctx: E
       if (!userId) break
 
       const plan = getPlanFromRazorpayPlanId(sub.plan_id, env)
+      if (!plan) {
+        console.error(`[webhook] Unmatched Razorpay planId: "${sub.plan_id}" for subscription: "${sub.id}" (user: "${userId}"). Skipping plan mutation.`)
+        break
+      }
       const now = Math.floor(Date.now() / 1000)
       const periodEnd = sub.current_end ?? now + 30 * 24 * 60 * 60
      
@@ -116,6 +120,10 @@ async function processWebhookEvent(event: RazorpayWebhookEvent, env: Env, ctx: E
       if (!userId) break
 
       const plan = getPlanFromRazorpayPlanId(sub.plan_id, env)
+      if (!plan) {
+        console.error(`[webhook] Unmatched Razorpay planId: "${sub.plan_id}" for subscription: "${sub.id}" (user: "${userId}"). Skipping plan mutation.`)
+        break
+      }
       const now = Math.floor(Date.now() / 1000)
       const periodEnd = sub.current_end ?? now + 30 * 24 * 60 * 60
      // BUG-9: Detect if this charge is healing a missed 'activated' event.
@@ -255,7 +263,7 @@ async function getUser(db: D1Database, userId: string): Promise<{ email: string;
   ).bind(userId).first<{ email: string; name: string }>()
 }
 
-function getPlanFromRazorpayPlanId(planId: string, env: Env): PlatformTier {
+export function getPlanFromRazorpayPlanId(planId: string, env: Env): PlatformTier | undefined {
   const planMap: Record<string, PlatformTier> = {
     [env.RAZORPAY_PLAN_STARTER_USD]: 'starter',
     [env.RAZORPAY_PLAN_STARTER_INR]: 'starter',
@@ -264,7 +272,7 @@ function getPlanFromRazorpayPlanId(planId: string, env: Env): PlatformTier {
     [env.RAZORPAY_PLAN_BUSINESS_USD]: 'business',
     [env.RAZORPAY_PLAN_BUSINESS_INR]: 'business',
   }
-  return planMap[planId] ?? 'starter'
+  return planMap[planId]
 }
 
 // ── Types ─────────────────────────────────────────────────────

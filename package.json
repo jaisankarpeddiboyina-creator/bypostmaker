@@ -11,7 +11,8 @@
     "db:migrate": "npm run db:migrate:prod --prefix worker",
     "type-check": "concurrently \"npm run type-check --prefix worker\" \"npm run type-check --prefix frontend\"",
     "tasks": "tsx scripts/task-status.ts",
-    "sync-tasks": "tsx scripts/sync-tasks.ts"
+    "sync-tasks": "tsx scripts/sync-tasks.ts",
+    "sync-secrets": "tsx scripts/sync_remote_secrets.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",

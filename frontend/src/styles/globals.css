@@ -7,12 +7,12 @@
 
 /* ── Design Tokens ─────────────────────────────────────────── */
 :root {
-  /* ── Light-mode Glass Gradient Palette ───────────────────── */
-  --color-primary-start:   #FF4B91;   /* vibrant neon pink */
-  --color-primary-end:     #7209B7;   /* vibrant violet purple */
+  /* ── Sky Blue Glass Gradient Palette ─────────────────────── */
+  --color-primary-start:   #38BDF8;   /* cyan sky blue */
+  --color-primary-end:     #0284C7;   /* deep ocean blue */
   --gradient-primary:      linear-gradient(135deg, var(--color-primary-start), var(--color-primary-end));
   --gradient-primary-h:    linear-gradient(90deg,  var(--color-primary-start), var(--color-primary-end));
-  --gradient-primary-glow: linear-gradient(135deg, rgba(255, 75, 145, 0.35), rgba(114, 9, 183, 0.35));
+  --gradient-primary-glow: linear-gradient(135deg, rgba(56, 189, 248, 0.35), rgba(2, 132, 199, 0.35));
 
   /* ── Accent Palette ─────────────────────────────────────── */
   --color-accent-emerald:  #059669;   /* solid emerald green */
@@ -26,7 +26,7 @@
   --backdrop-blur:         blur(30px) saturate(180%);
   --color-border:          rgba(255, 255, 255, 0.65); /* specular white glass border */
   --color-border-glass:    rgba(255, 255, 255, 0.85); /* top rim highlight */
-  --color-border-hover:    rgba(255, 75, 145, 0.50);  /* pink water glow */
+  --color-border-hover:    rgba(56, 189, 248, 0.50);  /* sky blue glow */
   --color-border-input:    rgba(255, 255, 255, 0.70);
 
   /* ── Light Mode Charcoal Typography ──────────────────────── */
@@ -42,9 +42,9 @@
   --color-nav-border:      rgba(255, 255, 255, 0.55);
   --color-nav-item-text:   #475569;
   --color-nav-item-icon:   #64748B;
-  --color-nav-active-bg:   rgba(255, 75, 145, 0.08);
-  --color-nav-active-text: #FF4B91;
-  --color-nav-active-icon: #FF4B91;
+  --color-nav-active-bg:   rgba(56, 189, 248, 0.12);
+  --color-nav-active-text: #0284C7;
+  --color-nav-active-icon: #0284C7;
 
   /* ── Status Colors ───────────────────────────────────────── */
   --color-success:         #059669;   /* deep emerald green */

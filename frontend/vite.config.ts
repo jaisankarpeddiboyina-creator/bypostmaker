@@ -11,14 +11,14 @@ export default defineConfig({
     compression({
       algorithm: 'brotliCompress',
       ext: '.br',
-      threshold: 1024, // only compress files > 1 KB
+      threshold: 10240, // compress files > 10 KB
     }),
 
     // ── Gzip compression (fallback — older clients / CDNs) ──────────────
     compression({
       algorithm: 'gzip',
       ext: '.gz',
-      threshold: 1024,
+      threshold: 10240, // compress files > 10 KB
     }),
   ],
 

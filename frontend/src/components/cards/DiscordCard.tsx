@@ -7,6 +7,7 @@ import { useAppStore } from '../../store/app'
 import { generateClientZip, sanitize } from '../../lib/downloadKit'
 import type { CardProps } from './types'
 import { UnifiedCardShell } from './UnifiedCardShell'
+import { PublishControl } from '../PublishControl'
 
 function FormattedContent({ content, linkColor }: { content: string; linkColor?: string }) {
   const color = linkColor || '#0067D5'
@@ -229,6 +230,11 @@ export function DiscordCard({ platformId, post, campaignId, imageFiles, videoFil
                 <span>❤️</span>
                 {heartCount > 0 && <span className="dis-pill-count">{heartCount}</span>}
               </button>
+            </div>
+
+            {/* Direct Publishing Control */}
+            <div style={{ marginTop: 12 }}>
+              <PublishControl text={post.content} mediaUrls={imageUrls} />
             </div>
           </div>
         </div>

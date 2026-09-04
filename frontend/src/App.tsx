@@ -10,6 +10,7 @@ import { Toasts } from './components/Toasts'
 import { UpgradeModal } from './components/UpgradeModal'
 import { VerifyEmailScreen } from './components/VerifyEmailScreen'
 import { ExportModal } from './components/ExportModal'
+import { AssetPickerModal } from './components/AssetPickerModal'
 import { FeedbackModal } from './components/FeedbackModal'
 import { ShareModal } from './components/ShareModal'
 
@@ -28,6 +29,8 @@ const ForPage = lazy(() => import('./pages/ForPage'))
 const BrandKitPage = lazy(() => import('./pages/BrandKitPage'))
 const PlatformPage = lazy(() => import('./pages/PlatformPage'))
 const SharedViewPage = lazy(() => import('./pages/SharedViewPage'))
+const ConnectionsPage = lazy(() => import('./pages/ConnectionsPage'))
+const AssetsPage = lazy(() => import('./pages/AssetsPage'))
 
 const SentryRoutes = Routes
 
@@ -91,8 +94,9 @@ function AppShell({ children }: { children: React.ReactNode }) {
 
         .app-shell-main {
           flex: 1;
-          overflow: hidden;
+          overflow-y: auto;
           position: relative;
+          height: calc(100vh - 64px);
         }
 
         @media (max-width: 768px) {
@@ -189,6 +193,13 @@ export default function App() {
     api.user.me()
       .then(({ user, usage }) => {
         setUser(user)
+        if (user.currency) {
+          setCurrency(user.currency)
+        } else {
+          api.payments.currency()
+            .then(({ currency }) => setCurrency(currency))
+            .catch(() => setCurrency('usd'))
+        }
         if (usage) {
           const planLimits: Record<string, number> = { free: 5, starter: 50, pro: 200, business: -1 }
           const limit = planLimits[user.plan] ?? 5
@@ -211,11 +222,13 @@ export default function App() {
           setUser({ ...user, plan: 'business' })
         }
       })
-      .catch(() => setUser(null))
+      .catch(() => {
+        setUser(null)
+        api.payments.currency()
+          .then(({ currency }) => setCurrency(currency))
+          .catch(() => setCurrency('usd'))
+      })
       .finally(() => setAuthReadySnapshot(true))
-
-    // Force INR for now since USD plan IDs are not configured
-    setCurrency('inr')
   }, [addToast])
 
   return (
@@ -258,6 +271,13 @@ export default function App() {
           <Route path="/app/brand-kit" element={
             <AuthGuard><AppShell><BrandKitPage /></AppShell></AuthGuard>
           } />
+          <Route path="/app/connections" element={
+            <AuthGuard><AppShell><ConnectionsPage /></AppShell></AuthGuard>
+          } />
+          <Route path="/app/media" element={
+            <AuthGuard><AppShell><AssetsPage /></AppShell></AuthGuard>
+          } />
+          <Route path="/app/assets" element={<Navigate to="/app/media" replace />} />
 
           <Route path="/admin" element={
             <AdminGuard><AppShell><AdminPage /></AppShell></AdminGuard>
@@ -276,6 +296,7 @@ export default function App() {
         </SentryRoutes>
       </Suspense>
       <Toasts />
+      <AssetPickerModal />
     </>
   )
 }

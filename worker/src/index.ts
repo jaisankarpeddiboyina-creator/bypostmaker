@@ -20,6 +20,8 @@ import { handleDirectUploadRoute, handlePresignRoute, handlePresignBatchRoute, h
 import { handleImageRoute } from './routes/image'
 import { handleBrandKit } from './routes/brand-kit'
 import { handleCreateShare, handleDeleteShare, handleGetShare, handleShareImage } from './routes/share'
+import { handleOmnipost } from './routes/omnipost'
+import { handleAssetsRoute } from './routes/assets'
 import { runCronJobs, runDataRetention } from './services/cron'
 
 
@@ -825,10 +827,37 @@ export default {
             status: 200, headers: { 'Content-Type': 'application/json' },
           }), env)
         }
+        if (path === '/api/test/expire-token' && env.ENVIRONMENT === 'development') {
+          const id = new URL(request.url).searchParams.get('id')
+          if (!id) return new Response('id required', { status: 400 })
+          const connection = await env.DB.prepare(
+            'SELECT * FROM omnipost_connections WHERE id = ?'
+          ).bind(id).first() as any
+          if (!connection) return new Response('not found', { status: 404 })
+          const keyId = connection.key_id || 'v1'
+          const masterKey = (keyId === 'v2' ? env.OMNIPOST_MASTER_KEY_V2 : env.OMNIPOST_MASTER_KEY) as string
+          const { decryptCredential, encryptCredential } = await import('./routes/omnipost')
+          const decrypted = await decryptCredential(connection.secret_blob, connection.wrapped_key, masterKey)
+          const creds = JSON.parse(decrypted)
+          creds.expiresAt = Math.floor(Date.now() / 1000) - 3600
+          const { ciphertextBase64, wrappedKeyBase64 } = await encryptCredential(
+            JSON.stringify(creds),
+            masterKey
+          )
+          await env.DB.prepare(
+            'UPDATE omnipost_connections SET secret_blob = ?, wrapped_key = ? WHERE id = ?'
+          ).bind(ciphertextBase64, wrappedKeyBase64, id).run()
+          return withCors(new Response(JSON.stringify({ success: true }), {
+            status: 200, headers: { 'Content-Type': 'application/json' },
+          }), env)
+        }
 
         // ── Auth guard ──────────────────────────────────────────
         const auth = await withAuth(request, env)
         if (!auth.ok) {
+          if (path === '/api/omnipost/oauth/callback') {
+            return Response.redirect(`${new URL(request.url).origin}/login?error=session_expired`, 302)
+          }
           return withCors(new Response(JSON.stringify({ error: 'Unauthorized' }), {
             status: 401, headers: { 'Content-Type': 'application/json' },
           }), env)
@@ -900,8 +929,14 @@ export default {
         if (path.startsWith('/api/share/') && request.method === 'DELETE')
           return withCors(await handleDeleteShare(request, env, userId), env)
 
+        if (path.startsWith('/api/assets'))
+          return withCors(await handleAssetsRoute(request, env, userId), env)
+
         if (path.startsWith('/api/image/') && request.method === 'GET')
           return withCors(await handleImageRoute(request, env, userId), env)
+
+        if (path.startsWith('/api/omnipost'))
+          return withCors(await handleOmnipost(request, env, userId), env)
 
         if (path.startsWith('/api/admin'))
           return withCors(await handleAdmin(request, env, userId, userRole), env)

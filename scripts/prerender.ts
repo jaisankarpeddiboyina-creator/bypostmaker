@@ -71,7 +71,7 @@ function startPreviewServer(): ChildProcess {
   return spawn(
     'npx',
     ['-y', 'vite', 'preview', '--port', String(PREVIEW_PORT), '--strictPort', '--host', '127.0.0.1'],
-    { cwd: frontendDir, stdio: 'inherit', shell: true }
+    { cwd: frontendDir, stdio: 'ignore', detached: true }
   )
 }
 
@@ -87,7 +87,13 @@ async function main() {
 
   const cleanup = () => {
     if (!serverExited && server.pid) {
-      server.kill()
+      try {
+        process.kill(-server.pid, 'SIGKILL')
+      } catch {
+        try {
+          server.kill('SIGKILL')
+        } catch {}
+      }
     }
   }
 

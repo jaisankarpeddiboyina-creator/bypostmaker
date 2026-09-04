@@ -38,7 +38,7 @@ Single-pane task list covering all 43 execution items across Phases 1 through 5.
 | **P1-01** | Stabilize core product | Core | High | ⏳ `Not Started` | End-to-end regression testing and error boundaries |
 | **P1-02** | Improve UI/UX polish | Core | High | ⏳ `Not Started` | Liquid glass styling polish across all devices |
 | **P1-03** | Performance optimization pass | Core | Medium | ⏳ `Not Started` | Lighthouse audit and asset optimization |
-| **P1-04** | Complete Razorpay international payments | Core | High | ⏳ `Not Started` | Payment checkout and webhook verification |
+| **P1-04** | **Complete Razorpay international payments** | Core | High | ✅ **`Completed`** | Payment checkout and webhook verification |
 | **P1-05** | Build subscription flow | Core | High | ⏳ `Not Started` | Plan upgrades, cancellation, and quota management |
 | **P1-06** | **Improve AI provider reliability/routing** | Core | High | ✅ **`Completed`** | Cloudflare AI Gateway integration & model slug routing |
 | **P1-07** | **Support higher AI rate limits** | Core | Medium | ✅ **`Completed`** | Groq slot pacing & token estimation rate limiter |

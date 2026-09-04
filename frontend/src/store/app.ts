@@ -71,6 +71,43 @@ export interface Toast {
   type: 'success' | 'error' | 'info'
 }
 
+export interface AssetItem {
+  id: string
+  user_id: string
+  folder_id: string | null
+  type: 'image' | 'video' | 'audio' | 'font' | 'icon' | 'svg' | 'doc'
+  name: string
+  r2_key: string | null
+  external_url: string | null
+  provider: string
+  mime_type: string | null
+  file_size: number | null
+  width: number | null
+  height: number | null
+  is_favorite: number
+  is_trashed: number
+  created_at: number
+  updated_at: number
+  attribution: {
+    authorName: string
+    authorUrl: string
+    sourceUrl: string
+    providerName: string
+  } | null
+}
+
+export interface AssetFolder {
+  id: string
+  name: string
+  created_at: number
+}
+
+export interface AssetPickerContext {
+  accept: ('image' | 'video' | 'audio' | 'font' | 'icon')[]
+  onSelect: (file: File) => void
+  title?: string
+}
+
 interface AppStore {
   user: User | null
   usage: UsageInfo | null
@@ -132,6 +169,16 @@ interface AppStore {
   sharePayload: SharePayload | null
   openShare: (payload: SharePayload) => void
   closeShare: () => void
+
+  showAssetPicker: boolean
+  assetPickerContext: AssetPickerContext | null
+  openAssetPicker: (ctx: AssetPickerContext) => void
+  closeAssetPicker: () => void
+
+  assets: AssetItem[]
+  setAssets: (a: AssetItem[] | ((prev: AssetItem[]) => AssetItem[])) => void
+  assetFolders: AssetFolder[]
+  setAssetFolders: (f: AssetFolder[] | ((prev: AssetFolder[]) => AssetFolder[])) => void
 
   showFeedbackModal: boolean
   setShowFeedbackModal: (v: boolean) => void
@@ -237,6 +284,20 @@ export const useAppStore = create<AppStore>((set, get) => ({
   sharePayload: null,
   openShare: (payload) => set({ sharePayload: payload, showShareModal: true }),
   closeShare: () => set({ sharePayload: null, showShareModal: false }),
+
+  showAssetPicker: false,
+  assetPickerContext: null,
+  openAssetPicker: (ctx) => set({ assetPickerContext: ctx, showAssetPicker: true }),
+  closeAssetPicker: () => set({ assetPickerContext: null, showAssetPicker: false }),
+
+  assets: [],
+  setAssets: (a) => set(state => ({
+    assets: typeof a === 'function' ? a(state.assets) : a
+  })),
+  assetFolders: [],
+  setAssetFolders: (f) => set(state => ({
+    assetFolders: typeof f === 'function' ? f(state.assetFolders) : f
+  })),
 
   showFeedbackModal: false,
   setShowFeedbackModal: (v) => set({ showFeedbackModal: v }),
