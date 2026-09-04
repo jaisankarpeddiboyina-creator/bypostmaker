@@ -123,7 +123,7 @@ export default function SharedViewPage() {
 
       {loading ? (
         <main className="shared-loading-center">
-          <Loader2 size={32} className="spin" color="var(--color-primary-start, #F72585)" />
+          <Loader2 size={32} className="spin" color="var(--color-primary-start, #38BDF8)" />
           <p className="shared-loading-text">Loading shared content kit...</p>
         </main>
       ) : (error || !data) ? (
@@ -274,11 +274,11 @@ export default function SharedViewPage() {
           gap: 5px;
           padding: 4px 10px;
           border-radius: 99px;
-          background: rgba(247, 37, 133, 0.08);
-          border: 1px solid rgba(247, 37, 133, 0.2);
+          background: rgba(56, 189, 248, 0.08);
+          border: 1px solid rgba(56, 189, 248, 0.25);
           font-size: 11.5px;
           font-weight: 600;
-          color: var(--color-primary-start, #f72585);
+          color: var(--color-primary-end, #0284C7);
         }
 
         .shared-cta-btn {
@@ -297,7 +297,7 @@ export default function SharedViewPage() {
         .shared-loading-text {
           font-size: 14px;
           font-weight: 500;
-          color: var(--color-text-secondary, #64748b);
+          color: var(--color-text-secondary, #64748B);
         }
 
         .shared-error-container {
@@ -311,8 +311,8 @@ export default function SharedViewPage() {
         .shared-error-card {
           width: 100%;
           max-width: 480px;
-          background: var(--color-surface, #ffffff);
-          border: 1px solid var(--color-border, #e2e8f0);
+          background: var(--color-surface, #FFFFFF);
+          border: 1px solid var(--color-border, #E2E8F0);
           border-radius: 16px;
           padding: 36px 28px;
           text-align: center;
@@ -326,7 +326,7 @@ export default function SharedViewPage() {
           width: 56px;
           height: 56px;
           border-radius: 16px;
-          background: #fee2e2;
+          background: #FEE2E2;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -336,14 +336,14 @@ export default function SharedViewPage() {
         .shared-error-title {
           font-size: 18px;
           font-weight: 700;
-          color: var(--color-text-primary, #0f172a);
+          color: var(--color-text-primary, #0F172A);
           margin: 0 0 8px;
         }
 
         .shared-error-desc {
           font-size: 13.5px;
           line-height: 1.55;
-          color: var(--color-text-secondary, #64748b);
+          color: var(--color-text-secondary, #64748B);
           margin: 0 0 24px;
         }
 
@@ -362,8 +362,8 @@ export default function SharedViewPage() {
         }
 
         .shared-header-bar {
-          background: var(--color-surface, #ffffff);
-          border-bottom: 1px solid var(--color-border, #e2e8f0);
+          background: var(--color-surface, #FFFFFF);
+          border-bottom: 1px solid var(--color-border, #E2E8F0);
           padding: 16px 24px 10px;
           display: flex;
           flex-direction: column;
@@ -379,14 +379,14 @@ export default function SharedViewPage() {
         .shared-title {
           font-size: 17px;
           font-weight: 700;
-          color: var(--color-text-primary, #0f172a);
+          color: var(--color-text-primary, #0F172A);
           margin: 0;
           letter-spacing: -0.01em;
         }
 
         .shared-subtitle {
           font-size: 12px;
-          color: var(--color-text-secondary, #64748b);
+          color: var(--color-text-secondary, #64748B);
           margin: 0;
         }
 
@@ -405,7 +405,7 @@ export default function SharedViewPage() {
           border-radius: var(--radius-pill, 99px);
           font-size: 12px;
           font-weight: 600;
-          color: var(--color-text-secondary, #64748b);
+          color: var(--color-text-secondary, #64748B);
           background: transparent;
           border: 1px solid transparent;
           cursor: pointer;
@@ -413,13 +413,13 @@ export default function SharedViewPage() {
           white-space: nowrap;
         }
         .platform-filter-tab:hover {
-          color: var(--color-text-primary, #0f172a);
-          background: var(--color-bg, #f1f5f9);
+          color: var(--color-text-primary, #0F172A);
+          background: var(--color-bg, #F1F5F9);
         }
         .platform-filter-tab.active {
-          color: #ffffff;
-          background: var(--color-primary-start, #f72585);
-          border-color: var(--color-primary-start, #f72585);
+          color: #FFFFFF;
+          background: var(--color-primary-start, #38BDF8);
+          border-color: var(--color-primary-start, #38BDF8);
         }
 
         .tab-count-badge {

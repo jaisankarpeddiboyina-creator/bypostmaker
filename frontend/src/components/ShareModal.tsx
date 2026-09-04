@@ -234,25 +234,25 @@ export function ShareModal() {
         }
 
         .share-globe-icon {
-          color: var(--color-primary-start, #f72585);
+          color: var(--color-primary-start, #38BDF8);
         }
 
         .share-modal-title {
           font-size: 16px;
           font-weight: 700;
-          color: var(--color-text-primary, #0f172a);
+          color: var(--color-text-primary, #0F172A);
           margin: 0;
           letter-spacing: -0.01em;
         }
 
         .share-modal-subtitle {
           font-size: 12.5px;
-          color: var(--color-text-secondary, #64748b);
+          color: var(--color-text-secondary, #64748B);
           margin: 0;
         }
 
         .close-share-btn {
-          color: var(--color-text-secondary, #64748b);
+          color: var(--color-text-secondary, #64748B);
           background: transparent;
           border: none;
           cursor: pointer;
@@ -263,8 +263,8 @@ export function ShareModal() {
           justify-content: center;
         }
         .close-share-btn:hover {
-          background: var(--color-bg, #f1f5f9);
-          color: var(--color-text-primary, #0f172a);
+          background: var(--color-nav-active-bg, rgba(56, 189, 248, 0.12));
+          color: var(--color-primary-end, #0284C7);
         }
 
         .share-modal-body {
@@ -281,7 +281,7 @@ export function ShareModal() {
           justify-content: center;
           padding: 32px 0;
           gap: 12px;
-          color: var(--color-text-secondary, #64748b);
+          color: var(--color-text-secondary, #64748B);
           font-size: 13px;
         }
 
@@ -295,7 +295,7 @@ export function ShareModal() {
         }
         .share-error-text {
           font-size: 13px;
-          color: #ef4444;
+          color: #EF4444;
           text-align: center;
           margin: 0;
         }
@@ -309,7 +309,7 @@ export function ShareModal() {
         .share-field-label {
           font-size: 12px;
           font-weight: 600;
-          color: var(--color-text-primary, #1e293b);
+          color: var(--color-text-primary, #0F172A);
         }
 
         .share-input-row {
@@ -323,16 +323,16 @@ export function ShareModal() {
           height: 40px;
           padding: 0 12px;
           border-radius: 10px;
-          border: 1.5px solid var(--color-border, #cbd5e1);
-          background: var(--color-bg, #f8fafc);
+          border: 1.5px solid var(--color-border, #CBD5E1);
+          background: var(--color-bg, #F8FAFC);
           font-size: 13px;
-          color: var(--color-text-primary, #0f172a);
+          color: var(--color-text-primary, #0F172A);
           font-family: var(--font-mono, monospace);
           outline: none;
         }
         .share-text-input:focus {
-          border-color: var(--color-primary-start, #f72585);
-          background: #ffffff;
+          border-color: var(--color-primary-start, #38BDF8);
+          background: #FFFFFF;
         }
 
         .share-copy-btn {
@@ -348,9 +348,9 @@ export function ShareModal() {
           flex-shrink: 0;
         }
         .share-copy-btn.copied {
-          background: #ecfdf5 !important;
-          color: #065f46 !important;
-          border: 1px solid #a7f3d0 !important;
+          background: #ECFDF5 !important;
+          color: #065F46 !important;
+          border: 1px solid #A7F3D0 !important;
         }
 
         .share-expiry-banner {
@@ -358,15 +358,15 @@ export function ShareModal() {
           align-items: center;
           gap: 8px;
           padding: 10px 14px;
-          background: rgba(247, 37, 133, 0.06);
-          border: 1px solid rgba(247, 37, 133, 0.15);
+          background: rgba(56, 189, 248, 0.08);
+          border: 1px solid rgba(56, 189, 248, 0.25);
           border-radius: 10px;
           font-size: 12px;
-          color: var(--color-text-secondary, #475569);
+          color: var(--color-text-secondary, #334155);
           font-weight: 500;
         }
         .share-clock-icon {
-          color: var(--color-primary-start, #f72585);
+          color: var(--color-primary-end, #0284C7);
           flex-shrink: 0;
         }
 
