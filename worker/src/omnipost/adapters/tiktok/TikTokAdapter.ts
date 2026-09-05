@@ -62,7 +62,7 @@ export class TikTokAdapter extends BaseAdapter {
 
   format(post: UnifiedPost): TikTokPayload {
     const firstMedia = post.media && post.media.length > 0 ? post.media[0] : undefined;
-    const videoUrl = firstMedia?.url || 'https://example.com/demo.mp4';
+    const videoUrl = firstMedia?.url || '';
     let title = post.text.trim();
 
     if (videoUrl && !title.includes(videoUrl) && (videoUrl.startsWith('http://') || videoUrl.startsWith('https://'))) {
@@ -90,6 +90,18 @@ export class TikTokAdapter extends BaseAdapter {
         success: false,
         status: 'failed',
         error: { code: 'AUTH_MISSING', message: 'Missing TikTok accessToken', retryable: false },
+      };
+    }
+
+    if (!payload.source_info?.video_url) {
+      return {
+        success: false,
+        status: 'failed',
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'TikTok requires a video or photo; text-only posts are not supported.',
+          retryable: false,
+        },
       };
     }
 

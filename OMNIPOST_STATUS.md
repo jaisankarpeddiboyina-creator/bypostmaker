@@ -234,3 +234,25 @@ wrangler secret put OMNIPOST_LEMON8_AUTH_TOKEN --env staging
 - **WhatsApp (`whatsapp`):** Code sends freeform text/image messages to phone numbers via `/v19.0/{phoneNumberId}/messages`. WhatsApp Cloud API restricts business-initiated messages to pre-approved Message Templates outside 24h user-initiated window.
 - **Stack Overflow (`stackoverflow`):** Code POSTs to `/2.3/questions/add` with default tags. Programmatic top-level question posting triggers automated spam detection and account suspension.
 - **Twitch (`twitch`):** `TwitchAdapter` calls `PATCH /helix/channels?broadcaster_id={id}` to update broadcast stream title. No persistent social feed exists; manifest needs UX description update to "Stream Title & Channel Status Update".
+
+---
+
+## 9. Session summary — 2026-09-05
+
+- **Live Registered Adapters (23):** `discord`, `mastodon`, `reddit`, `twitter`, `linkedin`, `pinterest`, `telegram`, `slack`, `devto`, `hashnode`, `github`, `instagram`, `facebook`, `youtube`, `tiktok`, `youtubeshorts`, `producthunt`, `whatsapp`, `threads`, `bluesky`, `stackoverflow`, `twitch`, `dribbble`.
+- **Parked / Unregistered Adapters (10):**
+  1. `hackernews` (no REST write API)
+  2. `medium` (v1 API deprecated by Medium)
+  3. `indiehackers` (no REST API, cookie scraping risk)
+  4. `betalist` (startup submission placeholder only)
+  5. `clubhouse` (reverse-engineered mobile API)
+  6. `lemon8` (reverse-engineered ByteDance endpoint)
+  7. `snapchat` (no server-side REST API; client-side Snap Kit only)
+  8. `substack` (unauthenticated/cookie-based draft endpoint simulation)
+  9. `quora` (no public post/question API)
+  10. `behance` (Adobe revoked public write API access)
+- **TikTok Urgent Safety Fix Applied:** Replaced fake `'https://example.com/demo.mp4'` fallback in `TikTokAdapter.ts` with explicit `VALIDATION_ERROR` check (`"TikTok requires a video or photo; text-only posts are not supported."`) returning immediately before any network call.
+- **Resume Here (Next Session Checklist):**
+  - [ ] **8 Capability-Mismatch Adapters Scope/UX Fixes:** Refactor manifest capabilities and UX warnings for `linkedin`, `instagram`, `facebook`, `tiktok`, `producthunt`, `whatsapp`, `stackoverflow`, and `twitch`.
+  - [ ] **Human Sign-off & Deployment:** Execute DB migration `0015_omnipost_claims.sql` on production D1, push staging branch / create PR, and perform live staging click-through verification.
+
