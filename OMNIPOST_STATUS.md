@@ -77,22 +77,22 @@ All 33 platform adapters are registered in `createStandardAdapterRegistry()`:
 | 15 | `tiktok` | Batch 2 | `oauth2` | official-api | Registered & Verified |
 | 16 | `youtubeshorts` | Batch 2 | `oauth2` | official-api | Registered & Verified |
 | 17 | `snapchat` | Batch 2 | `oauth2` | official-api | Registered & Verified |
-| 18 | `medium` | Batch 3 | `oauth2` | official-api | Registered & Verified |
+| 18 | `medium` | Batch 3 | `oauth2` | official-api | Unregistered (Pending Review) |
 | 19 | `producthunt` | Batch 3 | `oauth2` | official-api | Registered & Verified |
 | 20 | `whatsapp` | Batch 3 | `apiKey` | official-api | Registered & Verified |
 | 21 | `substack` | Batch 3 | `apiKey` | reverse-engineered | Registered & Verified |
-| 22 | `hackernews` | Batch 3 | `apiKey` | reverse-engineered | Registered & Verified |
+| 22 | `hackernews` | Batch 3 | `apiKey` | reverse-engineered | Unregistered (Pending Review) |
 | 23 | `quora` | Batch 3 | `apiKey` | reverse-engineered | Registered & Verified |
 | 24 | `threads` | Batch 4a | `oauth2` | official-api | Registered & Verified |
 | 25 | `bluesky` | Batch 4a | `basic` | official-api | Registered & Verified |
-| 26 | `indiehackers` | Batch 4a | `apiKey` | reverse-engineered | Registered & Verified |
-| 27 | `betalist` | Batch 4a | `apiKey` | official-api | Registered & Verified |
+| 26 | `indiehackers` | Batch 4a | `apiKey` | reverse-engineered | Unregistered (Pending Review) |
+| 27 | `betalist` | Batch 4a | `apiKey` | official-api | Unregistered (Pending Review) |
 | 28 | `stackoverflow` | Batch 4a | `oauth2` | official-api | Registered & Verified |
 | 29 | `twitch` | Batch 4b | `oauth2` | official-api | Registered & Verified |
-| 30 | `clubhouse` | Batch 4b | `apiKey` | reverse-engineered | Registered & Verified |
+| 30 | `clubhouse` | Batch 4b | `apiKey` | reverse-engineered | Unregistered (Pending Review) |
 | 31 | `dribbble` | Batch 4b | `oauth2` | official-api | Registered & Verified |
 | 32 | `behance` | Batch 4b | `apiKey` | official-api | Registered & Verified |
-| 33 | `lemon8` | Batch 4b | `basic` | reverse-engineered | Registered & Verified |
+| 33 | `lemon8` | Batch 4b | `basic` | reverse-engineered | Unregistered (Pending Review) |
 
 ---
 

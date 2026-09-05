@@ -78,7 +78,7 @@ export class TwitchAdapter extends BaseAdapter {
       };
     }
 
-    const clientId = (credentials.clientId as string) || (typeof process !== 'undefined' ? process.env.TWITCH_CLIENT_ID : '') || '';
+    const clientId = (credentials.clientId as string) || (typeof process !== 'undefined' ? (process.env.OMNIPOST_TWITCH_CLIENT_ID || process.env.TWITCH_CLIENT_ID) : '') || '';
 
     try {
       const response = await fetch(`https://api.twitch.tv/helix/channels?broadcaster_id=${payload.broadcasterId}`, {
@@ -127,7 +127,7 @@ export class TwitchAdapter extends BaseAdapter {
       return { ok: true, latencyMs: Date.now() - start };
     }
 
-    const clientId = (credentials.clientId as string) || (typeof process !== 'undefined' ? process.env.TWITCH_CLIENT_ID : '') || '';
+    const clientId = (credentials.clientId as string) || (typeof process !== 'undefined' ? (process.env.OMNIPOST_TWITCH_CLIENT_ID || process.env.TWITCH_CLIENT_ID) : '') || '';
 
     try {
       const response = await fetch('https://api.twitch.tv/helix/users', {
