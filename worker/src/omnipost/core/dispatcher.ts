@@ -24,6 +24,15 @@ export interface ClaimStore {
 const DEFAULT_TIMEOUT_MS = 15_000;
 const CLAIM_TTL_MS = 30_000;
 
+// Retry policy for transient (retryable: true) adapter failures.
+// Worst-case: 3 × 15s timeout + 1.5s backoff = 46.5s total.
+// Accepted: see phase_3_6_plan.md. waitUntil() async dispatch is tracked
+// as a follow-up for cases where this latency becomes a UX issue.
+const MAX_RETRIES = 3;
+const BASE_DELAY_MS = 500;
+
+const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
+
 export function isPrivateOrReservedIP(ipStr: string): boolean {
   const cleanIp = ipStr.replace(/^::ffff:/i, '');
   
@@ -159,13 +168,30 @@ export class Dispatcher {
 
       this.bus.emit('beforePost', { post, platformId });
 
-      const result = await this.withTimeout(
-        (async () => {
-          const payload = adapter.format(post);
-          return adapter.post(payload, creds);
-        })(),
-        DEFAULT_TIMEOUT_MS
-      );
+      // Retry loop — exponential backoff on retryable failures.
+      // Breaks immediately on success or any non-retryable error
+      // (AUTH_MISSING, FORBIDDEN, SSRF_REJECTED, validation errors).
+      let result: PostResult = {
+        success: false,
+        status: 'failed',
+        error: { code: 'UNKNOWN', message: 'No attempts made', retryable: false },
+      };
+
+      for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        result = await this.withTimeout(
+          (async () => {
+            const payload = adapter.format(post);
+            return adapter.post(payload, creds);
+          })(),
+          DEFAULT_TIMEOUT_MS
+        );
+
+        if (result.success || !result.error?.retryable) break;
+
+        if (attempt < MAX_RETRIES) {
+          await sleep(BASE_DELAY_MS * Math.pow(2, attempt - 1)); // 500ms, 1000ms
+        }
+      }
 
       if (result.status === undefined) {
         result.status = result.success ? 'success' : 'failed';

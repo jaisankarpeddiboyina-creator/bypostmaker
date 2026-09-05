@@ -5,7 +5,7 @@ import { EventBus } from '../omnipost/core/events'
 import { D1VaultStorage } from '../omnipost/storage/d1Vault'
 import { D1IdempotencyStore } from '../omnipost/storage/d1Idempotency'
 import { D1RateLimiter } from '../omnipost/storage/d1RateLimiter'
-import { MemoryClaimStore } from '../omnipost/storage/d1ClaimStore'
+import { MemoryClaimStore, D1ClaimStore } from '../omnipost/storage/d1ClaimStore'
 
 import { DiscordAdapter } from '../omnipost/adapters/discord/DiscordAdapter'
 import { MastodonAdapter } from '../omnipost/adapters/mastodon/MastodonAdapter'
@@ -59,8 +59,18 @@ export function createStandardAdapterRegistry(): AdapterRegistry {
   return registry;
 }
 
+// ── Module-level singletons (one per Worker isolate lifetime) ──────────────
+// AdapterRegistry is pure (no env bindings) — safe to construct once.
+// Re-creating it per-request wastes 23+ object instantiations every publish.
+const _adapterRegistry: AdapterRegistry = createStandardAdapterRegistry();
+
+// MemoryClaimStore singleton for local dev / mock path ONLY.
+// NOT safe in production across isolates — production uses D1ClaimStore.
+const _devClaimStore = new MemoryClaimStore();
+// ─────────────────────────────────────────────────────────────────────────────
 
 const DISCORD_WEBHOOK_REGEX = /^https:\/\/(discord\.com|discordapp\.com)\/api\/webhooks\/\d+\/[A-Za-z0-9_-]+$/;
+
 const SLACK_WEBHOOK_REGEX = /^https:\/\/hooks\.slack\.com\/services\/[A-Za-z0-9_]+\/[A-Za-z0-9_]+\/[A-Za-z0-9_]+$/;
 const GENERIC_WEBHOOK_REGEX = /^https?:\/\/[^\s/$.?#].[^\s]*$/;
 
@@ -869,17 +879,34 @@ export async function handleOmnipost(request: Request, env: Env, userId: string)
         return Response.json({ success: false, error: 'Failed to decrypt connection credentials', code: 'DECRYPTION_ERROR' }, { status: 500 });
       }
 
-      // ── Dispatch via Omnipost Engine (All 23 Registered Adapters) ────────
-      const registry = createStandardAdapterRegistry();
+      // ── Dispatch via Omnipost Engine ────────────────────────────────────
+      const registry = _adapterRegistry;
       if (registry.has(connection.platform)) {
         const bus = new EventBus();
 
-        const vault = new D1VaultStorage(env.DB, masterKey);
+        // Inline vault: use the already-decrypted credentials from above.
+        // This avoids a second DB round-trip in D1VaultStorage.get() which
+        // would query by (userId, platform) and return the WRONG connection
+        // when a user has multiple accounts on the same platform.
+        // _userId/_platformId are unused — the correct connection was already
+        // resolved at request start (connectionId lookup), credentials
+        // decrypted, and stored in `decryptedSecret`.
+        const inlineVault = {
+          get: async (_userId: string, _platformId: string): Promise<import('../omnipost/sdk/PlatformAdapter').AdapterCredentials> => ({
+            ...JSON.parse(decryptedSecret),
+            connectionId,  // inject so rateLimitKey in Dispatcher uses connectionId
+          }),
+        };
+
+
         const idempotencyStore = new D1IdempotencyStore(env.DB);
         const rateLimiter = new D1RateLimiter(env.DB);
-        const claimStore = new MemoryClaimStore();
+        // D1ClaimStore in production (cross-isolate safe via INSERT OR IGNORE).
+        // MemoryClaimStore singleton only in local dev/mock mode.
+        const isMockMode = isMockEnabledForPlatform(connection.platform, env);
+        const claimStore = isMockMode ? _devClaimStore : new D1ClaimStore(env.DB);
 
-        const dispatcher = new Dispatcher(registry, bus, vault, idempotencyStore, rateLimiter, claimStore);
+        const dispatcher = new Dispatcher(registry, bus, inlineVault, idempotencyStore, rateLimiter, claimStore);
 
         const unifiedPost = {
           id: idempotencyKey,
