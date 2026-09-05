@@ -39,3 +39,125 @@ UNSPLASH_ACCESS_KEY=
 
 # Google Fonts — https://developers.google.com/fonts/docs/developer_api (optional)
 GOOGLE_FONTS_API_KEY=
+
+# ============================================================
+# Omnipost Platform Credentials Scaffolding (All 33 Adapters)
+# Remote production/staging requires: wrangler secret put <NAME> --env <env>
+# ============================================================
+
+# Twitter / X (TwitterAdapter & oauth.ts)
+OMNIPOST_TWITTER_CLIENT_ID=
+OMNIPOST_TWITTER_CLIENT_SECRET=
+
+# LinkedIn (LinkedInAdapter & oauth.ts)
+OMNIPOST_LINKEDIN_CLIENT_ID=
+OMNIPOST_LINKEDIN_CLIENT_SECRET=
+
+# Mastodon (MastodonAdapter & oauth.ts)
+OMNIPOST_MASTODON_CLIENT_ID=
+OMNIPOST_MASTODON_CLIENT_SECRET=
+MASTODON_CLIENT_ID=
+MASTODON_CLIENT_SECRET=
+
+# Threads (ThreadsAdapter & oauth.ts)
+OMNIPOST_THREADS_CLIENT_ID=
+OMNIPOST_THREADS_CLIENT_SECRET=
+
+# Reddit (RedditAdapter & oauth.ts)
+OMNIPOST_REDDIT_CLIENT_ID=
+OMNIPOST_REDDIT_CLIENT_SECRET=
+
+# Meta / Facebook / Instagram (FacebookAdapter, InstagramAdapter & oauth.ts)
+OMNIPOST_META_CLIENT_ID=
+OMNIPOST_META_CLIENT_SECRET=
+
+# Google / YouTube / YouTube Shorts (YouTubeAdapter, YouTubeShortsAdapter & oauth.ts)
+OMNIPOST_GOOGLE_CLIENT_ID=
+OMNIPOST_GOOGLE_CLIENT_SECRET=
+
+# Pinterest (PinterestAdapter & oauth.ts)
+OMNIPOST_PINTEREST_CLIENT_ID=
+OMNIPOST_PINTEREST_CLIENT_SECRET=
+
+# GitHub (GitHubAdapter & oauth.ts)
+OMNIPOST_GITHUB_CLIENT_ID=
+OMNIPOST_GITHUB_CLIENT_SECRET=
+
+# Discord (DiscordAdapter)
+OMNIPOST_DISCORD_BOT_TOKEN=
+OMNIPOST_DISCORD_CLIENT_ID=
+OMNIPOST_DISCORD_CLIENT_SECRET=
+
+# Slack (SlackAdapter & oauth.ts)
+OMNIPOST_SLACK_CLIENT_ID=
+OMNIPOST_SLACK_CLIENT_SECRET=
+
+# TikTok (TikTokAdapter & oauth.ts)
+OMNIPOST_TIKTOK_CLIENT_KEY=
+OMNIPOST_TIKTOK_CLIENT_SECRET=
+
+# Snapchat (SnapchatAdapter & oauth.ts)
+OMNIPOST_SNAPCHAT_CLIENT_ID=
+OMNIPOST_SNAPCHAT_CLIENT_SECRET=
+
+# Medium (MediumAdapter & oauth.ts)
+OMNIPOST_MEDIUM_CLIENT_ID=
+OMNIPOST_MEDIUM_CLIENT_SECRET=
+
+# Product Hunt (ProductHuntAdapter & oauth.ts)
+OMNIPOST_PRODUCTHUNT_CLIENT_ID=
+OMNIPOST_PRODUCTHUNT_CLIENT_SECRET=
+
+# Substack (SubstackAdapter)
+OMNIPOST_SUBSTACK_API_KEY=
+
+# Hacker News (HackerNewsAdapter)
+OMNIPOST_HACKERNEWS_API_KEY=
+
+# Quora (QuoraAdapter)
+OMNIPOST_QUORA_API_KEY=
+
+# Dev.to (DevToAdapter)
+OMNIPOST_DEVTO_API_KEY=
+
+# Hashnode (HashnodeAdapter)
+OMNIPOST_HASHNODE_API_KEY=
+
+# Telegram (TelegramAdapter)
+OMNIPOST_TELEGRAM_BOT_TOKEN=
+
+# WhatsApp (WhatsAppAdapter)
+OMNIPOST_WHATSAPP_TOKEN=
+OMNIPOST_WHATSAPP_PHONE_NUMBER_ID=
+
+# Bluesky (BlueskyAdapter & oauth.ts)
+OMNIPOST_BLUESKY_APP_PASSWORD=
+
+# IndieHackers (IndieHackersAdapter)
+OMNIPOST_INDIEHACKERS_COOKIE=
+
+# BetaList (BetaListAdapter)
+OMNIPOST_BETALIST_API_KEY=
+
+# StackOverflow (StackOverflowAdapter & oauth.ts)
+OMNIPOST_STACKOVERFLOW_KEY=
+OMNIPOST_STACKOVERFLOW_CLIENT_ID=
+OMNIPOST_STACKOVERFLOW_CLIENT_SECRET=
+
+# Twitch (TwitchAdapter & oauth.ts)
+TWITCH_CLIENT_ID=
+OMNIPOST_TWITCH_CLIENT_ID=
+OMNIPOST_TWITCH_CLIENT_SECRET=
+
+# Clubhouse (ClubhouseAdapter & oauth.ts)
+OMNIPOST_CLUBHOUSE_TOKEN=
+
+# Dribbble (DribbbleAdapter & oauth.ts)
+OMNIPOST_DRIBBBLE_CLIENT_ID=
+OMNIPOST_DRIBBBLE_CLIENT_SECRET=
+
+# Behance (BehanceAdapter & oauth.ts)
+OMNIPOST_BEHANCE_API_KEY=
+
+# Lemon8 (Lemon8Adapter & oauth.ts)
+OMNIPOST_LEMON8_AUTH_TOKEN=

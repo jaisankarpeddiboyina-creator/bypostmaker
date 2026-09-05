@@ -30,6 +30,16 @@ import { WhatsAppAdapter } from '../omnipost/adapters/whatsapp/WhatsAppAdapter'
 import { SubstackAdapter } from '../omnipost/adapters/substack/SubstackAdapter'
 import { HackerNewsAdapter } from '../omnipost/adapters/hackernews/HackerNewsAdapter'
 import { QuoraAdapter } from '../omnipost/adapters/quora/QuoraAdapter'
+import { ThreadsAdapter } from '../omnipost/adapters/threads/ThreadsAdapter'
+import { BlueskyAdapter } from '../omnipost/adapters/bluesky/BlueskyAdapter'
+import { IndieHackersAdapter } from '../omnipost/adapters/indiehackers/IndieHackersAdapter'
+import { BetaListAdapter } from '../omnipost/adapters/betalist/BetaListAdapter'
+import { StackOverflowAdapter } from '../omnipost/adapters/stackoverflow/StackOverflowAdapter'
+import { TwitchAdapter } from '../omnipost/adapters/twitch/TwitchAdapter'
+import { ClubhouseAdapter } from '../omnipost/adapters/clubhouse/ClubhouseAdapter'
+import { DribbbleAdapter } from '../omnipost/adapters/dribbble/DribbbleAdapter'
+import { BehanceAdapter } from '../omnipost/adapters/behance/BehanceAdapter'
+import { Lemon8Adapter } from '../omnipost/adapters/lemon8/Lemon8Adapter'
 
 export function createStandardAdapterRegistry(): AdapterRegistry {
   const registry = new AdapterRegistry();
@@ -56,6 +66,18 @@ export function createStandardAdapterRegistry(): AdapterRegistry {
   registry.register(new SubstackAdapter());
   registry.register(new HackerNewsAdapter());
   registry.register(new QuoraAdapter());
+  // Batch 4a
+  registry.register(new ThreadsAdapter());
+  registry.register(new BlueskyAdapter());
+  registry.register(new IndieHackersAdapter());
+  registry.register(new BetaListAdapter());
+  registry.register(new StackOverflowAdapter());
+  // Batch 4b
+  registry.register(new TwitchAdapter());
+  registry.register(new ClubhouseAdapter());
+  registry.register(new DribbbleAdapter());
+  registry.register(new BehanceAdapter());
+  registry.register(new Lemon8Adapter());
   return registry;
 }
 

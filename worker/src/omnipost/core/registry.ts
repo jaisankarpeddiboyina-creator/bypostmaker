@@ -33,7 +33,7 @@ export class AdapterRegistry {
     return [...this.adapters.values()];
   }
 
-  private isCompatible(required: string, actual: string): boolean {
+  isCompatible(required: string, actual: string = CORE_VERSION): boolean {
     const [rMaj, rMin] = required.split('.').map(Number);
     const [aMaj, aMin] = actual.split('.').map(Number);
     if (aMaj !== rMaj) return aMaj > rMaj;
