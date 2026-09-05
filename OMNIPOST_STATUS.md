@@ -2,7 +2,7 @@
 
 **Repository:** `bypostmaker`  
 **Branch:** `feat/omnipost-worker-port`  
-**Status:** All 33 Platform Adapters Implemented, Registered, and Contract-Verified. Core Engine P0 Fixes Complete.
+**Status:** 23 Active Platforms Registered & Contract-Verified (10 Unregistered Pending API/Scope Audit). Core Engine P0 Fixes Complete.
 
 ---
 
@@ -36,7 +36,7 @@ worker/src/omnipost/
 ```
 
 **Single System Integration Point:**
-`worker/src/routes/omnipost.ts` exports `createStandardAdapterRegistry()`, initializing and registering all 33 adapters.
+`worker/src/routes/omnipost.ts` exports `createStandardAdapterRegistry()`, initializing 23 active registered adapters (10 unhooked for API verification).
 
 ---
 
@@ -44,19 +44,19 @@ worker/src/omnipost/
 
 Below are the verified commit hashes for all Omnipost features and fixes:
 
+* `c0708b4` — `fix(omnipost): remove process.env fallback in TwitchAdapter to rely strictly on credentials object`
+* `877ea68` — `fix(omnipost): unregister 6 unverified adapters from live registry and align Twitch env var name`
+* `39e898f` — `docs(omnipost): add unverified posting APIs audit section to OMNIPOST_STATUS.md`
 * `87f719f` — `feat(omnipost): add Batch 4b adapters (Twitch, Clubhouse, Dribbble, Behance, Lemon8), register all 33 adapters, add registry contract test suite and continuity doc`
 * `ec07b15` — `fix(omnipost): Phase 3-6 core P0 fixes — D1ClaimStore, idempotency key, dispatcher retry, inline vault`
 * `6d5380c` — `feat(omnipost): add Batch 4a adapters (Threads, Bluesky, IndieHackers, BetaList, StackOverflow)`
 * `5cd6f3b` — `feat(omnipost): register all 23 platform adapters in AdapterRegistry and omnipost route handler`
-* `49740f3` — `feat(omnipost): implement Batch 3 platform adapters (Medium, Product Hunt, WhatsApp, Substack, Hacker News, Quora)`
-* `e721a34` — `feat(omnipost): implement Batch 2 platform adapters (Instagram, Facebook, YouTube, TikTok, YouTube Shorts, Snapchat)`
-* `2750c6a` — `feat(omnipost): implement Batch 1 platform adapters (Twitter, LinkedIn, Pinterest, Telegram, Slack, dev.to, Hashnode, GitHub)`
 
 ---
 
 ## 3. Platform Adapter Census (All 33 Adapters)
 
-All 33 platform adapters are registered in `createStandardAdapterRegistry()`:
+23 platform adapters are actively registered in `createStandardAdapterRegistry()`, and 10 are unregistered pending API/scope audit:
 
 | # | Platform ID | Batch | Auth Type | Compliance | Status |
 |---|---|---|---|---|---|
@@ -76,13 +76,13 @@ All 33 platform adapters are registered in `createStandardAdapterRegistry()`:
 | 14 | `youtube` | Batch 2 | `oauth2` | official-api | Registered & Verified |
 | 15 | `tiktok` | Batch 2 | `oauth2` | official-api | Registered & Verified |
 | 16 | `youtubeshorts` | Batch 2 | `oauth2` | official-api | Registered & Verified |
-| 17 | `snapchat` | Batch 2 | `oauth2` | official-api | Registered & Verified |
+| 17 | `snapchat` | Batch 2 | `oauth2` | official-api | Unregistered (Pending Review) |
 | 18 | `medium` | Batch 3 | `oauth2` | official-api | Unregistered (Pending Review) |
 | 19 | `producthunt` | Batch 3 | `oauth2` | official-api | Registered & Verified |
 | 20 | `whatsapp` | Batch 3 | `apiKey` | official-api | Registered & Verified |
-| 21 | `substack` | Batch 3 | `apiKey` | reverse-engineered | Registered & Verified |
+| 21 | `substack` | Batch 3 | `apiKey` | reverse-engineered | Unregistered (Pending Review) |
 | 22 | `hackernews` | Batch 3 | `apiKey` | reverse-engineered | Unregistered (Pending Review) |
-| 23 | `quora` | Batch 3 | `apiKey` | reverse-engineered | Registered & Verified |
+| 23 | `quora` | Batch 3 | `apiKey` | reverse-engineered | Unregistered (Pending Review) |
 | 24 | `threads` | Batch 4a | `oauth2` | official-api | Registered & Verified |
 | 25 | `bluesky` | Batch 4a | `basic` | official-api | Registered & Verified |
 | 26 | `indiehackers` | Batch 4a | `apiKey` | reverse-engineered | Unregistered (Pending Review) |
@@ -91,7 +91,7 @@ All 33 platform adapters are registered in `createStandardAdapterRegistry()`:
 | 29 | `twitch` | Batch 4b | `oauth2` | official-api | Registered & Verified |
 | 30 | `clubhouse` | Batch 4b | `apiKey` | reverse-engineered | Unregistered (Pending Review) |
 | 31 | `dribbble` | Batch 4b | `oauth2` | official-api | Registered & Verified |
-| 32 | `behance` | Batch 4b | `apiKey` | official-api | Registered & Verified |
+| 32 | `behance` | Batch 4b | `apiKey` | official-api | Unregistered (Pending Review) |
 | 33 | `lemon8` | Batch 4b | `basic` | reverse-engineered | Unregistered (Pending Review) |
 
 ---
@@ -188,11 +188,6 @@ wrangler secret put OMNIPOST_QUORA_API_KEY --env staging
 wrangler secret put OMNIPOST_DEVTO_API_KEY --env staging
 wrangler secret put OMNIPOST_HASHNODE_API_KEY --env staging
 
-# Telegram / WhatsApp
-wrangler secret put OMNIPOST_TELEGRAM_BOT_TOKEN --env staging
-wrangler secret put OMNIPOST_WHATSAPP_TOKEN --env staging
-wrangler secret put OMNIPOST_WHATSAPP_PHONE_NUMBER_ID --env staging
-
 # Bluesky / IndieHackers / BetaList / StackOverflow
 wrangler secret put OMNIPOST_BLUESKY_APP_PASSWORD --env staging
 wrangler secret put OMNIPOST_INDIEHACKERS_COOKIE --env staging
@@ -222,3 +217,20 @@ wrangler secret put OMNIPOST_LEMON8_AUTH_TOKEN --env staging
 - **BetaList (`betalist`):** Uses startup submission API placeholder (`POST /api/v1/startups`); no public user post publishing REST API exists.
 - **Clubhouse (`clubhouse`):** Batch 4b adapter using reverse-engineered mobile app API (`POST /api/create_channel`); requires mobile token verification.
 - **Lemon8 (`lemon8`):** Batch 4b adapter using reverse-engineered ByteDance internal endpoint (`POST /api/v1/post/create`); unverified reverse-engineered route.
+- **Snapchat (`snapchat`):** No server-side REST API exists — Snap Kit is client-side only, requiring the user's phone to send; cloud-based tool cannot post.
+- **Substack (`substack`):** Uses unauthenticated/cookie-based draft endpoint (`POST /api/v1/posts`) with pseudo-token; official 2026 API is profile-lookup only.
+- **Quora (`quora`):** No public API exists for posting questions/answers; only Ads API and unrelated Poe bot API.
+- **Behance (`behance`):** Adobe revoked API access years ago; public write API endpoints deprecated and non-functional.
+
+---
+
+## 8. Capability mismatches — needs scope/UX correction
+
+- **LinkedIn (`linkedin`):** Code posts to `/v2/ugcPosts`. Defaults to personal profile URN (`urn:li:person:...`), but `w_member_social` for personal profiles is restricted/rarely granted by LinkedIn; Organization Pages (`urn:li:organization:...`) require explicit Page selection in UX.
+- **Instagram (`instagram`):** Graph API (`/v19.0/{igUserId}/media`) strictly requires an Instagram Professional/Creator account linked to a Facebook Page. Personal accounts are unsupported and must be warned in connection flow.
+- **Facebook (`facebook`):** Graph API (`/v19.0/{targetId}/feed`) targets Facebook Pages/Groups using Page Access Tokens; direct timeline posting to personal profiles is unsupported by Meta.
+- **TikTok (`tiktok`):** Manifest currently claims `capabilities.text = true`, but TikTok Direct Post API (`/v2/post/publish/video/init/`) strictly requires `video_url`. Must set `capabilities.text = false` and reject text-only posts upfront instead of injecting fake media fallbacks.
+- **Product Hunt (`producthunt`):** Code sends GraphQL `postCreate` mutation assuming product launch. Product Hunt API does not support programmatic product launches (requires web submission & moderation); API only supports comments/votes.
+- **WhatsApp (`whatsapp`):** Code sends freeform text/image messages to phone numbers via `/v19.0/{phoneNumberId}/messages`. WhatsApp Cloud API restricts business-initiated messages to pre-approved Message Templates outside 24h user-initiated window.
+- **Stack Overflow (`stackoverflow`):** Code POSTs to `/2.3/questions/add` with default tags. Programmatic top-level question posting triggers automated spam detection and account suspension.
+- **Twitch (`twitch`):** `TwitchAdapter` calls `PATCH /helix/channels?broadcaster_id={id}` to update broadcast stream title. No persistent social feed exists; manifest needs UX description update to "Stream Title & Channel Status Update".

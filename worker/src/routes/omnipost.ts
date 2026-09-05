@@ -59,15 +59,18 @@ export function createStandardAdapterRegistry(): AdapterRegistry {
   registry.register(new YouTubeAdapter());
   registry.register(new TikTokAdapter());
   registry.register(new YouTubeShortsAdapter());
-  registry.register(new SnapchatAdapter());
+  // Unregistered pending API verification — see OMNIPOST_STATUS.md section 7
+  // registry.register(new SnapchatAdapter());
   // Unregistered pending API verification — see OMNIPOST_STATUS.md section 7
   // registry.register(new MediumAdapter());
   registry.register(new ProductHuntAdapter());
   registry.register(new WhatsAppAdapter());
-  registry.register(new SubstackAdapter());
+  // Unregistered pending API verification — see OMNIPOST_STATUS.md section 7
+  // registry.register(new SubstackAdapter());
   // Unregistered pending API verification — see OMNIPOST_STATUS.md section 7
   // registry.register(new HackerNewsAdapter());
-  registry.register(new QuoraAdapter());
+  // Unregistered pending API verification — see OMNIPOST_STATUS.md section 7
+  // registry.register(new QuoraAdapter());
   // Batch 4a
   registry.register(new ThreadsAdapter());
   registry.register(new BlueskyAdapter());
@@ -81,7 +84,8 @@ export function createStandardAdapterRegistry(): AdapterRegistry {
   // Unregistered pending API verification — see OMNIPOST_STATUS.md section 7
   // registry.register(new ClubhouseAdapter());
   registry.register(new DribbbleAdapter());
-  registry.register(new BehanceAdapter());
+  // Unregistered pending API verification — see OMNIPOST_STATUS.md section 7
+  // registry.register(new BehanceAdapter());
   // Unregistered pending API verification — see OMNIPOST_STATUS.md section 7
   // registry.register(new Lemon8Adapter());
   return registry;
