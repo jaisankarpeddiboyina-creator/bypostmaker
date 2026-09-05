@@ -44,6 +44,7 @@ worker/src/omnipost/
 
 Below are the verified commit hashes for all Omnipost features and fixes:
 
+* `87f719f` — `feat(omnipost): add Batch 4b adapters (Twitch, Clubhouse, Dribbble, Behance, Lemon8), register all 33 adapters, add registry contract test suite and continuity doc`
 * `ec07b15` — `fix(omnipost): Phase 3-6 core P0 fixes — D1ClaimStore, idempotency key, dispatcher retry, inline vault`
 * `6d5380c` — `feat(omnipost): add Batch 4a adapters (Threads, Bluesky, IndieHackers, BetaList, StackOverflow)`
 * `5cd6f3b` — `feat(omnipost): register all 23 platform adapters in AdapterRegistry and omnipost route handler`
@@ -210,3 +211,14 @@ wrangler secret put OMNIPOST_DRIBBBLE_CLIENT_SECRET --env staging
 wrangler secret put OMNIPOST_BEHANCE_API_KEY --env staging
 wrangler secret put OMNIPOST_LEMON8_AUTH_TOKEN --env staging
 ```
+
+---
+
+## 7. Unverified posting APIs — needs individual verification before going live
+
+- **Hacker News (`hackernews`):** Uses web form POST payload simulation (`https://news.ycombinator.com/submit`); no official public REST write API exists.
+- **Medium (`medium`):** Medium REST API v1 (`POST /v1/users/{authorId}/posts`) is deprecated by Medium; requires account-level publication scope verification.
+- **IndieHackers (`indiehackers`):** Uses session cookie string matching; no official public publishing REST API endpoint exists.
+- **BetaList (`betalist`):** Uses startup submission API placeholder (`POST /api/v1/startups`); no public user post publishing REST API exists.
+- **Clubhouse (`clubhouse`):** Batch 4b adapter using reverse-engineered mobile app API (`POST /api/create_channel`); requires mobile token verification.
+- **Lemon8 (`lemon8`):** Batch 4b adapter using reverse-engineered ByteDance internal endpoint (`POST /api/v1/post/create`); unverified reverse-engineered route.
