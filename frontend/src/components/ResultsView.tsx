@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Sparkles, Download, ArrowLeft, Loader2 } from 'lucide-react'
+import { Sparkles, Download, ArrowLeft, Loader2, Share2 } from 'lucide-react'
 import { useAppStore } from '../store/app'
 import { PostCard } from './PostCard'
 import { RefinementChat } from './RefinementChat'
@@ -18,11 +18,25 @@ export function ResultsView() {
     selectedPlatforms,
     addToast,
     openExport,
+    openShare,
   } = useAppStore()
 
   const postsList = campaign ? Object.values(campaign.posts) : []
   const completedPosts = postsList.filter(p => p.status === 'done')
   const totalPosts = selectedPlatforms.length || postsList.length
+
+  const handleShare = () => {
+    if (!campaign?.id) return
+    openShare({
+      campaignId: campaign.id,
+      posts: completedPosts.map(post => ({
+        platformId: post.platformId,
+        content: post.content,
+        edited: post.edited,
+        extraFields: post.extraFields,
+      })),
+    })
+  }
 
   const handleDownloadAll = () => {
     if (!campaign?.id) return
@@ -96,14 +110,27 @@ export function ResultsView() {
           </div>
 
           {completedPosts.length > 0 && campaign?.id && (
-            <button
-              type="button"
-              className="btn btn-primary btn-sm download-kit-btn"
-              onClick={handleDownloadAll}
-            >
-              <Download size={13} />
-              <span>Download Full Kit ({completedPosts.length})</span>
-            </button>
+            <>
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm share-kit-btn"
+                onClick={handleShare}
+                disabled={completedPosts.length === 0}
+                title="Share public read-only link"
+              >
+                <Share2 size={13} />
+                <span>Share</span>
+              </button>
+
+              <button
+                type="button"
+                className="btn btn-primary btn-sm download-kit-btn"
+                onClick={handleDownloadAll}
+              >
+                <Download size={13} />
+                <span>Download Full Kit ({completedPosts.length})</span>
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -256,7 +283,38 @@ export function ResultsView() {
           color: var(--color-nav-active-text);
           font-size: 12px;
           font-weight: 600;
-          border: 1px solid rgba(255, 75, 145, 0.2);
+          border: 1px solid rgba(56, 189, 248, 0.25);
+        }
+
+        .share-kit-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 0 14px;
+          height: 36px;
+          border-radius: var(--radius-pill);
+          background: rgba(255, 255, 255, 0.65);
+          backdrop-filter: var(--backdrop-blur);
+          -webkit-backdrop-filter: var(--backdrop-blur);
+          border: 1px solid var(--color-border);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+          color: var(--color-text-primary);
+          font-weight: 600;
+          font-size: 13px;
+          transition: all var(--transition);
+          cursor: pointer;
+        }
+
+        .share-kit-btn:hover {
+          background: rgba(56, 189, 248, 0.12);
+          border-color: var(--color-primary-start);
+          color: var(--color-primary-end);
+          box-shadow: 0 4px 16px rgba(56, 189, 248, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+          transform: translateY(-1px);
+        }
+
+        .share-kit-btn:active {
+          transform: scale(0.98);
         }
 
         .platform-filter-wrapper {

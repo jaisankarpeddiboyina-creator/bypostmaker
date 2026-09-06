@@ -55,6 +55,16 @@ export interface ExportPayload {
   defaultFilename: string
 }
 
+export interface SharePayload {
+  campaignId: string
+  posts: {
+    platformId: string
+    content: string
+    edited?: boolean
+    extraFields?: Record<string, string>
+  }[]
+}
+
 export interface Toast {
   id: string
   message: string
@@ -153,6 +163,12 @@ interface AppStore {
   exportPayload: ExportPayload | null
   openExport: (payload: ExportPayload) => void
   closeExport: () => void
+
+  showShareModal: boolean
+  setShowShareModal: (v: boolean) => void
+  sharePayload: SharePayload | null
+  openShare: (payload: SharePayload) => void
+  closeShare: () => void
 
   showAssetPicker: boolean
   assetPickerContext: AssetPickerContext | null
@@ -262,6 +278,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
   exportPayload: null,
   openExport: (payload) => set({ exportPayload: payload, showExportModal: true }),
   closeExport: () => set({ exportPayload: null, showExportModal: false }),
+
+  showShareModal: false,
+  setShowShareModal: (v) => set({ showShareModal: v }),
+  sharePayload: null,
+  openShare: (payload) => set({ sharePayload: payload, showShareModal: true }),
+  closeShare: () => set({ sharePayload: null, showShareModal: false }),
 
   showAssetPicker: false,
   assetPickerContext: null,

@@ -264,6 +264,23 @@ export const api = {
       }),
   },
 
+  // ── Share ───────────────────────────────────────────────────
+  share: {
+    create: (campaignId: string, posts: Array<{ platformId: string; content: string; edited?: boolean; extraFields?: Record<string, string> }>) =>
+      request<{ success: boolean; shareId: string; shareUrl: string; expiresAt: number }>('/share', {
+        method: 'POST',
+        body: JSON.stringify({ campaignId, posts }),
+      }),
+
+    get: (shareId: string) =>
+      request<{ id: string; title: string; posts: any[]; imageUrls: string[]; createdAt: number; expiresAt: number }>(`/share/${shareId}`),
+
+    delete: (shareId: string) =>
+      request<{ ok: boolean; deleted: number }>(`/share/${shareId}`, {
+        method: 'DELETE',
+      }),
+  },
+
   // ── Omnipost (Social Media Publishing) ──────────────────────
   omnipost: {
     getConnections: () =>
