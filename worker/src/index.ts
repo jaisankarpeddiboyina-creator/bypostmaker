@@ -645,6 +645,17 @@ export default {
         if (path === '/api/health') return withCors(await handleHealth(env), env)
         if (path === '/api/feedback' && request.method === 'POST') return withCors(await handleFeedbackSubmit(request, env), env)
 
+        // ── Gate Omnipost API Endpoints ─────────────────────────
+        if (path.startsWith('/api/omnipost')) {
+          return withCors(new Response(JSON.stringify({
+            error: 'Feature unavailable',
+            message: 'The connections feature is currently unavailable.'
+          }), {
+            status: 503,
+            headers: { 'Content-Type': 'application/json' }
+          }), env)
+        }
+
         // ── Batch Monitoring Ingestion Endpoint ──
         if (path === '/api/monitoring/batch' && request.method === 'POST') {
           const rateLimit = await checkIpRateLimitDurable(request, env)

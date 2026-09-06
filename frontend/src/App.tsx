@@ -263,7 +263,7 @@ export default function App() {
             <AuthGuard><AppShell><BrandKitPage /></AppShell></AuthGuard>
           } />
           <Route path="/app/connections" element={
-            <AuthGuard><AppShell><ConnectionsPage /></AppShell></AuthGuard>
+            <Navigate to="/app" replace />
           } />
           <Route path="/app/media" element={
             <AuthGuard><AppShell><AssetsPage /></AppShell></AuthGuard>
