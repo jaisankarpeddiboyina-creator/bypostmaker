@@ -204,7 +204,6 @@ CREATE TABLE IF NOT EXISTS brand_kits (
 
 CREATE INDEX IF NOT EXISTS idx_brand_kits_user ON brand_kits(user_id);
 
-
 -- ── Asset Folders (migration 0010) ────────────────────────────
 CREATE TABLE IF NOT EXISTS asset_folders (
   id          TEXT PRIMARY KEY,
@@ -247,3 +246,20 @@ CREATE INDEX IF NOT EXISTS idx_assets_type     ON assets(type);
 CREATE INDEX IF NOT EXISTS idx_assets_fav      ON assets(user_id, is_favorite);
 CREATE INDEX IF NOT EXISTS idx_assets_trashed  ON assets(user_id, is_trashed);
 CREATE INDEX IF NOT EXISTS idx_assets_created  ON assets(user_id, created_at DESC);
+
+-- ── Shares (Public Read-Only Snapshots) ───────────────────────
+CREATE TABLE IF NOT EXISTS shares (
+  id                TEXT PRIMARY KEY,              -- 21-char URL-safe Nanoid
+  user_id           TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  campaign_id       TEXT NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+  title             TEXT NOT NULL,
+  content_snapshot  TEXT NOT NULL,                 -- JSON array of posts
+  media_keys        TEXT,                          -- JSON array of R2 keys, nullable
+  created_at        INTEGER NOT NULL DEFAULT (unixepoch()),
+  expires_at        INTEGER NOT NULL               -- created_at + 172800 (48h)
+);
+
+CREATE INDEX IF NOT EXISTS idx_shares_expires_at  ON shares(expires_at);
+CREATE INDEX IF NOT EXISTS idx_shares_user_id     ON shares(user_id);
+CREATE INDEX IF NOT EXISTS idx_shares_campaign_id ON shares(campaign_id);
+

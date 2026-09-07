@@ -5,18 +5,16 @@ export async function runCronJobs(cron: string, env: Env): Promise<void> {
   console.log(`Cron triggered: ${cron}`)
 
   try {
-    // 9AM UTC — data retention + DB health
+    // 9AM UTC — data retention + DB health + expired shares purge
     if (cron === '0 9 * * *') {
       await Promise.all([
         runDataRetention(env),
         runDBHealthCheck(env),
         runSystemLogsPurge(env),
+        runExpiredSharesPurge(env),
         runOmnipostCleanup(env),
       ])
     }
-
-  
-  
   } catch (err) {
     console.error('Cron job error:', err)
   }
@@ -127,13 +125,25 @@ export async function runSystemLogsPurge(env: Env): Promise<void> {
   }
 }
 
+// ── Expired Shares Purge ───────────────────────────────────────
+export async function runExpiredSharesPurge(env: Env): Promise<void> {
+  try {
+    const res = await env.DB.prepare(
+      'DELETE FROM shares WHERE expires_at < unixepoch()'
+    ).run()
+    console.log(`Cron: expired shares purge completed. Rows deleted: ${res.meta?.changes ?? 0}`)
+  } catch (err) {
+    console.error('Failed to run expired shares purge:', err)
+  }
+}
+
 // ── Omnipost Stale Pending connections Cleanup ─────────────────
 export async function runOmnipostCleanup(env: Env): Promise<void> {
   const cutoff = Math.floor(Date.now() / 1000) - 600 // 10 minutes ago
   try {
     const res = await env.DB.prepare(
-      `DELETE FROM omnipost_connections 
-       WHERE json_extract(coalesce(display_metadata, '{}'), '$.status') = 'pending' 
+      `DELETE FROM omnipost_connections
+       WHERE json_extract(coalesce(display_metadata, '{}'), '$.status') = 'pending'
          AND created_at < ?`
     ).bind(cutoff).run()
     console.log(`Cron: pruned expired pending OAuth connections. Rows deleted: ${res.meta.changes ?? 0}`)

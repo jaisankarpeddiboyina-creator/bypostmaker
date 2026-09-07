@@ -21,7 +21,8 @@ run_worker_first = [
   "/refund",
   "/cookies",
   "/shipping",
-  "/contact"
+  "/contact",
+  "/share*"
 ]
 
 # ── D1 Database ──────────────────────────────────────────────
