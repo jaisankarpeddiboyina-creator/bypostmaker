@@ -213,9 +213,62 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
         </div>
       )}
 
+      {/* FLOATING ATTACHED MEDIA SHELF (ABOVE PROMPT BAR) */}
+      {(imageFiles.length > 0 || videoFile) && (
+        <div className="attached-media-shelf glass-card animate-fade-in">
+          <div className="attached-media-header">
+            <div className="attached-media-title-group">
+              <ImageIcon size={13} className="text-accent" />
+              <span>Attached Media ({imageFiles.length > 0 ? `${imageFiles.length}/4 Images` : '1 Video MP4'})</span>
+            </div>
+            <button
+              type="button"
+              className="btn-clear-media"
+              onClick={() => { setImageFiles([]); setVideoFile(null); }}
+              disabled={isGenerating}
+              title="Remove all attached media"
+            >
+              Clear all
+            </button>
+          </div>
+          <div className="attached-media-strip">
+            {imageFiles.map((file, idx) => (
+              <div key={`${file.name}-${idx}`} className="media-chip-thumb" title={file.name}>
+                <span className="thumb-badge">#{idx + 1}</span>
+                <img src={URL.createObjectURL(file)} alt={file.name} />
+                <button
+                  type="button"
+                  className="thumb-remove"
+                  onClick={() => removeImageFile(idx)}
+                  disabled={isGenerating}
+                  title="Remove image"
+                >
+                  <X size={11} />
+                </button>
+              </div>
+            ))}
+            {videoFile && (
+              <div className="media-chip-thumb video-thumb" title={videoFile.name}>
+                <Video size={22} className="video-icon" />
+                <span className="thumb-badge">MP4</span>
+                <button
+                  type="button"
+                  className="thumb-remove"
+                  onClick={() => setVideoFile(null)}
+                  disabled={isGenerating}
+                  title="Remove video"
+                >
+                  <X size={11} />
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* FLOATING UNIFIED PROMPT BAR */}
       <div
-        className={`mockup-prompt-bar-card glass-card ${isDragOver ? 'dragover' : ''} ${imageFiles.length > 0 || videoFile ? 'has-media' : ''}`}
+        className={`mockup-prompt-bar-card glass-card ${isDragOver ? 'dragover' : ''}`}
         onDragOver={e => { e.preventDefault(); setIsDragOver(true); }}
         onDragLeave={() => setIsDragOver(false)}
         onDrop={handleDrop}
@@ -316,59 +369,6 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
             </button>
           </div>
         </div>
-
-        {/* ATTACHED MEDIA GALLERY */}
-        {(imageFiles.length > 0 || videoFile) && (
-          <div className="attached-media-container animate-fade-in">
-            <div className="attached-media-header">
-              <div className="attached-media-title-group">
-                <ImageIcon size={13} className="text-accent" />
-                <span>Attached Media ({imageFiles.length > 0 ? `${imageFiles.length}/4 Images` : '1 Video MP4'})</span>
-              </div>
-              <button
-                type="button"
-                className="btn-clear-media"
-                onClick={() => { setImageFiles([]); setVideoFile(null); }}
-                disabled={isGenerating}
-                title="Remove all attached media"
-              >
-                Clear all
-              </button>
-            </div>
-            <div className="attached-media-strip">
-              {imageFiles.map((file, idx) => (
-                <div key={`${file.name}-${idx}`} className="media-chip-thumb" title={file.name}>
-                  <span className="thumb-badge">#{idx + 1}</span>
-                  <img src={URL.createObjectURL(file)} alt={file.name} />
-                  <button
-                    type="button"
-                    className="thumb-remove"
-                    onClick={() => removeImageFile(idx)}
-                    disabled={isGenerating}
-                    title="Remove image"
-                  >
-                    <X size={11} />
-                  </button>
-                </div>
-              ))}
-              {videoFile && (
-                <div className="media-chip-thumb video-thumb" title={videoFile.name}>
-                  <Video size={20} className="video-icon" />
-                  <span className="thumb-badge">MP4</span>
-                  <button
-                    type="button"
-                    className="thumb-remove"
-                    onClick={() => setVideoFile(null)}
-                    disabled={isGenerating}
-                    title="Remove video"
-                  >
-                    <X size={11} />
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* SMART CHIPS ROW DIRECTLY UNDER TEXTAREA */}
@@ -498,11 +498,6 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
           transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        .mockup-prompt-bar-card.has-media {
-          border-radius: var(--radius-card);
-          padding: 14px 18px;
-        }
-
         .mockup-prompt-bar-card:focus-within {
           border-color: var(--color-primary-start);
           box-shadow: 0 0 20px rgba(56, 189, 248, 0.25), 0 10px 25px rgba(0, 0, 0, 0.12);
@@ -513,177 +508,21 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
           background: rgba(56, 189, 248, 0.10);
         }
 
-        .prompt-bar-input-row {
-          display: flex;
-          align-items: center;
-          gap: 12px;
+        /* FLOATING ATTACHED MEDIA SHELF (ABOVE PROMPT BAR) */
+        .attached-media-shelf {
           width: 100%;
-        }
-
-        .plus-menu-container {
-          position: relative;
-          flex-shrink: 0;
-        }
-
-        .plus-action-btn {
-          width: 36px;
-          height: 36px;
-          border-radius: 50%;
-          background: rgba(255, 255, 255, 0.15);
-          border: 1px solid rgba(255, 255, 255, 0.30);
-          color: var(--color-text-primary);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: all var(--transition);
-        }
-
-        .plus-action-btn:hover, .plus-action-btn.active {
-          background: rgba(255, 255, 255, 0.30);
-          border-color: var(--color-primary-start);
-          color: var(--color-primary-start);
-        }
-
-        .plus-popover-menu {
-          position: absolute;
-          top: 48px;
-          left: 0;
-          width: 250px;
-          z-index: 100;
-          padding: 12px;
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
+          padding: 12px 18px;
+          border-radius: var(--radius-card);
           background: var(--color-surface-solid);
           backdrop-filter: var(--backdrop-blur);
+          -webkit-backdrop-filter: var(--backdrop-blur);
           border: 1px solid var(--color-border);
-          border-radius: var(--radius-card);
-          box-shadow: 0 20px 50px rgba(0, 0, 0, 0.75);
-        }
-
-        .popover-section-title {
-          font-size: 11px;
-          font-weight: 700;
-          color: var(--color-text-muted);
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          display: flex;
-          align-items: center;
-          gap: 4px;
-        }
-
-        .popover-item-toggle {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          font-size: 12px;
-          color: var(--color-text-primary);
-          cursor: pointer;
-        }
-
-        .popover-media-actions {
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-        }
-
-        .popover-action-btn {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          padding: 6px 10px;
-          border-radius: var(--radius-sm);
-          background: rgba(255, 255, 255, 0.10);
-          border: 1px solid rgba(255, 255, 255, 0.20);
-          color: var(--color-text-primary);
-          font-size: 11.5px;
-          font-weight: 600;
-          cursor: pointer;
-          text-align: left;
-          transition: all var(--transition);
-        }
-
-        .popover-action-btn:hover {
-          background: rgba(255, 255, 255, 0.25);
-          border-color: var(--color-primary-start);
-        }
-
-        .prompt-text-field-container {
-          flex: 1;
-          display: flex;
-          align-items: center;
-        }
-
-        .mockup-prompt-textarea {
-          width: 100%;
-          background: transparent;
-          border: none;
-          outline: none;
-          font-family: var(--font-body);
-          font-size: 14.5px;
-          color: var(--color-text-primary);
-          line-height: 1.5;
-          resize: none;
-          padding: 4px 0;
-        }
-
-        .prompt-bar-right-actions {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          flex-shrink: 0;
-        }
-
-        .shortcut-pill {
-          display: flex;
-          align-items: center;
-          gap: 3px;
-          padding: 4px 8px;
-          border-radius: var(--radius-sm);
-          background: rgba(255, 255, 255, 0.15);
-          border: 1px solid rgba(255, 255, 255, 0.30);
-          font-size: 11px;
-          font-weight: 700;
-          color: var(--color-text-muted);
-        }
-
-        .mockup-generate-btn {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          padding: 10px 22px;
-          border-radius: var(--radius-pill);
-          border: none;
-          background: linear-gradient(135deg, #38BDF8 0%, #818CF8 50%, #C084FC 100%);
-          box-shadow: 0 4px 18px rgba(129, 140, 248, 0.45);
-          color: #ffffff;
-          font-family: var(--font-body);
-          font-size: 13.5px;
-          font-weight: 700;
-          cursor: pointer;
-          transition: all var(--transition);
-          white-space: nowrap;
-        }
-
-        .mockup-generate-btn:hover:not(:disabled) {
-          transform: translateY(-1px);
-          box-shadow: 0 6px 24px rgba(129, 140, 248, 0.65);
-        }
-
-        .mockup-generate-btn:disabled {
-          opacity: 0.45;
-          cursor: not-allowed;
-        }
-
-        /* ATTACHED MEDIA CONTAINER */
-        .attached-media-container {
-          margin-top: 14px;
-          padding-top: 12px;
-          border-top: 1px solid rgba(255, 255, 255, 0.12);
+          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15), 0 2px 6px rgba(0, 0, 0, 0.05);
           display: flex;
           flex-direction: column;
           gap: 10px;
+          z-index: 12;
+          transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .attached-media-header {
@@ -726,26 +565,26 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
           align-items: center;
           gap: 12px;
           overflow-x: auto;
-          padding: 4px 2px 6px 2px;
+          padding: 2px 2px 4px 2px;
         }
 
         .media-chip-thumb {
           position: relative;
-          width: 68px;
-          height: 68px;
+          width: 72px;
+          height: 72px;
           border-radius: 12px;
           overflow: hidden;
           border: 1px solid var(--color-border);
           flex-shrink: 0;
-          background: rgba(0, 0, 0, 0.25);
-          box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+          background: rgba(0, 0, 0, 0.3);
+          box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
           transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .media-chip-thumb:hover {
           transform: translateY(-2px) scale(1.04);
           border-color: var(--color-primary-start);
-          box-shadow: 0 6px 18px rgba(56, 189, 248, 0.35);
+          box-shadow: 0 6px 20px rgba(56, 189, 248, 0.4);
         }
 
         .media-chip-thumb img {
