@@ -54,10 +54,12 @@ export function AssetPickerModal() {
         return
       }
       if (!res.ok) throw new Error('Search failed')
-      const data = await res.json() as any[]
-      setFreeMediaResults(data || [])
+      const data = await res.json() as any
+      const items = Array.isArray(data) ? data : (Array.isArray(data?.results) ? data.results : [])
+      setFreeMediaResults(items)
     } catch (err: any) {
       addToast(err.message || 'Media search failed', 'error')
+      setFreeMediaResults([])
     } finally {
       setLoading(false)
     }
@@ -70,7 +72,7 @@ export function AssetPickerModal() {
 
   // Inject Google Font stylesheets into head for font previews in modal
   useEffect(() => {
-    if (freeMediaType === 'font' && freeMediaResults.length > 0) {
+    if (freeMediaType === 'font' && Array.isArray(freeMediaResults) && freeMediaResults.length > 0) {
       freeMediaResults.forEach(item => {
         if (item.type === 'font' && item.previewUrl) {
           const id = `gfont-modal-link-${item.id}`

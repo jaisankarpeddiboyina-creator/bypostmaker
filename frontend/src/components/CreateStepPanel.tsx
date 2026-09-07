@@ -259,10 +259,18 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
                   <button
                     type="button"
                     className="popover-action-btn"
+                    onClick={() => { imageInputRef.current?.click(); setShowPlusMenu(false); }}
+                    disabled={isGenerating || imageFiles.length >= 4 || !!videoFile}
+                  >
+                    <ImageIcon size={13} /> Upload Images ({imageFiles.length}/4)
+                  </button>
+                  <button
+                    type="button"
+                    className="popover-action-btn"
                     onClick={() => { handleOpenAssetPicker(); setShowPlusMenu(false); }}
                     disabled={isGenerating || imageFiles.length >= 4 || !!videoFile}
                   >
-                    <ImageIcon size={13} /> Add Images ({imageFiles.length}/4)
+                    <Sparkles size={13} /> Stock Photos Library
                   </button>
                   <button
                     type="button"
