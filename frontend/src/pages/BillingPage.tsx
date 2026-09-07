@@ -12,14 +12,16 @@ const PLAN_TAGLINES: Record<string, string> = {
 }
 
 export default function BillingPage() {
-  const { user, addToast, setShowUpgradeModal, setUpgradeReason, currency, setCurrency } = useAppStore()
+  const { user, usage, addToast, setShowUpgradeModal, setUpgradeReason, currency, setCurrency } = useAppStore()
   const [subStatus, setSubStatus] = useState<any>(null)
+  const [loadingSub, setLoadingSub] = useState(true)
   const [cancelling, setCancelling] = useState(false)
 
   useEffect(() => {
     api.payments.status()
       .then(res => setSubStatus(res))
       .catch(() => {})
+      .finally(() => setLoadingSub(false))
   }, [])
 
   const handleCurrencyToggle = async (c: 'usd' | 'inr') => {
@@ -43,6 +45,11 @@ export default function BillingPage() {
     } finally {
       setCancelling(false)
     }
+  }
+
+  const getLimitText = () => {
+    if (!usage) return ''
+    return usage.limit === -1 ? 'Unlimited' : `${usage.limit} generations`
   }
 
   const periodEnd = subStatus?.subscription?.current_period_end
@@ -84,22 +91,59 @@ export default function BillingPage() {
           </div>
         </div>
 
-        {/* Active Paid Subscription Notice (if active) */}
-        {subStatus?.subscription && subStatus.subscription.status === 'active' && (
+        {/* Subscription Status Bar (Active, Cancelled, Past Due, etc.) */}
+        {subStatus?.subscription && (
           <div className="sub-management-bar glass-card">
             <div className="sub-management-info">
-              <span className="sub-management-label">Active Subscription:</span>
-              <span className="sub-badge status-active">{subStatus.subscription.status}</span>
-              {periodEnd && <span className="sub-period">Renews on {periodEnd}</span>}
+              <div className="sub-detail-item">
+                <span className="sub-detail-label">Status</span>
+                <span className={`sub-badge status-${subStatus.subscription.status}`}>
+                  {subStatus.subscription.status}
+                </span>
+              </div>
+              {periodEnd && (
+                <div className="sub-detail-item">
+                  <span className="sub-detail-label">
+                    {subStatus.subscription.status === 'cancelled' ? 'Expires' : 'Renews'}
+                  </span>
+                  <span className="sub-detail-value">{periodEnd}</span>
+                </div>
+              )}
             </div>
-            <button
-              type="button"
-              className="btn btn-ghost cancel-sub-btn"
-              onClick={handleCancelSubscription}
-              disabled={cancelling}
-            >
-              {cancelling ? 'Cancelling…' : 'Cancel Subscription'}
-            </button>
+            {subStatus.subscription.status === 'active' && (
+              <button
+                type="button"
+                className="btn btn-ghost cancel-sub-btn"
+                onClick={handleCancelSubscription}
+                disabled={cancelling}
+              >
+                {cancelling ? 'Cancelling…' : 'Cancel Subscription'}
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Generations Usage Quota Display */}
+        {usage && user?.plan !== 'business' && (
+          <div className="billing-usage-section glass-card">
+            <div className="usage-labels">
+              <span className="usage-title">Generations Used</span>
+              <span className="usage-numbers">
+                <strong>{usage.generations}</strong> / {usage.limit === -1 ? 'Unlimited' : usage.limit}
+              </span>
+            </div>
+            <div className="usage-bar-container">
+              <div
+                className="usage-bar-fill-progress"
+                style={{
+                  width: `${Math.min(100, (usage.generations / (usage.limit === -1 ? 1 : usage.limit)) * 100)}%`,
+                  background: usage.remaining === 0 ? 'var(--color-error)' : 'var(--gradient-primary-h)',
+                }}
+              />
+            </div>
+            <div className="usage-footer">
+              <span>{usage.limit === -1 ? 'Unlimited generations' : `${usage.remaining} remaining this month`}</span>
+            </div>
           </div>
         )}
 
@@ -268,7 +312,7 @@ export default function BillingPage() {
           color: var(--color-text-muted);
         }
 
-        /* Active Subscription Bar */
+        /* Subscription Management Bar */
         .sub-management-bar {
           padding: 14px 20px;
           display: flex;
@@ -276,36 +320,61 @@ export default function BillingPage() {
           justify-content: space-between;
           gap: 16px;
           border-radius: 16px;
+          flex-wrap: wrap;
         }
 
         .sub-management-info {
           display: flex;
           align-items: center;
-          gap: 10px;
-          font-size: 13px;
+          gap: 24px;
         }
 
-        .sub-management-label {
+        .sub-detail-item {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .sub-detail-label {
+          font-size: 12px;
           font-weight: 600;
-          color: var(--color-text-secondary);
+          color: var(--color-text-muted);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+
+        .sub-detail-value {
+          font-size: 13.5px;
+          font-weight: 600;
+          color: var(--color-text-primary);
         }
 
         .sub-badge {
           display: inline-flex;
-          padding: 2px 8px;
+          padding: 2px 10px;
           border-radius: var(--radius-pill);
           font-size: 11px;
           font-weight: 700;
           text-transform: uppercase;
+          letter-spacing: 0.04em;
         }
 
         .sub-badge.status-active {
           background: var(--color-success-bg);
           color: var(--color-success);
+          border: 1px solid var(--color-success-border);
         }
 
-        .sub-period {
-          color: var(--color-text-muted);
+        .sub-badge.status-cancelled {
+          background: var(--color-error-bg);
+          color: var(--color-error);
+          border: 1px solid var(--color-error-border);
+        }
+
+        .sub-badge.status-past_due {
+          background: var(--color-warning-bg);
+          color: var(--color-warning);
+          border: 1px solid var(--color-warning-border);
         }
 
         .cancel-sub-btn {
@@ -320,6 +389,56 @@ export default function BillingPage() {
           background: var(--color-error-bg);
           border-color: var(--color-error);
           color: var(--color-error);
+        }
+
+        /* Usage Quota Card */
+        .billing-usage-section {
+          padding: 16px 20px;
+          border-radius: 16px;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+
+        .usage-labels {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+
+        .usage-title {
+          font-size: 13px;
+          font-weight: 700;
+          color: var(--color-text-primary);
+        }
+
+        .usage-numbers {
+          font-size: 13px;
+          color: var(--color-text-secondary);
+        }
+
+        .usage-numbers strong {
+          color: var(--color-text-primary);
+        }
+
+        .usage-bar-container {
+          height: 8px;
+          background: rgba(203, 213, 225, 0.45);
+          border-radius: var(--radius-pill);
+          overflow: hidden;
+        }
+
+        .usage-bar-fill-progress {
+          height: 100%;
+          border-radius: var(--radius-pill);
+          transition: width 0.5s ease;
+        }
+
+        .usage-footer {
+          display: flex;
+          justify-content: flex-end;
+          font-size: 12px;
+          color: var(--color-text-muted);
         }
 
         /* 4-Plan Grid */
