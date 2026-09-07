@@ -1,5 +1,6 @@
 import type { Env } from '../../../config/ai'
 import { sendEmail } from '../services/email'
+import { hashPassword, verifyPassword } from '../utils/crypto'
 
 export async function handleUser(
   request: Request,
@@ -23,6 +24,122 @@ export async function handleUser(
     ).bind(userId).first<{ generations: number; period_start: number; period_end: number }>()
 
     return json({ user, usage })
+  }
+
+  // ── GET /api/user/avatar ──────────────────────────────────
+  if (path === '/api/user/avatar' && request.method === 'GET') {
+    const user = await env.DB.prepare(
+      'SELECT avatar_url FROM users WHERE id = ?'
+    ).bind(userId).first<{ avatar_url: string | null }>()
+
+    if (!user || !user.avatar_url) {
+      return jsonError('Avatar not found', 404)
+    }
+
+    if (user.avatar_url.startsWith('http://') || user.avatar_url.startsWith('https://')) {
+      return Response.redirect(user.avatar_url, 302)
+    }
+
+    const expectedUserPrefix = `uploads/${userId}/`
+    if (!user.avatar_url.startsWith(expectedUserPrefix)) {
+      return jsonError('Invalid avatar key', 403)
+    }
+
+    const object = await env.BUCKET.get(user.avatar_url)
+    if (!object) {
+      return jsonError('Avatar image not found in storage', 404)
+    }
+
+    const contentType = object.httpMetadata?.contentType || 'image/jpeg'
+    return new Response(object.body, {
+      status: 200,
+      headers: {
+        'Content-Type': contentType,
+        'Cache-Control': 'private, max-age=3600',
+        'Content-Length': String(object.size),
+        'X-Content-Type-Options': 'nosniff',
+      },
+    })
+  }
+
+  // ── PUT /api/user/profile ─────────────────────────────────
+  if (path === '/api/user/profile' && request.method === 'PUT') {
+    const body = await request.json() as { name?: string; avatar_url?: string }
+    const name = body.name !== undefined ? body.name.trim().slice(0, 100) : undefined
+    const avatar_url = body.avatar_url !== undefined ? body.avatar_url.trim() : undefined
+
+    if (name !== undefined && name.length === 0) {
+      return jsonError('Name cannot be empty', 400)
+    }
+
+    if (avatar_url !== undefined && avatar_url !== '') {
+      const isHttp = avatar_url.startsWith('https://') || avatar_url.startsWith('http://')
+      const expectedUserPrefix = `uploads/${userId}/`
+      const isUserUpload = avatar_url.startsWith(expectedUserPrefix)
+      if (!isHttp && !isUserUpload) {
+        return jsonError('Invalid avatar key. Avatar must be uploaded directly by this account.', 403)
+      }
+    }
+
+    if (name !== undefined && avatar_url !== undefined) {
+      await env.DB.prepare(
+        'UPDATE users SET name = ?, avatar_url = ?, updated_at = unixepoch() WHERE id = ?'
+      ).bind(name, avatar_url, userId).run()
+    } else if (name !== undefined) {
+      await env.DB.prepare(
+        'UPDATE users SET name = ?, updated_at = unixepoch() WHERE id = ?'
+      ).bind(name, userId).run()
+    } else if (avatar_url !== undefined) {
+      await env.DB.prepare(
+        'UPDATE users SET avatar_url = ?, updated_at = unixepoch() WHERE id = ?'
+      ).bind(avatar_url, userId).run()
+    }
+
+    const updatedUser = await env.DB.prepare(
+      `SELECT id, email, name, avatar_url, plan, plan_status, currency, role, email_verified, created_at FROM users WHERE id = ?`
+    ).bind(userId).first()
+
+    return json({ ok: true, user: updatedUser })
+  }
+
+  // ── POST /api/user/change-password ────────────────────────
+  if (path === '/api/user/change-password' && request.method === 'POST') {
+    const { currentPassword, newPassword } = await request.json() as {
+      currentPassword?: string
+      newPassword?: string
+    }
+
+    if (!currentPassword || !newPassword) {
+      return jsonError('Current password and new password are required', 400)
+    }
+
+    const user = await env.DB.prepare(
+      'SELECT password_hash FROM users WHERE id = ?'
+    ).bind(userId).first<{ password_hash: string | null }>()
+
+    if (!user) return jsonError('User not found', 404)
+
+    if (!user.password_hash) {
+      return jsonError('This account was created with Google Sign-in and does not have a password.', 400)
+    }
+
+    const isValid = await verifyPassword(currentPassword, user.password_hash)
+    if (!isValid) {
+      return jsonError('Current password is incorrect', 400)
+    }
+
+    const passwordRegex = /(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[\W_]).{8,}/
+    if (newPassword.length < 8 || !passwordRegex.test(newPassword)) {
+      return jsonError('Password does not meet complexity requirements', 400)
+    }
+
+    const passwordHash = await hashPassword(newPassword)
+
+    await env.DB.prepare(
+      'UPDATE users SET password_hash = ?, updated_at = unixepoch() WHERE id = ?'
+    ).bind(passwordHash, userId).run()
+
+    return json({ ok: true, message: 'Password updated successfully' })
   }
 
   // ── POST /api/user/resend-verification ────────────────────
