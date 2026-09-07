@@ -92,35 +92,39 @@ export default function BillingPage() {
         </div>
 
         {/* Subscription Status Bar (Active, Cancelled, Past Due, etc.) */}
-        {subStatus?.subscription && (
-          <div className="sub-management-bar glass-card">
-            <div className="sub-management-info">
-              <div className="sub-detail-item">
-                <span className="sub-detail-label">Status</span>
-                <span className={`sub-badge status-${subStatus.subscription.status}`}>
-                  {subStatus.subscription.status}
-                </span>
-              </div>
-              {periodEnd && (
+        {loadingSub ? (
+          <div className="sub-status-loading glass-card">Loading subscription details...</div>
+        ) : (
+          subStatus?.subscription && (
+            <div className="sub-management-bar glass-card">
+              <div className="sub-management-info">
                 <div className="sub-detail-item">
-                  <span className="sub-detail-label">
-                    {subStatus.subscription.status === 'cancelled' ? 'Expires' : 'Renews'}
+                  <span className="sub-detail-label">Status</span>
+                  <span className={`sub-badge status-${subStatus.subscription.status}`}>
+                    {subStatus.subscription.status}
                   </span>
-                  <span className="sub-detail-value">{periodEnd}</span>
                 </div>
+                {periodEnd && (
+                  <div className="sub-detail-item">
+                    <span className="sub-detail-label">
+                      {subStatus.subscription.status === 'cancelled' ? 'Expires' : 'Renews'}
+                    </span>
+                    <span className="sub-detail-value">{periodEnd}</span>
+                  </div>
+                )}
+              </div>
+              {subStatus.subscription.status === 'active' && (
+                <button
+                  type="button"
+                  className="btn btn-ghost cancel-sub-btn"
+                  onClick={handleCancelSubscription}
+                  disabled={cancelling}
+                >
+                  {cancelling ? 'Cancelling…' : 'Cancel Subscription'}
+                </button>
               )}
             </div>
-            {subStatus.subscription.status === 'active' && (
-              <button
-                type="button"
-                className="btn btn-ghost cancel-sub-btn"
-                onClick={handleCancelSubscription}
-                disabled={cancelling}
-              >
-                {cancelling ? 'Cancelling…' : 'Cancel Subscription'}
-              </button>
-            )}
-          </div>
+          )
         )}
 
         {/* Generations Usage Quota Display */}
@@ -313,6 +317,14 @@ export default function BillingPage() {
         }
 
         /* Subscription Management Bar */
+        .sub-status-loading {
+          padding: 14px 20px;
+          border-radius: 16px;
+          font-size: 13px;
+          color: var(--color-text-muted);
+          text-align: center;
+        }
+
         .sub-management-bar {
           padding: 14px 20px;
           display: flex;
