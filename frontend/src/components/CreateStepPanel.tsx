@@ -213,66 +213,47 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
         </div>
       )}
 
-      {/* FLOATING ATTACHED MEDIA SHELF (ABOVE PROMPT BAR) */}
-      {(imageFiles.length > 0 || videoFile) && (
-        <div className="attached-media-shelf glass-card animate-fade-in">
-          <div className="attached-media-header">
-            <div className="attached-media-title-group">
-              <ImageIcon size={13} className="text-accent" />
-              <span>Attached Media ({imageFiles.length > 0 ? `${imageFiles.length}/4 Images` : '1 Video MP4'})</span>
-            </div>
-            <button
-              type="button"
-              className="btn-clear-media"
-              onClick={() => { setImageFiles([]); setVideoFile(null); }}
-              disabled={isGenerating}
-              title="Remove all attached media"
-            >
-              Clear all
-            </button>
-          </div>
-          <div className="attached-media-strip">
-            {imageFiles.map((file, idx) => (
-              <div key={`${file.name}-${idx}`} className="media-chip-thumb" title={file.name}>
-                <span className="thumb-badge">#{idx + 1}</span>
-                <img src={URL.createObjectURL(file)} alt={file.name} />
-                <button
-                  type="button"
-                  className="thumb-remove"
-                  onClick={() => removeImageFile(idx)}
-                  disabled={isGenerating}
-                  title="Remove image"
-                >
-                  <X size={11} />
-                </button>
-              </div>
-            ))}
-            {videoFile && (
-              <div className="media-chip-thumb video-thumb" title={videoFile.name}>
-                <Video size={22} className="video-icon" />
-                <span className="thumb-badge">MP4</span>
-                <button
-                  type="button"
-                  className="thumb-remove"
-                  onClick={() => setVideoFile(null)}
-                  disabled={isGenerating}
-                  title="Remove video"
-                >
-                  <X size={11} />
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* FLOATING UNIFIED PROMPT BAR */}
+      {/* FLOATING UNIFIED PROMPT BAR CARD (GEMINI AI STYLE) */}
       <div
-        className={`mockup-prompt-bar-card glass-card ${isDragOver ? 'dragover' : ''}`}
+        className={`mockup-prompt-bar-card glass-card ${isDragOver ? 'dragover' : ''} ${imageFiles.length > 0 || videoFile ? 'has-attached-media' : ''}`}
         onDragOver={e => { e.preventDefault(); setIsDragOver(true); }}
         onDragLeave={() => setIsDragOver(false)}
         onDrop={handleDrop}
       >
+        {/* TOP ATTACHED MEDIA PREVIEW ROW (GEMINI CHAT STYLE) */}
+        {(imageFiles.length > 0 || videoFile) && (
+          <div className="gemini-media-preview-row animate-fade-in">
+            {imageFiles.map((file, idx) => (
+              <div key={`${file.name}-${idx}`} className="gemini-media-tile" title={file.name}>
+                <img src={URL.createObjectURL(file)} alt={file.name} />
+                <button
+                  type="button"
+                  className="gemini-tile-remove"
+                  onClick={() => removeImageFile(idx)}
+                  disabled={isGenerating}
+                  title="Remove image"
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            ))}
+            {videoFile && (
+              <div className="gemini-media-tile video-tile" title={videoFile.name}>
+                <Video size={24} className="video-icon" />
+                <button
+                  type="button"
+                  className="gemini-tile-remove"
+                  onClick={() => setVideoFile(null)}
+                  disabled={isGenerating}
+                  title="Remove video"
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="prompt-bar-input-row">
           {/* Plus Action Menu Button */}
           <div className="plus-menu-container" ref={plusMenuRef}>
@@ -483,24 +464,27 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
           pointer-events: none;
         }
 
-        /* FLOATING SEARCH-BAR PROMPT CARD */
+        /* FLOATING SEARCH-BAR PROMPT CARD (GEMINI AI STYLE) */
         .mockup-prompt-bar-card {
           width: 100%;
-          padding: 10px 14px;
-          border-radius: var(--radius-pill);
+          padding: 12px 16px;
+          border-radius: 28px;
           background: var(--color-surface-solid);
           backdrop-filter: var(--backdrop-blur);
           -webkit-backdrop-filter: var(--backdrop-blur);
           border: 1px solid var(--color-border);
-          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.04);
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.05);
           position: relative;
           z-index: 10;
           transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
         }
 
         .mockup-prompt-bar-card:focus-within {
           border-color: var(--color-primary-start);
-          box-shadow: 0 0 20px rgba(56, 189, 248, 0.25), 0 10px 25px rgba(0, 0, 0, 0.12);
+          box-shadow: 0 0 24px rgba(56, 189, 248, 0.28), 0 10px 30px rgba(0, 0, 0, 0.15);
         }
 
         .mockup-prompt-bar-card.dragover {
@@ -508,122 +492,56 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
           background: rgba(56, 189, 248, 0.10);
         }
 
-        /* FLOATING ATTACHED MEDIA SHELF (ABOVE PROMPT BAR) */
-        .attached-media-shelf {
-          width: 100%;
-          padding: 12px 18px;
-          border-radius: var(--radius-card);
-          background: var(--color-surface-solid);
-          backdrop-filter: var(--backdrop-blur);
-          -webkit-backdrop-filter: var(--backdrop-blur);
-          border: 1px solid var(--color-border);
-          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15), 0 2px 6px rgba(0, 0, 0, 0.05);
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
-          z-index: 12;
-          transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .attached-media-header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 0 2px;
-        }
-
-        .attached-media-title-group {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          font-size: 11.5px;
-          font-weight: 700;
-          color: var(--color-text-muted);
-          text-transform: uppercase;
-          letter-spacing: 0.04em;
-        }
-
-        .btn-clear-media {
-          background: transparent;
-          border: none;
-          color: var(--color-text-muted);
-          font-size: 11.5px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: color 0.15s ease;
-          padding: 2px 6px;
-          border-radius: 4px;
-        }
-
-        .btn-clear-media:hover {
-          color: var(--color-error);
-          background: rgba(239, 68, 68, 0.1);
-        }
-
-        .attached-media-strip {
+        /* GEMINI AI ATTACHED MEDIA PREVIEW ROW (DIRECTLY TOP INSIDE PROMPT CARD) */
+        .gemini-media-preview-row {
           display: flex;
           align-items: center;
           gap: 12px;
+          padding: 4px 2px 2px 2px;
           overflow-x: auto;
-          padding: 2px 2px 4px 2px;
         }
 
-        .media-chip-thumb {
+        .gemini-media-tile {
           position: relative;
-          width: 72px;
-          height: 72px;
-          border-radius: 12px;
+          width: 76px;
+          height: 76px;
+          border-radius: 16px;
           overflow: hidden;
-          border: 1px solid var(--color-border);
           flex-shrink: 0;
-          background: rgba(0, 0, 0, 0.3);
+          background: rgba(0, 0, 0, 0.35);
+          border: 1px solid rgba(255, 255, 255, 0.18);
           box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
-          transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+          transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
         }
 
-        .media-chip-thumb:hover {
-          transform: translateY(-2px) scale(1.04);
+        .gemini-media-tile:hover {
+          transform: translateY(-2px) scale(1.03);
           border-color: var(--color-primary-start);
-          box-shadow: 0 6px 20px rgba(56, 189, 248, 0.4);
         }
 
-        .media-chip-thumb img {
+        .gemini-media-tile img {
           width: 100%;
           height: 100%;
           object-fit: cover;
         }
 
-        .video-thumb {
+        .gemini-media-tile.video-tile {
           display: flex;
           align-items: center;
           justify-content: center;
-          background: rgba(15, 23, 42, 0.85);
+          background: rgba(15, 23, 42, 0.9);
           color: var(--color-primary-start);
         }
 
-        .thumb-badge {
+        .gemini-tile-remove {
           position: absolute;
-          top: 4px;
-          left: 4px;
-          font-size: 9.5px;
-          font-weight: 800;
-          background: rgba(15, 23, 42, 0.85);
-          color: #38BDF8;
-          padding: 2px 6px;
-          border-radius: 5px;
-          border: 1px solid rgba(56, 189, 248, 0.3);
-          backdrop-filter: blur(4px);
-        }
-
-        .thumb-remove {
-          position: absolute;
-          top: 4px;
-          right: 4px;
-          width: 20px;
-          height: 20px;
+          top: 5px;
+          right: 5px;
+          width: 22px;
+          height: 22px;
           border-radius: 50%;
           background: rgba(15, 23, 42, 0.85);
-          color: var(--color-text-secondary);
+          color: #CBD5E1;
           border: 1px solid rgba(255, 255, 255, 0.25);
           display: flex;
           align-items: center;
@@ -633,16 +551,11 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
           backdrop-filter: blur(4px);
         }
 
-        .thumb-remove:hover {
+        .gemini-tile-remove:hover {
           background: #EF4444;
           color: #FFFFFF;
           border-color: #EF4444;
           transform: scale(1.1);
-        }
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
         }
 
         /* HORIZONTAL PLATFORM CHIPS ROW DIRECTLY UNDER TEXTAREA */
