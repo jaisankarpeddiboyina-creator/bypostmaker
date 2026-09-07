@@ -190,7 +190,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   setUser: (user) => set({ user }),
   setUsage: (usage) => set({ usage }),
 
-  selectedPlatforms: ['twitter', 'linkedin', 'instagram'],
+  selectedPlatforms: [],
   togglePlatform: (id) => {
     const current = get().selectedPlatforms
     set({ selectedPlatforms: current.includes(id) ? current.filter(p => p !== id) : [...current, id] })
