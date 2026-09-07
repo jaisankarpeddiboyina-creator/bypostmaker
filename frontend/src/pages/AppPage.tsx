@@ -278,6 +278,7 @@ export default function AppPage() {
           overflow-y: auto;
           padding: 24px var(--content-px);
           justify-content: center;
+          align-items: center;
         }
       `}</style>
     </div>
