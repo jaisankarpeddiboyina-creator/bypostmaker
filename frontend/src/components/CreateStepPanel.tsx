@@ -215,7 +215,7 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
 
       {/* FLOATING UNIFIED PROMPT BAR */}
       <div
-        className={`mockup-prompt-bar-card glass-card ${isDragOver ? 'dragover' : ''}`}
+        className={`mockup-prompt-bar-card glass-card ${isDragOver ? 'dragover' : ''} ${imageFiles.length > 0 || videoFile ? 'has-media' : ''}`}
         onDragOver={e => { e.preventDefault(); setIsDragOver(true); }}
         onDragLeave={() => setIsDragOver(false)}
         onDrop={handleDrop}
@@ -319,35 +319,54 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
 
         {/* ATTACHED MEDIA GALLERY */}
         {(imageFiles.length > 0 || videoFile) && (
-          <div className="attached-media-strip">
-            {imageFiles.map((file, idx) => (
-              <div key={`${file.name}-${idx}`} className="media-chip-thumb">
-                <span className="thumb-badge">#{idx + 1}</span>
-                <img src={URL.createObjectURL(file)} alt="" />
-                <button
-                  type="button"
-                  className="thumb-remove"
-                  onClick={() => removeImageFile(idx)}
-                  disabled={isGenerating}
-                >
-                  <X size={10} />
-                </button>
+          <div className="attached-media-container animate-fade-in">
+            <div className="attached-media-header">
+              <div className="attached-media-title-group">
+                <ImageIcon size={13} className="text-accent" />
+                <span>Attached Media ({imageFiles.length > 0 ? `${imageFiles.length}/4 Images` : '1 Video MP4'})</span>
               </div>
-            ))}
-            {videoFile && (
-              <div className="media-chip-thumb video-thumb">
-                <Video size={16} />
-                <span className="thumb-badge">MP4</span>
-                <button
-                  type="button"
-                  className="thumb-remove"
-                  onClick={() => setVideoFile(null)}
-                  disabled={isGenerating}
-                >
-                  <X size={10} />
-                </button>
-              </div>
-            )}
+              <button
+                type="button"
+                className="btn-clear-media"
+                onClick={() => { setImageFiles([]); setVideoFile(null); }}
+                disabled={isGenerating}
+                title="Remove all attached media"
+              >
+                Clear all
+              </button>
+            </div>
+            <div className="attached-media-strip">
+              {imageFiles.map((file, idx) => (
+                <div key={`${file.name}-${idx}`} className="media-chip-thumb" title={file.name}>
+                  <span className="thumb-badge">#{idx + 1}</span>
+                  <img src={URL.createObjectURL(file)} alt={file.name} />
+                  <button
+                    type="button"
+                    className="thumb-remove"
+                    onClick={() => removeImageFile(idx)}
+                    disabled={isGenerating}
+                    title="Remove image"
+                  >
+                    <X size={11} />
+                  </button>
+                </div>
+              ))}
+              {videoFile && (
+                <div className="media-chip-thumb video-thumb" title={videoFile.name}>
+                  <Video size={20} className="video-icon" />
+                  <span className="thumb-badge">MP4</span>
+                  <button
+                    type="button"
+                    className="thumb-remove"
+                    onClick={() => setVideoFile(null)}
+                    disabled={isGenerating}
+                    title="Remove video"
+                  >
+                    <X size={11} />
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -476,7 +495,12 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
           box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.04);
           position: relative;
           z-index: 10;
-          transition: all var(--transition);
+          transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .mockup-prompt-bar-card.has-media {
+          border-radius: var(--radius-card);
+          padding: 14px 18px;
         }
 
         .mockup-prompt-bar-card:focus-within {
@@ -652,25 +676,76 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
           cursor: not-allowed;
         }
 
-        /* ATTACHED MEDIA STRIP */
+        /* ATTACHED MEDIA CONTAINER */
+        .attached-media-container {
+          margin-top: 14px;
+          padding-top: 12px;
+          border-top: 1px solid rgba(255, 255, 255, 0.12);
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+
+        .attached-media-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0 2px;
+        }
+
+        .attached-media-title-group {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 11.5px;
+          font-weight: 700;
+          color: var(--color-text-muted);
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
+        }
+
+        .btn-clear-media {
+          background: transparent;
+          border: none;
+          color: var(--color-text-muted);
+          font-size: 11.5px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: color 0.15s ease;
+          padding: 2px 6px;
+          border-radius: 4px;
+        }
+
+        .btn-clear-media:hover {
+          color: var(--color-error);
+          background: rgba(239, 68, 68, 0.1);
+        }
+
         .attached-media-strip {
           display: flex;
           align-items: center;
-          gap: 8px;
-          margin-top: 10px;
-          padding-top: 10px;
-          border-top: 1px solid var(--color-border);
+          gap: 12px;
           overflow-x: auto;
+          padding: 4px 2px 6px 2px;
         }
 
         .media-chip-thumb {
           position: relative;
-          width: 50px;
-          height: 50px;
-          border-radius: var(--radius-sm);
+          width: 68px;
+          height: 68px;
+          border-radius: 12px;
           overflow: hidden;
           border: 1px solid var(--color-border);
           flex-shrink: 0;
+          background: rgba(0, 0, 0, 0.25);
+          box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+          transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .media-chip-thumb:hover {
+          transform: translateY(-2px) scale(1.04);
+          border-color: var(--color-primary-start);
+          box-shadow: 0 6px 18px rgba(56, 189, 248, 0.35);
         }
 
         .media-chip-thumb img {
@@ -683,32 +758,48 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
           display: flex;
           align-items: center;
           justify-content: center;
-          background: rgba(0, 0, 0, 0.4);
+          background: rgba(15, 23, 42, 0.85);
           color: var(--color-primary-start);
         }
 
         .thumb-badge {
           position: absolute;
-          top: 2px;
-          left: 2px;
-          font-size: 9px;
+          top: 4px;
+          left: 4px;
+          font-size: 9.5px;
           font-weight: 800;
-          background: rgba(0, 0, 0, 0.7);
-          color: #ffffff;
-          padding: 1px 4px;
-          border-radius: 3px;
+          background: rgba(15, 23, 42, 0.85);
+          color: #38BDF8;
+          padding: 2px 6px;
+          border-radius: 5px;
+          border: 1px solid rgba(56, 189, 248, 0.3);
+          backdrop-filter: blur(4px);
         }
 
         .thumb-remove {
           position: absolute;
-          top: 2px;
-          right: 2px;
-          width: 16px;
-          height: 16px;
+          top: 4px;
+          right: 4px;
+          width: 20px;
+          height: 20px;
           border-radius: 50%;
-          background: rgba(0, 0, 0, 0.75);
-          color: #ffffff;
-          border: none;
+          background: rgba(15, 23, 42, 0.85);
+          color: var(--color-text-secondary);
+          border: 1px solid rgba(255, 255, 255, 0.25);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.15s ease;
+          backdrop-filter: blur(4px);
+        }
+
+        .thumb-remove:hover {
+          background: #EF4444;
+          color: #FFFFFF;
+          border-color: #EF4444;
+          transform: scale(1.1);
+        }
           display: flex;
           align-items: center;
           justify-content: center;
