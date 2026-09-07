@@ -492,6 +492,212 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
           background: rgba(56, 189, 248, 0.10);
         }
 
+        /* ── Prompt Bar Inner Layout ─────────────────────────────── */
+        .prompt-bar-input-row {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          width: 100%;
+        }
+
+        .plus-menu-container {
+          position: relative;
+          flex-shrink: 0;
+        }
+
+        .plus-action-btn {
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.15);
+          border: 1px solid rgba(255, 255, 255, 0.30);
+          color: var(--color-text-primary);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all var(--transition);
+        }
+
+        .plus-action-btn:hover, .plus-action-btn.active {
+          background: rgba(255, 255, 255, 0.30);
+          border-color: var(--color-primary-start);
+          color: var(--color-primary-start);
+        }
+
+        .plus-popover-menu {
+          position: absolute;
+          top: 48px;
+          left: 0;
+          width: 250px;
+          z-index: 100;
+          padding: 12px;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          background: var(--color-surface-solid);
+          backdrop-filter: var(--backdrop-blur);
+          border: 1px solid var(--color-border);
+          border-radius: var(--radius-card);
+          box-shadow: 0 20px 50px rgba(0, 0, 0, 0.75);
+        }
+
+        .popover-section-title {
+          font-size: 11px;
+          font-weight: 700;
+          color: var(--color-text-muted);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }
+
+        .popover-item-toggle {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 12px;
+          color: var(--color-text-primary);
+          cursor: pointer;
+        }
+
+        .popover-media-actions {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+
+        .popover-action-btn {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 6px 10px;
+          border-radius: var(--radius-sm);
+          background: rgba(255, 255, 255, 0.10);
+          border: 1px solid rgba(255, 255, 255, 0.20);
+          color: var(--color-text-primary);
+          font-size: 11.5px;
+          font-weight: 600;
+          cursor: pointer;
+          text-align: left;
+          transition: all var(--transition);
+        }
+
+        .popover-action-btn:hover {
+          background: rgba(255, 255, 255, 0.25);
+          border-color: var(--color-primary-start);
+        }
+
+        .popover-action-btn:disabled {
+          opacity: 0.4;
+          cursor: not-allowed;
+          pointer-events: none;
+        }
+
+        .prompt-text-field-container {
+          flex: 1;
+          display: flex;
+          align-items: center;
+        }
+
+        .mockup-prompt-textarea {
+          width: 100%;
+          background: transparent;
+          border: none;
+          outline: none;
+          font-family: var(--font-body);
+          font-size: 14.5px;
+          color: var(--color-text-primary);
+          line-height: 1.5;
+          resize: none;
+          padding: 4px 0;
+        }
+
+        .mockup-prompt-textarea::placeholder {
+          color: var(--color-text-placeholder);
+        }
+
+        .prompt-bar-right-actions {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          flex-shrink: 0;
+        }
+
+        .shortcut-pill {
+          display: flex;
+          align-items: center;
+          gap: 3px;
+          padding: 4px 8px;
+          border-radius: var(--radius-sm);
+          background: rgba(255, 255, 255, 0.15);
+          border: 1px solid rgba(255, 255, 255, 0.30);
+          font-size: 11px;
+          font-weight: 700;
+          color: var(--color-text-muted);
+        }
+
+        .mockup-generate-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 10px 22px;
+          border-radius: var(--radius-pill);
+          border: none;
+          background: linear-gradient(135deg, #38BDF8 0%, #818CF8 50%, #C084FC 100%);
+          box-shadow: 0 4px 18px rgba(129, 140, 248, 0.45);
+          color: #ffffff;
+          font-family: var(--font-body);
+          font-size: 13.5px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: all var(--transition);
+          white-space: nowrap;
+        }
+
+        .mockup-generate-btn:hover:not(:disabled) {
+          transform: translateY(-1px);
+          box-shadow: 0 6px 24px rgba(129, 140, 248, 0.65);
+        }
+
+        .mockup-generate-btn:disabled {
+          opacity: 0.45;
+          cursor: not-allowed;
+        }
+
+        /* ── Studio Banner Notifications ─────────────────────────── */
+        .studio-preview-banner,
+        .studio-lock-banner {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 16px;
+          border-radius: var(--radius-pill);
+          font-size: 12.5px;
+          font-weight: 600;
+          width: 100%;
+          max-width: 680px;
+          backdrop-filter: blur(12px);
+        }
+
+        .studio-preview-banner {
+          background: rgba(56, 189, 248, 0.08);
+          border: 1px solid rgba(56, 189, 248, 0.25);
+          color: var(--color-text-secondary);
+        }
+
+        .studio-lock-banner {
+          background: rgba(129, 140, 248, 0.08);
+          border: 1px solid rgba(129, 140, 248, 0.25);
+          color: var(--color-text-secondary);
+          justify-content: center;
+        }
+
+        .hide-mobile {
+          display: flex;
+        }
+
         /* GEMINI AI ATTACHED MEDIA PREVIEW ROW (DIRECTLY TOP INSIDE PROMPT CARD) */
         .gemini-media-preview-row {
           display: flex;
@@ -701,6 +907,9 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
           .mockup-generate-btn {
             width: 100%;
             justify-content: center;
+          }
+          .hide-mobile {
+            display: none !important;
           }
         }
       `}</style>
