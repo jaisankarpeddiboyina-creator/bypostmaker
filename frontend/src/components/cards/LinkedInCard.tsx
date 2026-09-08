@@ -7,6 +7,7 @@ import { useAppStore } from '../../store/app'
 import { generateClientZip, sanitize } from '../../lib/downloadKit'
 import type { CardProps } from './types'
 import { UnifiedCardShell } from './UnifiedCardShell'
+import { PlatformIcon } from '../PlatformIcon'
 
 function FormattedContent({ content, linkColor }: { content: string; linkColor?: string }) {
   const color = linkColor || '#0a66c2'
@@ -225,8 +226,8 @@ export function LinkedInCard({ platformId, post, campaignId, imageFiles, videoFi
           )}
         </div>
 
-        {/* LinkedIn Document / Multi-Image Carousel Frame */}
-        {imageUrls.length > 0 && (
+        {/* LinkedIn Document / Multi-Image Carousel Frame or Platform Icon Placeholder */}
+        {imageUrls.length > 0 ? (
           <div className="li-media-frame">
             {imageUrls.length > 1 && (
               <div className="li-doc-tag">
@@ -263,6 +264,10 @@ export function LinkedInCard({ platformId, post, campaignId, imageFiles, videoFi
                 </>
               )}
             </div>
+          </div>
+        ) : (
+          <div className="li-media-frame li-media-placeholder">
+            <PlatformIcon id="linkedin" size={48} useBrandColor />
           </div>
         )}
 
@@ -352,6 +357,9 @@ export function LinkedInCard({ platformId, post, campaignId, imageFiles, videoFi
         }
 
         .li-media-frame { position: relative; width: 100%; background: #000000; overflow: hidden; }
+        .li-media-placeholder {
+          background: #F8FAFC; aspect-ratio: 1.91 / 1; min-height: 180px; max-height: 340px; display: flex; align-items: center; justify-content: center; border-top: 1px solid #E2E8F0; border-bottom: 1px solid #E2E8F0;
+        }
         .li-doc-tag {
           position: absolute; top: 12px; left: 12px; z-index: 10; padding: 4px 10px; border-radius: 6px;
           background: rgba(0, 0, 0, 0.75); color: #ffffff; font-size: 12px; font-weight: 600; backdrop-filter: blur(4px);
