@@ -12,6 +12,7 @@ export interface User {
   role: 'user' | 'beta' | 'admin'
   email_verified: number
   created_at: number
+  updated_at?: number
 }
 
 export interface UsageInfo {

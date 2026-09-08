@@ -4,6 +4,7 @@ import {
 } from 'lucide-react'
 import { PLATFORM_MAP } from '@@config/platforms'
 import { useAppStore } from '../../store/app'
+import { getAvatarUrl } from '../../lib/avatar'
 import { generateClientZip, sanitize } from '../../lib/downloadKit'
 import type { CardProps } from './types'
 import { UnifiedCardShell } from './UnifiedCardShell'
@@ -46,6 +47,7 @@ function FormattedContent({ content, linkColor }: { content: string; linkColor?:
 
 export function MediumCard({ platformId, post, campaignId, imageFiles, videoFile, onOpenRefinement }: CardProps) {
   const { user, updatePost, addToast } = useAppStore()
+  const avatarSrc = getAvatarUrl(user?.avatar_url, user?.updated_at)
   const platform = PLATFORM_MAP[platformId]
 
   const [imageUrls, setImageUrls] = useState<string[]>([])
@@ -166,8 +168,8 @@ export function MediumCard({ platformId, post, campaignId, imageFiles, videoFile
         {/* Author Header */}
         <div className="med-author-header">
           <div className="med-avatar">
-            {user?.avatar_url ? (
-              <img src={user.avatar_url} alt="" className="med-avatar-img" />
+            {avatarSrc ? (
+              <img src={avatarSrc} alt="" className="med-avatar-img" />
             ) : (
               userName[0].toUpperCase()
             )}

@@ -4,6 +4,7 @@ import {
 } from 'lucide-react'
 import { PLATFORM_MAP } from '@@config/platforms'
 import { useAppStore } from '../../store/app'
+import { getAvatarUrl } from '../../lib/avatar'
 import { PlatformIcon } from '../PlatformIcon'
 import { generateClientZip, sanitize } from '../../lib/downloadKit'
 import type { CardProps } from './types'
@@ -47,6 +48,7 @@ function FormattedContent({ content, linkColor }: { content: string; linkColor?:
 
 export function YouTubeShortsCard({ platformId, post, campaignId, imageFiles, videoFile, onOpenRefinement }: CardProps) {
   const { user, updatePost, addToast } = useAppStore()
+  const avatarSrc = getAvatarUrl(user?.avatar_url, user?.updated_at)
   const platform = PLATFORM_MAP[platformId]
 
   const [imageUrls, setImageUrls] = useState<string[]>([])
@@ -191,8 +193,8 @@ export function YouTubeShortsCard({ platformId, post, campaignId, imageFiles, vi
           <div className="yts-bottom-overlay">
             <div className="yts-channel-row">
               <div className="yts-avatar">
-                {user?.avatar_url ? (
-                  <img src={user.avatar_url} alt="" className="yts-avatar-img" />
+                {avatarSrc ? (
+                  <img src={avatarSrc} alt="" className="yts-avatar-img" />
                 ) : (
                   userName[0].toUpperCase()
                 )}

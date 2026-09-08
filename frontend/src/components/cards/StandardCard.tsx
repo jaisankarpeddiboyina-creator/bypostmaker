@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { PLATFORM_MAP } from '@@config/platforms'
 import { useAppStore } from '../../store/app'
+import { getAvatarUrl } from '../../lib/avatar'
 import { generateClientZip, sanitize } from '../../lib/downloadKit'
 import type { CardProps } from './types'
 import { UnifiedCardShell } from './UnifiedCardShell'
@@ -51,6 +52,7 @@ function FormattedContent({ content, linkColor }: { content: string; linkColor?:
 
 export function StandardCard({ platformId, post, campaignId, imageFiles, videoFile, onOpenRefinement }: CardProps) {
   const { user, updatePost, addToast } = useAppStore()
+  const avatarSrc = getAvatarUrl(user?.avatar_url, user?.updated_at)
   const platform = PLATFORM_MAP[platformId]
   const extraFieldDefs = PLATFORM_EXTRA_FIELDS[platformId] ?? []
 
@@ -165,8 +167,8 @@ export function StandardCard({ platformId, post, campaignId, imageFiles, videoFi
       <div className={`std-post-box ${isEditing ? 'editing' : ''}`}>
         <div className="pc-profile-row">
           <div className="pc-avatar" style={{ background: brandColor }}>
-            {user?.avatar_url ? (
-              <img src={user.avatar_url} alt="" className="pc-avatar-img" />
+            {avatarSrc ? (
+              <img src={avatarSrc} alt="" className="pc-avatar-img" />
             ) : (
               userName[0].toUpperCase()
             )}

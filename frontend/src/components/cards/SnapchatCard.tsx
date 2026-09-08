@@ -4,6 +4,7 @@ import {
 } from 'lucide-react'
 import { PLATFORM_MAP } from '@@config/platforms'
 import { useAppStore } from '../../store/app'
+import { getAvatarUrl } from '../../lib/avatar'
 import { PlatformIcon } from '../PlatformIcon'
 import { generateClientZip, sanitize } from '../../lib/downloadKit'
 import type { CardProps } from './types'
@@ -47,6 +48,7 @@ function FormattedContent({ content, linkColor }: { content: string; linkColor?:
 
 export function SnapchatCard({ platformId, post, campaignId, imageFiles, videoFile, onOpenRefinement }: CardProps) {
   const { user, updatePost, addToast } = useAppStore()
+  const avatarSrc = getAvatarUrl(user?.avatar_url, user?.updated_at)
   const platform = PLATFORM_MAP[platformId]
 
   const [imageUrls, setImageUrls] = useState<string[]>([])
@@ -157,8 +159,8 @@ export function SnapchatCard({ platformId, post, campaignId, imageFiles, videoFi
           {/* Top Profile Bar */}
           <div className="sc-top-profile">
             <div className="sc-avatar">
-              {user?.avatar_url ? (
-                <img src={user.avatar_url} alt="" className="sc-avatar-img" />
+              {avatarSrc ? (
+                <img src={avatarSrc} alt="" className="sc-avatar-img" />
               ) : (
                 userName[0].toUpperCase()
               )}

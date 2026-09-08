@@ -4,6 +4,7 @@ import {
 } from 'lucide-react'
 import { PLATFORM_MAP } from '@@config/platforms'
 import { useAppStore } from '../../store/app'
+import { getAvatarUrl } from '../../lib/avatar'
 import { generateClientZip, sanitize } from '../../lib/downloadKit'
 import type { CardProps } from './types'
 import { UnifiedCardShell } from './UnifiedCardShell'
@@ -46,6 +47,7 @@ function FormattedContent({ content, linkColor }: { content: string; linkColor?:
 
 export function InstagramCard({ platformId, post, campaignId, imageFiles, videoFile, onOpenRefinement }: CardProps) {
   const { user, updatePost, addToast } = useAppStore()
+  const avatarSrc = getAvatarUrl(user?.avatar_url, user?.updated_at)
   const platform = PLATFORM_MAP[platformId]
 
   const [imageUrls, setImageUrls] = useState<string[]>([])
@@ -166,8 +168,8 @@ export function InstagramCard({ platformId, post, campaignId, imageFiles, videoF
         {/* Profile Header */}
         <div className="ig-profile-header">
           <div className="ig-avatar">
-            {user?.avatar_url ? (
-              <img src={user.avatar_url} alt="" className="ig-avatar-img" />
+            {avatarSrc ? (
+              <img src={avatarSrc} alt="" className="ig-avatar-img" />
             ) : (
               handleName[0].toUpperCase()
             )}
