@@ -69,6 +69,7 @@
 .plus-menu-container {
   position: relative;
   flex-shrink: 0;
+  align-self: flex-start;  /* stays top-aligned when row wraps */
 }
 
 .plus-action-btn {
@@ -179,6 +180,7 @@
   line-height: 1.5;
   resize: none;
   padding: 4px 0;
+  min-height: 44px;  /* never gets squished on desktop */
 }
 
 .mockup-prompt-textarea::placeholder {
@@ -466,8 +468,8 @@
 
 @media (max-width: 768px) {
   .mockup-studio-container {
-    padding: 12px var(--content-px);
-    gap: 12px;
+    padding: 10px var(--content-px);
+    gap: 10px;
   }
 
   .mockup-studio-container.drawer-open {
@@ -475,28 +477,58 @@
     max-width: 100%;
   }
 
-  .mockup-platform-chips-row {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    justify-content: flex-start;
-    padding-bottom: 8px;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
+  /* Prompt card tighter on mobile */
+  .mockup-prompt-bar-card {
+    padding: 10px 12px;
+    border-radius: 20px;
+    gap: 8px;
   }
 
-  .mockup-platform-chips-row::-webkit-scrollbar {
-    display: none;
-  }
-
+  /* Stack: [+ icon] [textarea] on top row
+     Generate button moves to its own bottom row */
   .prompt-bar-input-row {
     flex-wrap: wrap;
+    gap: 8px;
   }
 
-  .mockup-generate-btn {
+  /* Textarea expands to fill remaining row space beside + icon */
+  .prompt-text-field-container {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .mockup-prompt-textarea {
+    font-size: 13.5px;
+    min-height: 52px;
+  }
+
+  /* Right-actions row drops below textarea, right-aligned */
+  .prompt-bar-right-actions {
     width: 100%;
-    justify-content: center;
+    justify-content: flex-end;
   }
 
+  /* Generate button: compact — NOT full-width, just a tight pill */
+  .mockup-generate-btn {
+    padding: 8px 18px;
+    font-size: 12.5px;
+    gap: 5px;
+    width: auto;
+    flex-shrink: 0;
+  }
+
+  /* Chips: wrap into rows, no horizontal scrolling */
+  .mockup-platform-chips-row {
+    flex-wrap: wrap;
+    overflow-x: visible;
+    justify-content: flex-start;
+    padding-bottom: 0;
+    gap: 6px;
+  }
+
+  .mockup-platform-chips-row::-webkit-scrollbar { display: none; }
+
+  /* Shortcut pill hidden on mobile */
   .shortcut-pill {
     display: none;
   }
@@ -505,5 +537,25 @@
   .studio-lock-banner {
     border-radius: var(--radius);
     font-size: 12px;
+    padding: 7px 12px;
+  }
+}
+
+/* Extra-small phones (≤ 390px) */
+@media (max-width: 390px) {
+  .mockup-prompt-bar-card {
+    padding: 8px 10px;
+    border-radius: 16px;
+  }
+
+  .mockup-generate-btn {
+    padding: 7px 14px;
+    font-size: 12px;
+  }
+
+  .quick-suggestion-chip,
+  .selected-platform-chip {
+    padding: 5px 10px;
+    font-size: 11.5px;
   }
 }
