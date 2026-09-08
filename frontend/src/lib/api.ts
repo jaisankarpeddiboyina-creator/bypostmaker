@@ -78,6 +78,18 @@ export const api = {
     setCurrency: (currency: 'usd' | 'inr') =>
       request('/user/currency', { method: 'PUT', body: JSON.stringify({ currency }) }),
 
+    updateProfile: (data: { name?: string; avatar_url?: string }) =>
+      request<{ ok: boolean; user: import('../store/app').User }>('/user/profile', {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+
+    changePassword: (data: { currentPassword: string; newPassword: string }) =>
+      request<{ ok: boolean; message: string }>('/user/change-password', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+
     deleteAccount: (confirmation: string) =>
       request('/user/account', {
         method: 'DELETE',
