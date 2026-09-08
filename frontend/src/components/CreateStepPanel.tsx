@@ -453,10 +453,12 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
           transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        /* Adaptive Stage Shift when Right Drawer Opens */
-        .mockup-studio-container.drawer-open {
-          margin-right: 440px;
-          max-width: calc(100% - 460px);
+        /* Adaptive Stage Shift when Right Drawer Opens — desktop only */
+        @media (min-width: 1025px) {
+          .mockup-studio-container.drawer-open {
+            margin-right: 440px;
+            max-width: calc(100% - 460px);
+          }
         }
 
         .mockup-studio-container.disabled-locked {
@@ -776,6 +778,18 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
           z-index: 5;
         }
 
+        @media (max-width: 768px) {
+          .mockup-platform-chips-row {
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            justify-content: flex-start;
+            padding-bottom: 8px;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+          }
+          .mockup-platform-chips-row::-webkit-scrollbar { display: none; }
+        }
+
         .quick-suggestion-chip {
           display: inline-flex;
           align-items: center;
@@ -901,6 +915,14 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
         }
 
         @media (max-width: 768px) {
+          .mockup-studio-container {
+            padding: 12px var(--content-px);
+            gap: 12px;
+          }
+          .mockup-studio-container.drawer-open {
+            margin-right: 0;
+            max-width: 100%;
+          }
           .prompt-bar-input-row {
             flex-wrap: wrap;
           }
@@ -910,6 +932,11 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
           }
           .hide-mobile {
             display: none !important;
+          }
+          .studio-preview-banner,
+          .studio-lock-banner {
+            border-radius: var(--radius);
+            font-size: 12px;
           }
         }
       `}</style>

@@ -449,17 +449,26 @@ export function PlatformsDrawer({
           box-shadow: 0 6px 20px rgba(56, 189, 248, 0.50);
         }
 
-        @media (max-width: 640px) {
+        @media (max-width: 768px) {
           .drawer-overlay {
             align-items: flex-end;
+            justify-content: center;
           }
           .drawer-panel {
             width: 100%;
-            height: 80vh;
+            max-width: 100%;
+            height: 90dvh;
             border-left: none;
             border-top: 1px solid var(--color-border);
             border-radius: 20px 20px 0 0;
+            padding: 20px 16px 16px;
           }
+          .drawer-platform-grid {
+            grid-template-columns: 1fr 1fr;
+          }
+        }
+
+        @media (max-width: 480px) {
           .drawer-platform-grid {
             grid-template-columns: 1fr;
           }

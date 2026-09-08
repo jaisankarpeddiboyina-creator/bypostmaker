@@ -395,6 +395,20 @@ export function GenerationSummaryRail({ onGenerateClick }: GenerationSummaryRail
             position: static;
           }
         }
+
+        @media (max-width: 640px) {
+          .summary-rail-card {
+            padding: 14px;
+            gap: 12px;
+          }
+          /* Hide verbose sections on small phones — keep CTA visible */
+          .summary-section:has(.summary-prompt-box) {
+            display: none;
+          }
+          .summary-rail-footer {
+            display: none;
+          }
+        }
       `}</style>
     </aside>
   )

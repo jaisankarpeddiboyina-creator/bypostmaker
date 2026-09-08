@@ -103,6 +103,12 @@
   --sidebar-width:  230px;
   --topbar-height:  64px;
   --content-px:     32px;
+  --content-px-mobile: 16px;
+
+  /* ── Responsive Fluid Spacing (clamp: min, fluid, max) ─── */
+  /* Usage: padding: var(--space-page-x)  → auto-scales 16px→32px */
+  --space-page-x:   clamp(16px, 4vw, 32px);
+  --space-page-y:   clamp(16px, 3vw, 32px);
 
   /* ── Backward-Compat Aliases ─────────────────────────────── */
   --bg:           transparent;
@@ -450,4 +456,43 @@ code, .mono {
   background-color: var(--color-nav-active-bg) !important;
 }
 
+/* ── Global Responsive Utilities ────────────────────────── */
+/* Breakpoints: sm=480px  md=768px  lg=1024px */
 
+/* hide-mobile: hide on phones, show on md+ */
+@media (max-width: 768px) {
+  .hide-mobile { display: none !important; }
+}
+
+/* show-mobile: hidden by default, visible only on phones */
+.show-mobile { display: none !important; }
+@media (max-width: 768px) {
+  .show-mobile { display: revert !important; }
+}
+
+/* Fluid auto-reflow card grid — no media queries needed */
+/* Usage: <div className="auto-grid"> */
+.auto-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  gap: var(--space-6);
+  width: 100%;
+}
+
+/* ── App Shell — Global Responsive Overrides ─────────────── */
+@media (max-width: 768px) {
+  :root {
+    --content-px: 16px;
+  }
+
+  .app-shell-main {
+    height: auto !important;
+    min-height: calc(100dvh - var(--topbar-height)) !important;
+    overflow-y: auto !important;
+  }
+
+  /* Prevent any page from causing horizontal scroll */
+  .app-shell-content {
+    overflow-x: hidden;
+  }
+}

@@ -280,6 +280,13 @@ export default function AppPage() {
           justify-content: center;
           align-items: center;
         }
+
+        @media (max-width: 768px) {
+          .create-view-wrapper {
+            padding: 12px var(--content-px);
+            align-items: flex-start;
+          }
+        }
       `}</style>
     </div>
   )

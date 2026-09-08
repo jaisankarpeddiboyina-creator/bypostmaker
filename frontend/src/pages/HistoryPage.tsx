@@ -897,6 +897,28 @@ export default function HistoryPage() {
           .hub-search-box {
             max-width: 100%;
           }
+          /* Make filter tabs horizontally scrollable instead of wrapping */
+          .platform-filter-bar {
+            display: flex;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            gap: 6px;
+            padding-bottom: 4px;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+          }
+          .platform-filter-bar::-webkit-scrollbar { display: none; }
+          .platform-filter-tab {
+            white-space: nowrap;
+            flex-shrink: 0;
+          }
+          /* Collapse action buttons to icon-only on very small screens */
+          .gen-actions-group {
+            flex-wrap: wrap;
+          }
+          .gen-actions-group .btn span {
+            display: none;
+          }
         }
 
         @media (max-width: ${BREAKPOINT_MOBILE}) {
