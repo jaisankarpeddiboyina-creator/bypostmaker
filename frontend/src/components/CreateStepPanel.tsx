@@ -9,6 +9,11 @@ import { api } from '../lib/api'
 import { PlatformIcon } from './PlatformIcon'
 import { PlatformsDrawer } from './PlatformsDrawer'
 import { MAX_IMAGE_SIZE_BYTES } from '../../../config/limits'
+import styles from './CreateStepPanel.module.css'
+
+// Utility: compose CSS Module class names (handles falsy values gracefully)
+const cx = (...args: (string | false | null | undefined)[]) =>
+  args.filter(Boolean).join(' ')
 
 const VIDEO_MAX_MB = 100
 
@@ -178,7 +183,11 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
   }
 
   return (
-    <div className={`mockup-studio-container ${showDrawer ? 'drawer-open' : ''} ${isGenerating ? 'disabled-locked' : ''}`}>
+    <div className={cx(
+      styles['mockup-studio-container'],
+      showDrawer && styles['drawer-open'],
+      isGenerating && styles['disabled-locked']
+    )}>
       {/* Hidden File Inputs */}
       <input
         ref={imageInputRef}
@@ -200,14 +209,14 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
 
       {/* Studio Banners */}
       {!user && (
-        <div className="studio-preview-banner">
+        <div className={styles['studio-preview-banner']}>
           <Sparkles size={14} className="text-accent" />
           <span>Interactive Studio Playground — Explore prompt features & platforms freely. Click Generate when ready to sign in.</span>
         </div>
       )}
 
       {isGenerating && (
-        <div className="studio-lock-banner">
+        <div className={styles['studio-lock-banner']}>
           <Sparkles size={16} className="spin text-primary" />
           <span>Generating multi-platform post kit... Creation panel locked.</span>
         </div>
@@ -215,20 +224,24 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
 
       {/* FLOATING UNIFIED PROMPT BAR CARD (GEMINI AI STYLE) */}
       <div
-        className={`mockup-prompt-bar-card glass-card ${isDragOver ? 'dragover' : ''} ${imageFiles.length > 0 || videoFile ? 'has-attached-media' : ''}`}
+        className={cx(
+          styles['mockup-prompt-bar-card'],
+          'glass-card',
+          isDragOver && styles['dragover'],
+        )}
         onDragOver={e => { e.preventDefault(); setIsDragOver(true); }}
         onDragLeave={() => setIsDragOver(false)}
         onDrop={handleDrop}
       >
         {/* TOP ATTACHED MEDIA PREVIEW ROW (GEMINI CHAT STYLE) */}
         {(imageFiles.length > 0 || videoFile) && (
-          <div className="gemini-media-preview-row animate-fade-in">
+          <div className={cx(styles['gemini-media-preview-row'], 'animate-fade-in')}>
             {imageFiles.map((file, idx) => (
-              <div key={`${file.name}-${idx}`} className="gemini-media-tile" title={file.name}>
+              <div key={`${file.name}-${idx}`} className={styles['gemini-media-tile']} title={file.name}>
                 <img src={URL.createObjectURL(file)} alt={file.name} />
                 <button
                   type="button"
-                  className="gemini-tile-remove"
+                  className={styles['gemini-tile-remove']}
                   onClick={() => removeImageFile(idx)}
                   disabled={isGenerating}
                   title="Remove image"
@@ -238,11 +251,11 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
               </div>
             ))}
             {videoFile && (
-              <div className="gemini-media-tile video-tile" title={videoFile.name}>
+              <div className={cx(styles['gemini-media-tile'], styles['video-tile'])} title={videoFile.name}>
                 <Video size={24} className="video-icon" />
                 <button
                   type="button"
-                  className="gemini-tile-remove"
+                  className={styles['gemini-tile-remove']}
                   onClick={() => setVideoFile(null)}
                   disabled={isGenerating}
                   title="Remove video"
@@ -254,12 +267,12 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
           </div>
         )}
 
-        <div className="prompt-bar-input-row">
+        <div className={styles['prompt-bar-input-row']}>
           {/* Plus Action Menu Button */}
-          <div className="plus-menu-container" ref={plusMenuRef}>
+          <div className={styles['plus-menu-container']} ref={plusMenuRef}>
             <button
               type="button"
-              className={`plus-action-btn ${showPlusMenu ? 'active' : ''}`}
+              className={cx(styles['plus-action-btn'], showPlusMenu && styles['active'])}
               onClick={() => setShowPlusMenu(!showPlusMenu)}
               disabled={isGenerating}
               title="Add media or apply brand kit"
@@ -269,13 +282,13 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
 
             {/* Plus Action Popover Menu */}
             {showPlusMenu && (
-              <div className="plus-popover-menu glass-card animate-fade-in">
-                <div className="popover-section-title">
+              <div className={cx(styles['plus-popover-menu'], 'glass-card', 'animate-fade-in')}>
+                <div className={styles['popover-section-title']}>
                   <Sparkles size={12} /> AI & Brand Controls
                 </div>
 
                 {/* Brand Kit Toggle */}
-                <label className={`popover-item-toggle ${useBrandKit ? 'active' : ''}`}>
+                <label className={cx(styles['popover-item-toggle'], useBrandKit && styles['active'])}>
                   <input
                     type="checkbox"
                     checked={useBrandKit}
@@ -286,13 +299,13 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
                 </label>
 
                 {/* Media Attachments */}
-                <div className="popover-section-title" style={{ marginTop: 10 }}>
+                <div className={styles['popover-section-title']} style={{ marginTop: 10 }}>
                   <Upload size={12} /> Attach Media
                 </div>
-                <div className="popover-media-actions">
+                <div className={styles['popover-media-actions']}>
                   <button
                     type="button"
-                    className="popover-action-btn"
+                    className={styles['popover-action-btn']}
                     onClick={() => { imageInputRef.current?.click(); setShowPlusMenu(false); }}
                     disabled={isGenerating || imageFiles.length >= 4 || !!videoFile}
                   >
@@ -300,7 +313,7 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
                   </button>
                   <button
                     type="button"
-                    className="popover-action-btn"
+                    className={styles['popover-action-btn']}
                     onClick={() => { handleOpenAssetPicker(); setShowPlusMenu(false); }}
                     disabled={isGenerating || imageFiles.length >= 4 || !!videoFile}
                   >
@@ -308,7 +321,7 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
                   </button>
                   <button
                     type="button"
-                    className="popover-action-btn"
+                    className={styles['popover-action-btn']}
                     onClick={() => { videoInputRef.current?.click(); setShowPlusMenu(false); }}
                     disabled={isGenerating || !!videoFile || imageFiles.length > 0}
                   >
@@ -320,9 +333,9 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
           </div>
 
           {/* Prompt Textarea / Input */}
-          <div className="prompt-text-field-container">
+          <div className={styles['prompt-text-field-container']}>
             <textarea
-              className="mockup-prompt-textarea"
+              className={cx(styles['mockup-prompt-textarea'], 'step-prompt-textarea')}
               value={prompt}
               onChange={e => setPrompt(e.target.value)}
               placeholder="Describe your post, product release, or announcement..."
@@ -333,15 +346,15 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
           </div>
 
           {/* Ctrl K Badge & Generate CTA */}
-          <div className="prompt-bar-right-actions">
-            <div className="shortcut-pill hide-mobile">
+          <div className={styles['prompt-bar-right-actions']}>
+            <div className={styles['shortcut-pill']}>
               <Command size={10} />
               <span>K</span>
             </div>
 
             <button
               type="button"
-              className="mockup-generate-btn"
+              className={styles['mockup-generate-btn']}
               disabled={isGenerating || !prompt.trim() || selectedPlatforms.length === 0}
               onClick={onGenerateClick}
             >
@@ -353,7 +366,7 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
       </div>
 
       {/* SMART CHIPS ROW DIRECTLY UNDER TEXTAREA */}
-      <div className="mockup-platform-chips-row">
+      <div className={styles['mockup-platform-chips-row']}>
         {selectedPlatforms.length === 0 ? (
           /* STATE 1: ZERO PLATFORMS SELECTED (CLEAN SUGGESTIONS) */
           <>
@@ -361,20 +374,20 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
               <button
                 key={platform.id}
                 type="button"
-                className="quick-suggestion-chip"
+                className={styles['quick-suggestion-chip']}
                 onClick={() => handleQuickAdd(platform)}
                 disabled={isGenerating}
                 title={`Add ${platform.name}`}
               >
                 <PlatformIcon id={platform.id} size={14} />
-                <span className="chip-label">{platform.name}</span>
-                <Plus size={12} className="chip-plus-icon" />
+                <span className={styles['chip-label']}>{platform.name}</span>
+                <Plus size={12} className={styles['chip-plus-icon']} />
               </button>
             ))}
 
             <button
               type="button"
-              className="platform-chip-btn more-chip-btn"
+              className={cx(styles['platform-chip-btn'], styles['more-chip-btn'])}
               onClick={() => setShowDrawer(!showDrawer)}
               disabled={isGenerating}
             >
@@ -388,14 +401,14 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
             {activeSelectedPlatforms.map(platform => (
               <div
                 key={platform.id}
-                className="selected-platform-chip"
+                className={styles['selected-platform-chip']}
                 style={{ '--brand-color': platform.brandColor } as React.CSSProperties}
               >
                 <PlatformIcon id={platform.id} size={15} />
-                <span className="chip-label">{platform.name}</span>
+                <span className={styles['chip-label']}>{platform.name}</span>
                 <button
                   type="button"
-                  className="chip-remove-btn"
+                  className={styles['chip-remove-btn']}
                   onClick={() => togglePlatform(platform.id)}
                   disabled={isGenerating}
                   title={`Remove ${platform.name}`}
@@ -407,7 +420,7 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
 
             <button
               type="button"
-              className="platform-chip-btn add-more-chip-btn"
+              className={cx(styles['platform-chip-btn'], styles['add-more-chip-btn'])}
               onClick={() => setShowDrawer(!showDrawer)}
               disabled={isGenerating}
             >
@@ -418,7 +431,7 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
 
             <button
               type="button"
-              className="btn-clear-all-chips"
+              className={styles['btn-clear-all-chips']}
               onClick={() => setSelectedPlatforms([])}
               disabled={isGenerating}
             >
@@ -438,508 +451,6 @@ export function CreateStepPanel({ userPlan, onLockedClick, onGenerateClick }: Cr
         isGenerating={isGenerating}
         onLockedClick={onLockedClick}
       />
-
-      <style>{`
-        .mockup-studio-container {
-          max-width: 900px;
-          margin: auto;
-          width: 100%;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          gap: 18px;
-          padding: 20px var(--content-px);
-          transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        /* Adaptive Stage Shift when Right Drawer Opens — desktop only */
-        @media (min-width: 1025px) {
-          .mockup-studio-container.drawer-open {
-            margin-right: 440px;
-            max-width: calc(100% - 460px);
-          }
-        }
-
-        .mockup-studio-container.disabled-locked {
-          opacity: 0.7;
-          pointer-events: none;
-        }
-
-        /* FLOATING SEARCH-BAR PROMPT CARD (GEMINI AI STYLE) */
-        .mockup-prompt-bar-card {
-          width: 100%;
-          padding: 12px 16px;
-          border-radius: 28px;
-          background: var(--color-surface-solid);
-          backdrop-filter: var(--backdrop-blur);
-          -webkit-backdrop-filter: var(--backdrop-blur);
-          border: 1px solid var(--color-border);
-          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.05);
-          position: relative;
-          z-index: 10;
-          transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
-        }
-
-        .mockup-prompt-bar-card:focus-within {
-          border-color: var(--color-primary-start);
-          box-shadow: 0 0 24px rgba(56, 189, 248, 0.28), 0 10px 30px rgba(0, 0, 0, 0.15);
-        }
-
-        .mockup-prompt-bar-card.dragover {
-          border-color: var(--color-primary-start);
-          background: rgba(56, 189, 248, 0.10);
-        }
-
-        /* ── Prompt Bar Inner Layout ─────────────────────────────── */
-        .prompt-bar-input-row {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          width: 100%;
-        }
-
-        .plus-menu-container {
-          position: relative;
-          flex-shrink: 0;
-        }
-
-        .plus-action-btn {
-          width: 36px;
-          height: 36px;
-          border-radius: 50%;
-          background: rgba(255, 255, 255, 0.15);
-          border: 1px solid rgba(255, 255, 255, 0.30);
-          color: var(--color-text-primary);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: all var(--transition);
-        }
-
-        .plus-action-btn:hover, .plus-action-btn.active {
-          background: rgba(255, 255, 255, 0.30);
-          border-color: var(--color-primary-start);
-          color: var(--color-primary-start);
-        }
-
-        .plus-popover-menu {
-          position: absolute;
-          top: 48px;
-          left: 0;
-          width: 250px;
-          z-index: 100;
-          padding: 12px;
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-          background: var(--color-surface-solid);
-          backdrop-filter: var(--backdrop-blur);
-          border: 1px solid var(--color-border);
-          border-radius: var(--radius-card);
-          box-shadow: 0 20px 50px rgba(0, 0, 0, 0.75);
-        }
-
-        .popover-section-title {
-          font-size: 11px;
-          font-weight: 700;
-          color: var(--color-text-muted);
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          display: flex;
-          align-items: center;
-          gap: 4px;
-        }
-
-        .popover-item-toggle {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          font-size: 12px;
-          color: var(--color-text-primary);
-          cursor: pointer;
-        }
-
-        .popover-media-actions {
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-        }
-
-        .popover-action-btn {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          padding: 6px 10px;
-          border-radius: var(--radius-sm);
-          background: rgba(255, 255, 255, 0.10);
-          border: 1px solid rgba(255, 255, 255, 0.20);
-          color: var(--color-text-primary);
-          font-size: 11.5px;
-          font-weight: 600;
-          cursor: pointer;
-          text-align: left;
-          transition: all var(--transition);
-        }
-
-        .popover-action-btn:hover {
-          background: rgba(255, 255, 255, 0.25);
-          border-color: var(--color-primary-start);
-        }
-
-        .popover-action-btn:disabled {
-          opacity: 0.4;
-          cursor: not-allowed;
-          pointer-events: none;
-        }
-
-        .prompt-text-field-container {
-          flex: 1;
-          display: flex;
-          align-items: center;
-        }
-
-        .mockup-prompt-textarea {
-          width: 100%;
-          background: transparent;
-          border: none;
-          outline: none;
-          font-family: var(--font-body);
-          font-size: 14.5px;
-          color: var(--color-text-primary);
-          line-height: 1.5;
-          resize: none;
-          padding: 4px 0;
-        }
-
-        .mockup-prompt-textarea::placeholder {
-          color: var(--color-text-placeholder);
-        }
-
-        .prompt-bar-right-actions {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          flex-shrink: 0;
-        }
-
-        .shortcut-pill {
-          display: flex;
-          align-items: center;
-          gap: 3px;
-          padding: 4px 8px;
-          border-radius: var(--radius-sm);
-          background: rgba(255, 255, 255, 0.15);
-          border: 1px solid rgba(255, 255, 255, 0.30);
-          font-size: 11px;
-          font-weight: 700;
-          color: var(--color-text-muted);
-        }
-
-        .mockup-generate-btn {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          padding: 10px 22px;
-          border-radius: var(--radius-pill);
-          border: none;
-          background: linear-gradient(135deg, #38BDF8 0%, #818CF8 50%, #C084FC 100%);
-          box-shadow: 0 4px 18px rgba(129, 140, 248, 0.45);
-          color: #ffffff;
-          font-family: var(--font-body);
-          font-size: 13.5px;
-          font-weight: 700;
-          cursor: pointer;
-          transition: all var(--transition);
-          white-space: nowrap;
-        }
-
-        .mockup-generate-btn:hover:not(:disabled) {
-          transform: translateY(-1px);
-          box-shadow: 0 6px 24px rgba(129, 140, 248, 0.65);
-        }
-
-        .mockup-generate-btn:disabled {
-          opacity: 0.45;
-          cursor: not-allowed;
-        }
-
-        /* ── Studio Banner Notifications ─────────────────────────── */
-        .studio-preview-banner,
-        .studio-lock-banner {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 8px 16px;
-          border-radius: var(--radius-pill);
-          font-size: 12.5px;
-          font-weight: 600;
-          width: 100%;
-          max-width: 680px;
-          backdrop-filter: blur(12px);
-        }
-
-        .studio-preview-banner {
-          background: rgba(56, 189, 248, 0.08);
-          border: 1px solid rgba(56, 189, 248, 0.25);
-          color: var(--color-text-secondary);
-        }
-
-        .studio-lock-banner {
-          background: rgba(129, 140, 248, 0.08);
-          border: 1px solid rgba(129, 140, 248, 0.25);
-          color: var(--color-text-secondary);
-          justify-content: center;
-        }
-
-        .hide-mobile {
-          display: flex;
-        }
-
-        /* GEMINI AI ATTACHED MEDIA PREVIEW ROW (DIRECTLY TOP INSIDE PROMPT CARD) */
-        .gemini-media-preview-row {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 4px 2px 2px 2px;
-          overflow-x: auto;
-        }
-
-        .gemini-media-tile {
-          position: relative;
-          width: 76px;
-          height: 76px;
-          border-radius: 16px;
-          overflow: hidden;
-          flex-shrink: 0;
-          background: rgba(0, 0, 0, 0.35);
-          border: 1px solid rgba(255, 255, 255, 0.18);
-          box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
-          transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
-        }
-
-        .gemini-media-tile:hover {
-          transform: translateY(-2px) scale(1.03);
-          border-color: var(--color-primary-start);
-        }
-
-        .gemini-media-tile img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-
-        .gemini-media-tile.video-tile {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: rgba(15, 23, 42, 0.9);
-          color: var(--color-primary-start);
-        }
-
-        .gemini-tile-remove {
-          position: absolute;
-          top: 5px;
-          right: 5px;
-          width: 22px;
-          height: 22px;
-          border-radius: 50%;
-          background: rgba(15, 23, 42, 0.85);
-          color: #CBD5E1;
-          border: 1px solid rgba(255, 255, 255, 0.25);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          transition: all 0.15s ease;
-          backdrop-filter: blur(4px);
-        }
-
-        .gemini-tile-remove:hover {
-          background: #EF4444;
-          color: #FFFFFF;
-          border-color: #EF4444;
-          transform: scale(1.1);
-        }
-
-        /* HORIZONTAL PLATFORM CHIPS ROW DIRECTLY UNDER TEXTAREA */
-        .mockup-platform-chips-row {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-          width: 100%;
-          flex-wrap: wrap;
-          padding: 4px;
-          z-index: 5;
-        }
-
-        @media (max-width: 768px) {
-          .mockup-platform-chips-row {
-            flex-wrap: nowrap;
-            overflow-x: auto;
-            justify-content: flex-start;
-            padding-bottom: 8px;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none;
-          }
-          .mockup-platform-chips-row::-webkit-scrollbar { display: none; }
-        }
-
-        .quick-suggestion-chip {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          padding: 6px 12px;
-          border-radius: var(--radius-pill);
-          background: var(--color-surface-solid);
-          border: 1px dashed var(--color-border);
-          color: var(--color-text-secondary);
-          font-size: 12px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.15s ease;
-        }
-
-        .quick-suggestion-chip:hover {
-          background: rgba(255, 255, 255, 0.25);
-          color: var(--color-text-primary);
-          border-color: var(--color-primary-start);
-          border-style: solid;
-        }
-
-        .chip-plus-icon {
-          color: var(--color-text-muted);
-        }
-
-        .quick-suggestion-chip:hover .chip-plus-icon {
-          color: var(--color-primary-start);
-        }
-
-        .selected-platform-chip {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          padding: 6px 12px;
-          border-radius: var(--radius-pill);
-          background: var(--color-surface-solid);
-          border: 1px solid var(--brand-color, var(--color-primary-start));
-          color: var(--color-text-primary);
-          font-size: 12.5px;
-          font-weight: 600;
-          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
-        }
-
-        .chip-label {
-          font-size: 12.5px;
-        }
-
-        .chip-remove-btn {
-          background: none;
-          border: none;
-          color: var(--color-text-muted);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          cursor: pointer;
-          padding: 2px;
-          border-radius: 50%;
-          transition: all 0.15s ease;
-        }
-
-        .chip-remove-btn:hover {
-          color: var(--color-error);
-          background: rgba(239, 68, 68, 0.15);
-        }
-
-        .platform-chip-btn {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          padding: 7px 14px;
-          border-radius: var(--radius-pill);
-          background: var(--color-surface-solid);
-          border: 1px solid var(--color-border);
-          color: var(--color-text-primary);
-          font-size: 12.5px;
-          font-weight: 600;
-          cursor: pointer;
-          flex-shrink: 0;
-          white-space: nowrap;
-          transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .platform-chip-btn:hover {
-          background: rgba(255, 255, 255, 0.25);
-          transform: translateY(-1px);
-        }
-
-        .add-more-chip-btn {
-          background: rgba(56, 189, 248, 0.12);
-          border-color: rgba(56, 189, 248, 0.35);
-          color: var(--color-primary-start);
-        }
-
-        .add-more-chip-btn:hover {
-          background: rgba(56, 189, 248, 0.25);
-        }
-
-        .more-chip-btn {
-          background: rgba(255, 255, 255, 0.15);
-          border-color: rgba(255, 255, 255, 0.35);
-        }
-
-        .btn-clear-all-chips {
-          background: none;
-          border: none;
-          color: var(--color-primary-start);
-          font-size: 12px;
-          font-weight: 600;
-          cursor: pointer;
-          padding: 4px 8px;
-        }
-
-        .btn-clear-all-chips:hover {
-          text-decoration: underline;
-        }
-
-        @media (max-width: 1024px) {
-          .mockup-studio-container.drawer-open {
-            margin-right: 0;
-            max-width: 900px;
-          }
-        }
-
-        @media (max-width: 768px) {
-          .mockup-studio-container {
-            padding: 12px var(--content-px);
-            gap: 12px;
-          }
-          .mockup-studio-container.drawer-open {
-            margin-right: 0;
-            max-width: 100%;
-          }
-          .prompt-bar-input-row {
-            flex-wrap: wrap;
-          }
-          .mockup-generate-btn {
-            width: 100%;
-            justify-content: center;
-          }
-          .hide-mobile {
-            display: none !important;
-          }
-          .studio-preview-banner,
-          .studio-lock-banner {
-            border-radius: var(--radius);
-            font-size: 12px;
-          }
-        }
-      `}</style>
     </div>
   )
 }
