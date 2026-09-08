@@ -4,6 +4,7 @@ import {
 } from 'lucide-react'
 import { PLATFORM_MAP } from '@@config/platforms'
 import { useAppStore } from '../../store/app'
+import { getAvatarUrl } from '../../lib/avatar'
 import { generateClientZip, sanitize } from '../../lib/downloadKit'
 import type { CardProps } from './types'
 import { UnifiedCardShell } from './UnifiedCardShell'
@@ -46,6 +47,7 @@ function FormattedContent({ content, linkColor }: { content: string; linkColor?:
 
 export function ClubhouseCard({ platformId, post, campaignId, imageFiles, videoFile, onOpenRefinement }: CardProps) {
   const { user, updatePost, addToast } = useAppStore()
+  const avatarSrc = getAvatarUrl(user?.avatar_url, user?.updated_at)
   const platform = PLATFORM_MAP[platformId]
 
   const [copied, setCopied] = useState(false)
@@ -170,8 +172,8 @@ export function ClubhouseCard({ platformId, post, campaignId, imageFiles, videoF
         <div className="ch-speakers-grid">
           <div className="ch-speaker">
             <div className="ch-avatar">
-              {user?.avatar_url ? (
-                <img src={user.avatar_url} alt="" className="ch-avatar-img" />
+              {avatarSrc ? (
+                <img src={avatarSrc} alt="" className="ch-avatar-img" />
               ) : (
                 userName[0].toUpperCase()
               )}

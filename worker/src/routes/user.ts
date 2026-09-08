@@ -13,7 +13,7 @@ export async function handleUser(
   // ── GET /api/user/me ──────────────────────────────────────
   if (path === '/api/user/me') {
     const user = await env.DB.prepare(
-      `SELECT id, email, name, avatar_url, plan, plan_status, currency, role, email_verified, created_at FROM users WHERE id = ?`
+      `SELECT id, email, name, avatar_url, plan, plan_status, currency, role, email_verified, created_at, updated_at FROM users WHERE id = ?`
     ).bind(userId).first()
 
     if (!user) return jsonError('User not found', 404)
@@ -62,17 +62,44 @@ export async function handleUser(
     })
   }
 
+  // ── DELETE /api/user/avatar ───────────────────────────────
+  if (path === '/api/user/avatar' && request.method === 'DELETE') {
+    const user = await env.DB.prepare(
+      'SELECT avatar_url FROM users WHERE id = ?'
+    ).bind(userId).first<{ avatar_url: string | null }>()
+
+    if (user?.avatar_url) {
+      const expectedUserPrefix = `uploads/${userId}/`
+      if (user.avatar_url.startsWith(expectedUserPrefix)) {
+        await env.BUCKET.delete(user.avatar_url).catch((err: any) => {
+          console.error(`Failed to delete avatar from R2: ${user.avatar_url}`, err)
+        })
+      }
+    }
+
+    await env.DB.prepare(
+      'UPDATE users SET avatar_url = NULL, updated_at = unixepoch() WHERE id = ?'
+    ).bind(userId).run()
+
+    const updatedUser = await env.DB.prepare(
+      `SELECT id, email, name, avatar_url, plan, plan_status, currency, role, email_verified, created_at, updated_at FROM users WHERE id = ?`
+    ).bind(userId).first()
+
+    return json({ ok: true, user: updatedUser })
+  }
+
   // ── PUT /api/user/profile ─────────────────────────────────
   if (path === '/api/user/profile' && request.method === 'PUT') {
-    const body = await request.json() as { name?: string; avatar_url?: string }
-    const name = body.name !== undefined ? body.name.trim().slice(0, 100) : undefined
-    const avatar_url = body.avatar_url !== undefined ? body.avatar_url.trim() : undefined
+    const body = await request.json() as { name?: string; avatar_url?: string | null }
+    const name = body.name !== undefined && body.name !== null ? body.name.trim().slice(0, 100) : undefined
+    const rawAvatar = body.avatar_url
+    const avatar_url = rawAvatar !== undefined && rawAvatar !== null ? rawAvatar.trim() : (rawAvatar === null ? null : undefined)
 
     if (name !== undefined && name.length === 0) {
       return jsonError('Name cannot be empty', 400)
     }
 
-    if (avatar_url !== undefined && avatar_url !== '') {
+    if (avatar_url !== undefined && avatar_url !== null && avatar_url !== '') {
       const isHttp = avatar_url.startsWith('https://') || avatar_url.startsWith('http://')
       const expectedUserPrefix = `uploads/${userId}/`
       const isUserUpload = avatar_url.startsWith(expectedUserPrefix)
@@ -81,10 +108,21 @@ export async function handleUser(
       }
     }
 
+    // Fetch previous avatar to clean up orphaned R2 object if replacing/removing
+    let oldAvatarUrl: string | null = null
+    if (avatar_url !== undefined) {
+      const currentUser = await env.DB.prepare(
+        'SELECT avatar_url FROM users WHERE id = ?'
+      ).bind(userId).first<{ avatar_url: string | null }>()
+      oldAvatarUrl = currentUser?.avatar_url ?? null
+    }
+
+    const newAvatarVal = avatar_url === '' ? null : avatar_url
+
     if (name !== undefined && avatar_url !== undefined) {
       await env.DB.prepare(
         'UPDATE users SET name = ?, avatar_url = ?, updated_at = unixepoch() WHERE id = ?'
-      ).bind(name, avatar_url, userId).run()
+      ).bind(name, newAvatarVal, userId).run()
     } else if (name !== undefined) {
       await env.DB.prepare(
         'UPDATE users SET name = ?, updated_at = unixepoch() WHERE id = ?'
@@ -92,11 +130,23 @@ export async function handleUser(
     } else if (avatar_url !== undefined) {
       await env.DB.prepare(
         'UPDATE users SET avatar_url = ?, updated_at = unixepoch() WHERE id = ?'
-      ).bind(avatar_url, userId).run()
+      ).bind(newAvatarVal, userId).run()
+    }
+
+    // If avatar was replaced with a different value, delete the old R2 object
+    if (
+      avatar_url !== undefined &&
+      oldAvatarUrl &&
+      oldAvatarUrl !== newAvatarVal &&
+      oldAvatarUrl.startsWith(`uploads/${userId}/`)
+    ) {
+      await env.BUCKET.delete(oldAvatarUrl).catch((err: any) => {
+        console.error(`Failed to delete replaced avatar from R2: ${oldAvatarUrl}`, err)
+      })
     }
 
     const updatedUser = await env.DB.prepare(
-      `SELECT id, email, name, avatar_url, plan, plan_status, currency, role, email_verified, created_at FROM users WHERE id = ?`
+      `SELECT id, email, name, avatar_url, plan, plan_status, currency, role, email_verified, created_at, updated_at FROM users WHERE id = ?`
     ).bind(userId).first()
 
     return json({ ok: true, user: updatedUser })

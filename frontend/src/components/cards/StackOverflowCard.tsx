@@ -4,6 +4,7 @@ import {
 } from 'lucide-react'
 import { PLATFORM_MAP } from '@@config/platforms'
 import { useAppStore } from '../../store/app'
+import { getAvatarUrl } from '../../lib/avatar'
 import { generateClientZip, sanitize } from '../../lib/downloadKit'
 import type { CardProps } from './types'
 import { UnifiedCardShell } from './UnifiedCardShell'
@@ -46,6 +47,7 @@ function FormattedContent({ content, linkColor }: { content: string; linkColor?:
 
 export function StackOverflowCard({ platformId, post, campaignId, imageFiles, videoFile, onOpenRefinement }: CardProps) {
   const { user, updatePost, addToast } = useAppStore()
+  const avatarSrc = getAvatarUrl(user?.avatar_url, user?.updated_at)
   const platform = PLATFORM_MAP[platformId]
 
   const [copied, setCopied] = useState(false)
@@ -219,8 +221,8 @@ export function StackOverflowCard({ platformId, post, campaignId, imageFiles, vi
                 <span className="so-answered-time">answered 3 mins ago</span>
                 <div className="so-user-row">
                   <div className="so-avatar">
-                    {user?.avatar_url ? (
-                      <img src={user.avatar_url} alt="" className="so-avatar-img" />
+                    {avatarSrc ? (
+                      <img src={avatarSrc} alt="" className="so-avatar-img" />
                     ) : (
                       userName[0].toUpperCase()
                     )}

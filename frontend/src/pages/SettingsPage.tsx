@@ -22,6 +22,7 @@ import {
 } from 'lucide-react'
 import { useAppStore } from '../store/app'
 import { api } from '../lib/api'
+import { getAvatarUrl } from '../lib/avatar'
 import { PLANS } from '../config/pricing'
 import { TIER_LIMITS } from '@@config/platforms'
 
@@ -34,8 +35,23 @@ export default function SettingsPage() {
   const [nameInput, setNameInput] = useState(user?.name ?? '')
   const [savingProfile, setSavingProfile] = useState(false)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const [removingAvatar, setRemovingAvatar] = useState(false)
+  const [avatarMenuOpen, setAvatarMenuOpen] = useState(false)
   const [copiedUsername, setCopiedUsername] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const avatarMenuRef = useRef<HTMLDivElement>(null)
+
+  // Close avatar action menu on click outside
+  useEffect(() => {
+    if (!avatarMenuOpen) return
+    const handleClickOutside = (e: MouseEvent) => {
+      if (avatarMenuRef.current && !avatarMenuRef.current.contains(e.target as Node)) {
+        setAvatarMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [avatarMenuOpen])
 
   // Sync name input when user data changes
   useEffect(() => {
@@ -133,6 +149,26 @@ export default function SettingsPage() {
     } finally {
       setUploadingAvatar(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  // Remove uploaded avatar photo
+  const handleRemoveAvatar = async (e?: React.MouseEvent) => {
+    e?.stopPropagation()
+    setAvatarMenuOpen(false)
+    setRemovingAvatar(true)
+    try {
+      const res = await api.user.removeAvatar()
+      if (res.user) {
+        setUser(res.user)
+      } else if (user) {
+        setUser({ ...user, avatar_url: null })
+      }
+      addToast('Profile photo removed successfully', 'info')
+    } catch (err: any) {
+      addToast(err?.message || 'Failed to remove profile photo', 'error')
+    } finally {
+      setRemovingAvatar(false)
     }
   }
 
@@ -275,12 +311,8 @@ export default function SettingsPage() {
     ]
   }, [currentPlanKey])
 
-  // Avatar Image Source
-  const avatarSrc = user?.avatar_url
-    ? user.avatar_url.startsWith('http://') || user.avatar_url.startsWith('https://')
-      ? user.avatar_url
-      : `/api/user/avatar`
-    : null
+  // Avatar Image Source (single source of truth with cache-busting)
+  const avatarSrc = getAvatarUrl(user?.avatar_url, user?.updated_at)
 
   const userInitial = (user?.name?.trim() || user?.email?.trim() || 'U')
     .charAt(0)
@@ -297,9 +329,9 @@ export default function SettingsPage() {
           <div className="settings-card profile-card glass-card">
             <div className="profile-card-content">
               
-              {/* Avatar with Camera Overlay */}
+              {/* Avatar with Camera Overlay & Action Menu */}
               <div className="avatar-section">
-                <div className="avatar-circle-wrapper">
+                <div className="avatar-circle-wrapper" ref={avatarMenuRef}>
                   {avatarSrc ? (
                     <img src={avatarSrc} alt={user?.name || 'User Avatar'} className="avatar-image" />
                   ) : (
@@ -308,20 +340,56 @@ export default function SettingsPage() {
                     </div>
                   )}
                   
-                  {/* Camera Upload Overlay Button */}
+                  {/* Camera Upload / Menu Trigger Button */}
                   <button
                     type="button"
                     className="avatar-upload-trigger-btn"
-                    onClick={() => fileInputRef.current?.click()}
-                    title="Change profile photo"
-                    disabled={uploadingAvatar}
+                    onClick={() => {
+                      if (avatarSrc) {
+                        setAvatarMenuOpen(prev => !prev)
+                      } else {
+                        fileInputRef.current?.click()
+                      }
+                    }}
+                    title={avatarSrc ? 'Avatar options' : 'Upload profile photo'}
+                    disabled={uploadingAvatar || removingAvatar}
                   >
-                    {uploadingAvatar ? (
+                    {uploadingAvatar || removingAvatar ? (
                       <Loader2 size={13} className="spin" />
                     ) : (
                       <Camera size={13} />
                     )}
                   </button>
+
+                  {/* Avatar Action Dropdown Menu */}
+                  {avatarMenuOpen && avatarSrc && (
+                    <div className="avatar-action-menu" onClick={e => e.stopPropagation()}>
+                      <button
+                        type="button"
+                        className="avatar-menu-item"
+                        onClick={e => {
+                          e.stopPropagation()
+                          setAvatarMenuOpen(false)
+                          fileInputRef.current?.click()
+                        }}
+                      >
+                        <Camera size={13} />
+                        <span>Change Photo</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="avatar-menu-item danger"
+                        onClick={e => {
+                          e.stopPropagation()
+                          handleRemoveAvatar(e)
+                        }}
+                      >
+                        <Trash2 size={13} />
+                        <span>Remove Photo</span>
+                      </button>
+                    </div>
+                  )}
+
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -869,6 +937,66 @@ export default function SettingsPage() {
           color: var(--color-primary-end);
           border-color: var(--color-primary-start);
           transform: scale(1.08);
+        }
+
+        /* Avatar Action Menu */
+        .avatar-action-menu {
+          position: absolute;
+          top: calc(100% + 6px);
+          left: 0;
+          width: 150px;
+          background: #FFFFFF;
+          border: 1px solid var(--color-border);
+          border-radius: 10px;
+          box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+          padding: 4px;
+          z-index: 60;
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+          animation: avatarMenuFadeIn 150ms ease-out;
+        }
+
+        @keyframes avatarMenuFadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(-4px) scale(0.96);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+
+        .avatar-menu-item {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          width: 100%;
+          padding: 7px 10px;
+          border: none;
+          background: transparent;
+          border-radius: 6px;
+          font-size: 12px;
+          font-weight: 500;
+          color: var(--color-text-primary, #334155);
+          cursor: pointer;
+          transition: background 120ms ease, color 120ms ease;
+          text-align: left;
+        }
+
+        .avatar-menu-item:hover {
+          background: var(--color-nav-active-bg, #F1F5F9);
+          color: var(--color-text-primary, #0F172A);
+        }
+
+        .avatar-menu-item.danger {
+          color: #EF4444;
+        }
+
+        .avatar-menu-item.danger:hover {
+          background: #FEF2F2;
+          color: #DC2626;
         }
 
         /* Profile Fields */

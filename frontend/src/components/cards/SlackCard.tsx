@@ -4,6 +4,7 @@ import {
 } from 'lucide-react'
 import { PLATFORM_MAP } from '@@config/platforms'
 import { useAppStore } from '../../store/app'
+import { getAvatarUrl } from '../../lib/avatar'
 import { generateClientZip, sanitize } from '../../lib/downloadKit'
 import type { CardProps } from './types'
 import { UnifiedCardShell } from './UnifiedCardShell'
@@ -46,6 +47,7 @@ function FormattedContent({ content, linkColor }: { content: string; linkColor?:
 
 export function SlackCard({ platformId, post, campaignId, imageFiles, videoFile, onOpenRefinement }: CardProps) {
   const { user, updatePost, addToast } = useAppStore()
+  const avatarSrc = getAvatarUrl(user?.avatar_url, user?.updated_at)
   const platform = PLATFORM_MAP[platformId]
 
   const [copied, setCopied] = useState(false)
@@ -153,8 +155,8 @@ export function SlackCard({ platformId, post, campaignId, imageFiles, videoFile,
         <div className="slk-message-row">
           {/* Avatar Column */}
           <div className="slk-avatar">
-            {user?.avatar_url ? (
-              <img src={user.avatar_url} alt="" className="slk-avatar-img" />
+            {avatarSrc ? (
+              <img src={avatarSrc} alt="" className="slk-avatar-img" />
             ) : (
               userName[0].toUpperCase()
             )}

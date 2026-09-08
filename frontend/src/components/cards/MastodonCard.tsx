@@ -4,6 +4,7 @@ import {
 } from 'lucide-react'
 import { PLATFORM_MAP } from '@@config/platforms'
 import { useAppStore } from '../../store/app'
+import { getAvatarUrl } from '../../lib/avatar'
 import { generateClientZip, sanitize } from '../../lib/downloadKit'
 import type { CardProps } from './types'
 import { UnifiedCardShell } from './UnifiedCardShell'
@@ -46,6 +47,7 @@ function FormattedContent({ content, linkColor }: { content: string; linkColor?:
 
 export function MastodonCard({ platformId, post, campaignId, imageFiles, videoFile, onOpenRefinement }: CardProps) {
   const { user, updatePost, addToast } = useAppStore()
+  const avatarSrc = getAvatarUrl(user?.avatar_url, user?.updated_at)
   const platform = PLATFORM_MAP[platformId]
 
   const [imageUrls, setImageUrls] = useState<string[]>([])
@@ -164,8 +166,8 @@ export function MastodonCard({ platformId, post, campaignId, imageFiles, videoFi
         {/* Profile Header */}
         <div className="mas-profile-header">
           <div className="mas-avatar">
-            {user?.avatar_url ? (
-              <img src={user.avatar_url} alt="" className="mas-avatar-img" />
+            {avatarSrc ? (
+              <img src={avatarSrc} alt="" className="mas-avatar-img" />
             ) : (
               userName[0].toUpperCase()
             )}

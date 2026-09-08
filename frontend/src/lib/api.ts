@@ -95,6 +95,11 @@ export const api = {
         method: 'DELETE',
         body: JSON.stringify({ confirmation }),
       }),
+
+    removeAvatar: () =>
+      request<{ ok: boolean; user: import('../store/app').User }>('/user/avatar', {
+        method: 'DELETE',
+      }),
   },
 
   // ── Generate (SSE) ──────────────────────────────────────────
