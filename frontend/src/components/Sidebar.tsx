@@ -39,7 +39,6 @@ export function Sidebar({ isOpen, onClose, onUpgradeClick }: SidebarProps) {
     { label: 'Media Studio', path: '/app/media', icon: Image },
     { label: 'My Generations', path: '/app/history', icon: History },
     { label: 'Billing', path: '/app/billing', icon: CreditCard },
-    { label: 'Settings', path: '/app/settings', icon: Settings },
     ...(user?.role === 'admin' ? [{ label: 'Admin Panel', path: '/admin', icon: Shield }] : [])
   ]
 
@@ -101,22 +100,36 @@ export function Sidebar({ isOpen, onClose, onUpgradeClick }: SidebarProps) {
               </Link>
             )
           })}
-          <button
-            type="button"
-            className="nav-item-link"
-            style={{ border: 'none', background: 'none', width: '100%', textAlign: 'left', cursor: 'pointer' }}
-            onClick={() => {
-              onClose?.()
-              setShowFeedbackModal(true)
-            }}
-          >
-            <MessageSquare size={18} className="nav-item-icon" />
-            <span className="nav-item-label">Give Feedback</span>
-          </button>
         </nav>
 
         {/* Footer User Profile & Upgrade Card */}
         <div className="sidebar-footer">
+          <div className="sidebar-footer-nav">
+            <Link
+              to="/app/settings"
+              className={[
+                'nav-item-link',
+                path === '/app/settings' ? 'active' : ''
+              ].join(' ')}
+              onClick={onClose}
+            >
+              <Settings size={18} className="nav-item-icon" />
+              <span className="nav-item-label">Settings</span>
+              {path === '/app/settings' && <span className="active-pill-indicator" />}
+            </Link>
+            <button
+              type="button"
+              className="nav-item-link sidebar-btn-link"
+              onClick={() => {
+                onClose?.()
+                setShowFeedbackModal(true)
+              }}
+            >
+              <MessageSquare size={18} className="nav-item-icon" />
+              <span className="nav-item-label">Give Feedback</span>
+            </button>
+          </div>
+
           {userPlan === 'free' && (
             <div className="upgrade-teaser-card glass-card">
               <div className="teaser-header">
@@ -282,6 +295,21 @@ export function Sidebar({ isOpen, onClose, onUpgradeClick }: SidebarProps) {
             gap: 14px;
             padding-top: 14px;
             border-top: 1px solid var(--color-nav-border);
+          }
+
+          .sidebar-footer-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+          }
+
+          .sidebar-btn-link {
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+            font-family: inherit;
           }
 
           .upgrade-teaser-card {
