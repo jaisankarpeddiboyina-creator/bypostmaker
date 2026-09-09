@@ -7,6 +7,7 @@ import { useAppStore } from '../../store/app'
 import { generateClientZip, sanitize } from '../../lib/downloadKit'
 import type { CardProps } from './types'
 import { UnifiedCardShell } from './UnifiedCardShell'
+import { PlatformIcon } from '../PlatformIcon'
 
 function FormattedContent({ content, linkColor }: { content: string; linkColor?: string }) {
   const color = linkColor || '#0095F6'
@@ -212,7 +213,7 @@ export function ThreadsCard({ platformId, post, campaignId, imageFiles, videoFil
         </div>
 
         {/* Threads Media Swipe Horizontal Carousel (Peeking Cards) */}
-        {imageUrls.length > 0 && (
+        {imageUrls.length > 0 ? (
           <div className="th-media-section">
             {imageUrls.length === 1 ? (
               <div className="th-single-media-frame">
@@ -227,6 +228,20 @@ export function ThreadsCard({ platformId, post, campaignId, imageFiles, videoFil
                 ))}
               </div>
             )}
+          </div>
+        ) : (
+          <div
+            style={{
+              aspectRatio: '1 / 1',
+              backgroundColor: 'rgba(0, 0, 0, 0.05)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '12px',
+              margin: '6px 0',
+            }}
+          >
+            <PlatformIcon id="threads" size={56} useBrandColor />
           </div>
         )}
 

@@ -4,6 +4,7 @@ import { useAppStore } from '../../store/app'
 import { generateClientZip, sanitize } from '../../lib/downloadKit'
 import type { CardProps } from './types'
 import { UnifiedCardShell } from './UnifiedCardShell'
+import { PlatformIcon } from '../PlatformIcon'
 
 interface ExtraField {
   key: string
@@ -193,7 +194,7 @@ export function StandardCard({ platformId, post, campaignId, imageFiles, videoFi
           </div>
         )}
 
-        {imageUrls.length > 0 && (
+        {imageUrls.length > 0 ? (
           <div className="pc-image-container">
             <div className={`pc-image-grid grid-${Math.min(imageUrls.length, 4)}`}>
               {imageUrls.slice(0, 4).map((url, idx) => (
@@ -202,6 +203,20 @@ export function StandardCard({ platformId, post, campaignId, imageFiles, videoFi
                 </div>
               ))}
             </div>
+          </div>
+        ) : (
+          <div
+            style={{
+              aspectRatio: '16 / 9',
+              backgroundColor: brandColor ? `${brandColor}14` : 'rgba(124, 58, 237, 0.08)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '8px',
+              margin: '8px 0',
+            }}
+          >
+            <PlatformIcon id={platformId} size={56} useBrandColor />
           </div>
         )}
 

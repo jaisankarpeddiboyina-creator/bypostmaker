@@ -7,6 +7,7 @@ import { useAppStore } from '../../store/app'
 import { generateClientZip, sanitize } from '../../lib/downloadKit'
 import type { CardProps } from './types'
 import { UnifiedCardShell } from './UnifiedCardShell'
+import { PlatformIcon } from '../PlatformIcon'
 
 function FormattedContent({ content, linkColor }: { content: string; linkColor?: string }) {
   const color = linkColor || '#3B82F6'
@@ -164,9 +165,22 @@ export function DevToCard({ platformId, post, campaignId, imageFiles, videoFile,
       {/* Authentic 1:1 dev.to Article Card Box */}
       <div className={`dev-post-box ${isEditing ? 'editing' : ''}`}>
         {/* Cover Image Frame */}
-        {imageUrls.length > 0 && (
+        {imageUrls.length > 0 ? (
           <div className="dev-cover-frame">
             <img src={imageUrls[0]} alt="Cover" className="dev-cover-img" />
+          </div>
+        ) : (
+          <div
+            style={{
+              aspectRatio: '100 / 42',
+              maxHeight: '220px',
+              backgroundColor: 'rgba(10, 10, 10, 0.05)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <PlatformIcon id="devto" size={56} useBrandColor />
           </div>
         )}
 

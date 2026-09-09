@@ -228,7 +228,7 @@ export function RedditCard({ platformId, post, campaignId, imageFiles, videoFile
         </div>
 
         {/* Reddit Image Carousel Frame */}
-        {imageUrls.length > 0 && (
+        {imageUrls.length > 0 ? (
           <div className="rd-media-frame">
             <img src={imageUrls[activeImgIdx]} alt={`Media ${activeImgIdx + 1}`} className="rd-media-img" />
 
@@ -263,6 +263,20 @@ export function RedditCard({ platformId, post, campaignId, imageFiles, videoFile
                 </div>
               </>
             )}
+          </div>
+        ) : (
+          <div
+            style={{
+              aspectRatio: '16 / 9',
+              backgroundColor: 'rgba(255, 69, 0, 0.08)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '14px',
+              border: '1px solid #edeff1',
+            }}
+          >
+            <PlatformIcon id="reddit" size={56} useBrandColor />
           </div>
         )}
 

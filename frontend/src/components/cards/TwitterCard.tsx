@@ -7,6 +7,7 @@ import { useAppStore } from '../../store/app'
 import { generateClientZip, sanitize } from '../../lib/downloadKit'
 import type { CardProps } from './types'
 import { UnifiedCardShell } from './UnifiedCardShell'
+import { PlatformIcon } from '../PlatformIcon'
 
 function FormattedContent({ content, linkColor }: { content: string; linkColor?: string }) {
   const color = linkColor || '#1D9BF0'
@@ -205,7 +206,7 @@ export function TwitterCard({ platformId, post, campaignId, imageFiles, videoFil
         </div>
 
         {/* Media Frame (16:9 Rounded Container) */}
-        {imageUrls.length > 0 && (
+        {imageUrls.length > 0 ? (
           <div className="tw-media-frame">
             <div className="tw-single-media">
               <img src={imageUrls[activeImgIdx]} alt={`Media ${activeImgIdx + 1}`} className="tw-media-img" />
@@ -232,6 +233,21 @@ export function TwitterCard({ platformId, post, campaignId, imageFiles, videoFil
                 </>
               )}
             </div>
+          </div>
+        ) : (
+          <div
+            style={{
+              aspectRatio: '1.91 / 1',
+              backgroundColor: 'rgba(29, 155, 240, 0.08)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '14px',
+              border: '1px solid #cfd9de',
+              marginTop: '4px',
+            }}
+          >
+            <PlatformIcon id="twitter" size={56} useBrandColor />
           </div>
         )}
 

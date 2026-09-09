@@ -7,6 +7,7 @@ import { useAppStore } from '../../store/app'
 import { generateClientZip, sanitize } from '../../lib/downloadKit'
 import type { CardProps } from './types'
 import { UnifiedCardShell } from './UnifiedCardShell'
+import { PlatformIcon } from '../PlatformIcon'
 
 function FormattedContent({ content, linkColor }: { content: string; linkColor?: string }) {
   const color = linkColor || '#2962FF'
@@ -174,9 +175,22 @@ export function HashnodeCard({ platformId, post, campaignId, imageFiles, videoFi
         </div>
 
         {/* Cover Image Frame */}
-        {imageUrls.length > 0 && (
+        {imageUrls.length > 0 ? (
           <div className="hn-cover-frame">
             <img src={imageUrls[0]} alt="Cover" className="hn-cover-img" />
+          </div>
+        ) : (
+          <div
+            style={{
+              aspectRatio: '16 / 9',
+              backgroundColor: 'rgba(41, 98, 255, 0.08)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '8px',
+            }}
+          >
+            <PlatformIcon id="hashnode" size={56} useBrandColor />
           </div>
         )}
 

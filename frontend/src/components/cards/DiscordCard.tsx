@@ -8,6 +8,7 @@ import { generateClientZip, sanitize } from '../../lib/downloadKit'
 import type { CardProps } from './types'
 import { UnifiedCardShell } from './UnifiedCardShell'
 import { PublishControl } from '../PublishControl'
+import { PlatformIcon } from '../PlatformIcon'
 
 function FormattedContent({ content, linkColor }: { content: string; linkColor?: string }) {
   const color = linkColor || '#0067D5'
@@ -207,7 +208,7 @@ export function DiscordCard({ platformId, post, campaignId, imageFiles, videoFil
             </div>
 
             {/* Media Attachment Grid */}
-            {imageUrls.length > 0 && (
+            {imageUrls.length > 0 ? (
               <div className="dis-media-container">
                 <div className={`dis-image-grid grid-${Math.min(imageUrls.length, 4)}`}>
                   {imageUrls.slice(0, 4).map((url, idx) => (
@@ -216,6 +217,21 @@ export function DiscordCard({ platformId, post, campaignId, imageFiles, videoFil
                     </div>
                   ))}
                 </div>
+              </div>
+            ) : (
+              <div
+                style={{
+                  aspectRatio: '16 / 9',
+                  backgroundColor: 'rgba(88, 101, 242, 0.08)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '8px',
+                  marginBottom: '8px',
+                  border: '1px solid #e3e5e8',
+                }}
+              >
+                <PlatformIcon id="discord" size={56} useBrandColor />
               </div>
             )}
 

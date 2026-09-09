@@ -7,6 +7,7 @@ import { useAppStore } from '../../store/app'
 import { generateClientZip, sanitize } from '../../lib/downloadKit'
 import type { CardProps } from './types'
 import { UnifiedCardShell } from './UnifiedCardShell'
+import { PlatformIcon } from '../PlatformIcon'
 
 function FormattedContent({ content, linkColor }: { content: string; linkColor?: string }) {
   const color = linkColor || '#1A8917'
@@ -207,9 +208,21 @@ export function MediumCard({ platformId, post, campaignId, imageFiles, videoFile
                 )}
               </div>
 
-              {imageUrls.length > 0 && (
+              {imageUrls.length > 0 ? (
                 <div className="med-image-col">
                   <img src={imageUrls[0]} alt="Feature" className="med-feature-img" />
+                </div>
+              ) : (
+                <div
+                  className="med-image-col"
+                  style={{
+                    backgroundColor: 'rgba(26, 137, 23, 0.08)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <PlatformIcon id="medium" size={44} useBrandColor />
                 </div>
               )}
             </div>
