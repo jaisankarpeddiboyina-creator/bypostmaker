@@ -8,6 +8,7 @@ import { getAvatarUrl } from '../../lib/avatar'
 import { generateClientZip, sanitize } from '../../lib/downloadKit'
 import type { CardProps } from './types'
 import { UnifiedCardShell } from './UnifiedCardShell'
+import { PlatformIcon } from '../PlatformIcon'
 
 function FormattedContent({ content, linkColor }: { content: string; linkColor?: string }) {
   const color = linkColor || '#1877F2'
@@ -198,7 +199,7 @@ export function FacebookCard({ platformId, post, campaignId, imageFiles, videoFi
         </div>
 
         {/* Media Frame Grid */}
-        {imageUrls.length > 0 && (
+        {imageUrls.length > 0 ? (
           <div className="fb-media-container">
             <div className={`fb-image-grid grid-${Math.min(imageUrls.length, 4)}`}>
               {imageUrls.slice(0, 4).map((url, idx) => (
@@ -207,6 +208,19 @@ export function FacebookCard({ platformId, post, campaignId, imageFiles, videoFi
                 </div>
               ))}
             </div>
+          </div>
+        ) : (
+          <div
+            style={{
+              aspectRatio: '1.91 / 1',
+              backgroundColor: 'rgba(24, 119, 242, 0.08)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '8px 0',
+            }}
+          >
+            <PlatformIcon id="facebook" size={56} useBrandColor />
           </div>
         )}
 

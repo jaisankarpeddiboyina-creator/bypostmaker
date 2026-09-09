@@ -8,6 +8,7 @@ import { getAvatarUrl } from '../../lib/avatar'
 import { generateClientZip, sanitize } from '../../lib/downloadKit'
 import type { CardProps } from './types'
 import { UnifiedCardShell } from './UnifiedCardShell'
+import { PlatformIcon } from '../PlatformIcon'
 
 function FormattedContent({ content, linkColor }: { content: string; linkColor?: string }) {
   const color = linkColor || '#0095F6'
@@ -189,8 +190,8 @@ export function InstagramCard({ platformId, post, campaignId, imageFiles, videoF
           <MoreHorizontal size={18} className="ig-more" />
         </div>
 
-        {/* Media Frame (Dedicated Instagram Arrow & Dots Carousel) */}
-        {imageUrls.length > 0 && (
+        {/* Media Frame (Dedicated Instagram Arrow & Dots Carousel or Platform Icon Placeholder) */}
+        {imageUrls.length > 0 ? (
           <div className="ig-media-wrapper">
             <img src={imageUrls[activeImgIdx]} alt={`Media ${activeImgIdx + 1}`} className="ig-media-img" />
             {imageUrls.length > 1 && (
@@ -226,6 +227,10 @@ export function InstagramCard({ platformId, post, campaignId, imageFiles, videoF
                 </div>
               </>
             )}
+          </div>
+        ) : (
+          <div className="ig-media-wrapper ig-media-placeholder">
+            <PlatformIcon id="instagram" size={64} useBrandColor />
           </div>
         )}
 
@@ -296,6 +301,9 @@ export function InstagramCard({ platformId, post, campaignId, imageFiles, videoF
         .ig-more { color: #262626; margin-left: 4px; cursor: pointer; }
         .ig-media-wrapper {
           position: relative; width: 100%; max-height: 480px; background: #fafafa; overflow: hidden; display: flex; align-items: center; justify-content: center;
+        }
+        .ig-media-placeholder {
+          aspect-ratio: 1 / 1; min-height: 200px; max-height: 380px; background: rgba(225, 48, 108, 0.05); border-top: 1px solid #F1F3F5; border-bottom: 1px solid #F1F3F5;
         }
         .ig-media-img { width: 100%; height: auto; max-height: 480px; object-fit: contain; display: block; }
         .ig-carousel-arrow {

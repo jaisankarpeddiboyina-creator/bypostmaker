@@ -8,6 +8,7 @@ import { getAvatarUrl } from '../../lib/avatar'
 import { generateClientZip, sanitize } from '../../lib/downloadKit'
 import type { CardProps } from './types'
 import { UnifiedCardShell } from './UnifiedCardShell'
+import { PlatformIcon } from '../PlatformIcon'
 
 function FormattedContent({ content, linkColor }: { content: string; linkColor?: string }) {
   const color = linkColor || '#075E54'
@@ -163,9 +164,23 @@ export function WhatsAppCard({ platformId, post, campaignId, imageFiles, videoFi
         {/* Message Bubble Frame */}
         <div className="wa-bubble-wrapper">
           <div className="wa-bubble" onClick={() => !isEditing && setIsEditing(true)} title="Click to edit">
-            {imageUrls.length > 0 && (
+            {imageUrls.length > 0 ? (
               <div className="wa-media-container">
                 <img src={imageUrls[0]} alt="Attachment" className="wa-img" />
+              </div>
+            ) : (
+              <div
+                style={{
+                  aspectRatio: '16 / 9',
+                  backgroundColor: 'rgba(37, 211, 102, 0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '6px',
+                  marginBottom: '6px',
+                }}
+              >
+                <PlatformIcon id="whatsapp" size={48} useBrandColor />
               </div>
             )}
 

@@ -8,6 +8,7 @@ import { getAvatarUrl } from '../../lib/avatar'
 import { generateClientZip, sanitize } from '../../lib/downloadKit'
 import type { CardProps } from './types'
 import { UnifiedCardShell } from './UnifiedCardShell'
+import { PlatformIcon } from '../PlatformIcon'
 
 function FormattedContent({ content, linkColor }: { content: string; linkColor?: string }) {
   const color = linkColor || '#FF6719'
@@ -186,9 +187,22 @@ export function SubstackCard({ platformId, post, campaignId, imageFiles, videoFi
         </div>
 
         {/* Cover Image Frame */}
-        {imageUrls.length > 0 && (
+        {imageUrls.length > 0 ? (
           <div className="sub-cover-frame">
             <img src={imageUrls[0]} alt="Cover" className="sub-cover-img" />
+          </div>
+        ) : (
+          <div
+            style={{
+              aspectRatio: '16 / 9',
+              backgroundColor: 'rgba(255, 103, 25, 0.08)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: '8px',
+            }}
+          >
+            <PlatformIcon id="substack" size={56} useBrandColor />
           </div>
         )}
 

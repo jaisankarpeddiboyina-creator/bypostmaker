@@ -8,6 +8,7 @@ import { getAvatarUrl } from '../../lib/avatar'
 import { generateClientZip, sanitize } from '../../lib/downloadKit'
 import type { CardProps } from './types'
 import { UnifiedCardShell } from './UnifiedCardShell'
+import { PlatformIcon } from '../PlatformIcon'
 
 function FormattedContent({ content, linkColor }: { content: string; linkColor?: string }) {
   const color = linkColor || '#0085FF'
@@ -206,7 +207,7 @@ export function BlueskyCard({ platformId, post, campaignId, imageFiles, videoFil
             </div>
 
             {/* Media Grid */}
-            {imageUrls.length > 0 && (
+            {imageUrls.length > 0 ? (
               <div className="bsky-media-container">
                 <div className={`bsky-image-grid grid-${Math.min(imageUrls.length, 4)}`}>
                   {imageUrls.slice(0, 4).map((url, idx) => (
@@ -215,6 +216,21 @@ export function BlueskyCard({ platformId, post, campaignId, imageFiles, videoFil
                     </div>
                   ))}
                 </div>
+              </div>
+            ) : (
+              <div
+                style={{
+                  aspectRatio: '16 / 9',
+                  backgroundColor: 'rgba(0, 133, 255, 0.08)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '10px',
+                  marginBottom: '10px',
+                  border: '1px solid #e2e8f0',
+                }}
+              >
+                <PlatformIcon id="bluesky" size={56} useBrandColor />
               </div>
             )}
 
