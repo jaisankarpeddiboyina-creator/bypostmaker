@@ -228,7 +228,7 @@ export function InstagramCard({ platformId, post, campaignId, imageFiles, videoF
           </div>
         ) : (
           <div className="ig-media-wrapper ig-media-placeholder">
-            <PlatformIcon id="instagram" size={48} useBrandColor />
+            <PlatformIcon id="instagram" size={64} useBrandColor />
           </div>
         )}
 
@@ -301,7 +301,7 @@ export function InstagramCard({ platformId, post, campaignId, imageFiles, videoF
           position: relative; width: 100%; max-height: 480px; background: #fafafa; overflow: hidden; display: flex; align-items: center; justify-content: center;
         }
         .ig-media-placeholder {
-          aspect-ratio: 1 / 1; min-height: 200px; max-height: 380px; background: #FAF9FB; border-top: 1px solid #F1F3F5; border-bottom: 1px solid #F1F3F5;
+          aspect-ratio: 1 / 1; min-height: 200px; max-height: 380px; background: rgba(225, 48, 108, 0.05); border-top: 1px solid #F1F3F5; border-bottom: 1px solid #F1F3F5;
         }
         .ig-media-img { width: 100%; height: auto; max-height: 480px; object-fit: contain; display: block; }
         .ig-carousel-arrow {
