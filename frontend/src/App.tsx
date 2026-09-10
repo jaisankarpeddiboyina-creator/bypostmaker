@@ -31,6 +31,7 @@ const PlatformPage = lazy(() => import('./pages/PlatformPage'))
 const SharedViewPage = lazy(() => import('./pages/SharedViewPage'))
 const ConnectionsPage = lazy(() => import('./pages/ConnectionsPage'))
 const AssetsPage = lazy(() => import('./pages/AssetsPage'))
+const AiToolsPage = lazy(() => import('./pages/AiToolsPage'))
 
 const SentryRoutes = Routes
 
@@ -245,6 +246,7 @@ export default function App() {
           <Route path="/for/:slug" element={<ForPage />} />
           <Route path="/tools" element={<PlatformPage />} />
           <Route path="/tools/:slug" element={<PlatformPage />} />
+          <Route path="/ai-tools" element={<AiToolsPage />} />
           <Route path="/share/:id" element={<SharedViewPage />} />
 
           {/* Auth routes */}
