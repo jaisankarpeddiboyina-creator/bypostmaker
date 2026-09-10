@@ -183,6 +183,10 @@ interface AppStore {
 
   showFeedbackModal: boolean
   setShowFeedbackModal: (v: boolean) => void
+
+  sidebarCollapsed: boolean
+  setSidebarCollapsed: (v: boolean) => void
+  toggleSidebarCollapsed: () => void
 }
 
 export const useAppStore = create<AppStore>((set, get) => ({
@@ -302,6 +306,17 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   showFeedbackModal: false,
   setShowFeedbackModal: (v) => set({ showFeedbackModal: v }),
+
+  sidebarCollapsed: typeof window !== 'undefined' ? localStorage.getItem('pm_sidebar_collapsed') === 'true' : false,
+  setSidebarCollapsed: (v) => {
+    try { localStorage.setItem('pm_sidebar_collapsed', String(v)) } catch {}
+    set({ sidebarCollapsed: v })
+  },
+  toggleSidebarCollapsed: () => {
+    const next = !get().sidebarCollapsed
+    try { localStorage.setItem('pm_sidebar_collapsed', String(next)) } catch {}
+    set({ sidebarCollapsed: next })
+  },
 }))
 
 // Dev-only: expose store to window so test/reproduction scripts can inject state.

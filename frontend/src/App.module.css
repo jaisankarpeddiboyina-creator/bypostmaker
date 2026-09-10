@@ -1,0 +1,41 @@
+/* ─────────────────────────────────────────────────────────
+   App.module.css
+   Layout styles for AppShell and Main Application Layout
+   ───────────────────────────────────────────────────────── */
+
+.app-shell-container {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: transparent;
+}
+
+.app-shell-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+  margin-left: var(--sidebar-width);
+  transition: margin-left var(--transition);
+}
+
+.app-shell-content.sidebar-collapsed {
+  margin-left: var(--sidebar-collapsed-width);
+}
+
+.app-shell-main {
+  flex: 1;
+  overflow-y: auto;
+  position: relative;
+  height: calc(100vh - 64px);
+}
+
+@media (max-width: 768px) {
+  .app-shell-content,
+  .app-shell-content.sidebar-collapsed {
+    margin-left: 0;
+  }
+}
