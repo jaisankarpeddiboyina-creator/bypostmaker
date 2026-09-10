@@ -524,3 +524,21 @@
     z-index: 85;
   }
 }
+
+/* ── Reduced Motion Support ───────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-container,
+  .sidebar-brand-wrapper,
+  .brand-logo-emblem,
+  .brand-name-text,
+  .sidebar-toggle-btn,
+  .sidebar-close-btn,
+  .nav-item-link,
+  .sidebar-btn-link,
+  .upgrade-collapsed-btn,
+  .user-profile-card,
+  .user-logout-btn {
+    transition: none !important;
+    animation: none !important;
+  }
+}

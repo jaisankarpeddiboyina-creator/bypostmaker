@@ -39,3 +39,10 @@
     margin-left: 0;
   }
 }
+
+/* ── Reduced Motion Support ───────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .app-shell-content {
+    transition: none !important;
+  }
+}
