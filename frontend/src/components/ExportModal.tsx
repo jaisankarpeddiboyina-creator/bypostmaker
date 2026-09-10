@@ -2,6 +2,10 @@ import { useState, useEffect } from 'react'
 import { X, Loader2, Archive, FileText } from 'lucide-react'
 import { useAppStore } from '../store/app'
 import { generateClientZip, generateClientPdf, sanitizeFilename } from '../lib/downloadKit'
+import styles from './ExportModal.module.css'
+
+const cx = (...args: (string | false | null | undefined)[]) =>
+  args.filter(Boolean).join(' ')
 
 export function ExportModal() {
   const { exportPayload, closeExport, addToast } = useAppStore()
@@ -81,7 +85,7 @@ export function ExportModal() {
 
   const handleFilenameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value
-    // We allow typing freely but restrict/sanitize when updating filename state
+    // Allow typing freely but sanitize restricted characters and limit length
     setFilename(val.replace(/[\\/:*?"<>|]/g, '').slice(0, 100))
   }
 
@@ -97,32 +101,40 @@ export function ExportModal() {
   const previewName = sanitizeFilename(filename) || exportPayload.defaultFilename
 
   return (
-    <div className="modal-overlay" onClick={() => !isGenerating && closeExport()}>
-      <div className="modal export-modal" onClick={e => e.stopPropagation()} onKeyDown={handleKeyDown}>
-        
+    <div
+      className={styles['modal-overlay']}
+      onClick={() => !isGenerating && closeExport()}
+    >
+      <div
+        className={cx('glass-card', styles['export-modal'])}
+        onClick={e => e.stopPropagation()}
+        onKeyDown={handleKeyDown}
+      >
         {/* Header */}
-        <div className="export-modal-header">
-          <div className="export-header-title-block">
-            <h2 className="export-modal-title">Export Content Kit</h2>
-            <p className="export-modal-subtitle">Package your social posts and creative assets</p>
+        <div className={styles['export-modal-header']}>
+          <div className={styles['export-header-title-block']}>
+            <h2 className={styles['export-modal-title']}>Export Content Kit</h2>
+            <p className={styles['export-modal-subtitle']}>Package your social posts and creative assets</p>
           </div>
           <button 
             type="button" 
-            className="btn-icon close-export-btn" 
+            className={styles['close-export-btn']}
             onClick={closeExport} 
             disabled={isGenerating}
+            title="Close"
+            aria-label="Close"
           >
             <X size={16} />
           </button>
         </div>
 
         {/* Filename Input Section */}
-        <div className="export-modal-field">
-          <label className="export-field-label" htmlFor="export-filename">Filename</label>
-          <div className="export-input-wrapper">
+        <div className={styles['export-modal-field']}>
+          <label className={styles['export-field-label']} htmlFor="export-filename">Filename</label>
+          <div className={styles['export-input-wrapper']}>
             <input
               id="export-filename"
-              className="export-text-input"
+              className={styles['export-text-input']}
               type="text"
               placeholder={exportPayload.defaultFilename}
               value={filename}
@@ -132,18 +144,21 @@ export function ExportModal() {
               autoFocus
             />
           </div>
-          <p className="export-filename-preview">
-            Will download as: <span className="preview-filename-text">{previewName}.{format}</span>
+          <p className={styles['export-filename-preview']}>
+            Will download as: <span className={styles['preview-filename-text']}>{previewName}.{format}</span>
           </p>
         </div>
 
         {/* Format Selector Section */}
-        <div className="export-modal-field">
-          <label className="export-field-label">Choose Format</label>
-          <div className="format-toggle-container">
+        <div className={styles['export-modal-field']}>
+          <label className={styles['export-field-label']}>Choose Format</label>
+          <div className={styles['format-toggle-container']}>
             <button
               type="button"
-              className={`format-toggle-btn ${format === 'zip' ? 'active' : ''}`}
+              className={cx(
+                styles['format-toggle-btn'],
+                format === 'zip' && styles['active']
+              )}
               onClick={() => setFormat('zip')}
               disabled={isGenerating}
               aria-pressed={format === 'zip'}
@@ -154,7 +169,10 @@ export function ExportModal() {
             
             <button
               type="button"
-              className={`format-toggle-btn ${format === 'pdf' ? 'active' : ''}`}
+              className={cx(
+                styles['format-toggle-btn'],
+                format === 'pdf' && styles['active']
+              )}
               onClick={() => setFormat('pdf')}
               disabled={isGenerating}
               aria-pressed={format === 'pdf'}
@@ -167,17 +185,17 @@ export function ExportModal() {
 
         {/* Progress Message */}
         {isGenerating && (
-          <div className="export-progress-container">
-            <Loader2 size={16} className="spin progress-spinner" />
-            <p className="export-progress-text">{progressMsg}</p>
+          <div className={styles['export-progress-container']}>
+            <Loader2 size={16} className={cx('spin', styles['progress-spinner'])} />
+            <p className={styles['export-progress-text']}>{progressMsg}</p>
           </div>
         )}
 
         {/* Actions Footer */}
-        <div className="export-modal-footer">
+        <div className={styles['export-modal-footer']}>
           <button
             type="button"
-            className="btn btn-ghost cancel-export-btn"
+            className={cx('btn', 'btn-ghost', styles['cancel-export-btn'])}
             onClick={closeExport}
             disabled={isGenerating}
           >
@@ -186,7 +204,7 @@ export function ExportModal() {
           
           <button
             type="button"
-            className="btn btn-primary start-export-btn"
+            className={cx('btn', 'btn-primary', styles['start-export-btn'])}
             onClick={handleDownload}
             disabled={isGenerating || !filename.trim()}
           >
@@ -200,181 +218,6 @@ export function ExportModal() {
             )}
           </button>
         </div>
-
-        {/* Component-Specific Liquid Glass Styles */}
-        <style>{`
-          .export-modal {
-            max-width: 460px;
-            padding: 24px;
-            background: var(--color-surface);
-            backdrop-filter: var(--backdrop-blur);
-            border: 1px solid var(--color-border);
-            border-radius: var(--radius-card);
-            box-shadow: var(--shadow-modal);
-            color: var(--color-text-primary);
-          }
-
-          .export-modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 20px;
-          }
-
-          .export-modal-title {
-            font-family: var(--font-display);
-            font-size: 20px;
-            font-weight: 700;
-            letter-spacing: -0.02em;
-            color: var(--color-text-primary);
-          }
-
-          .export-modal-subtitle {
-            font-size: 13px;
-            color: var(--color-text-secondary);
-            margin-top: 4px;
-          }
-
-          .export-modal-field {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            margin-bottom: 20px;
-          }
-
-          .export-field-label {
-            font-size: 12px;
-            font-weight: 700;
-            color: var(--color-text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-          }
-
-          .export-input-wrapper {
-            position: relative;
-            background: var(--color-surface-inset);
-            border: 1px solid var(--color-border);
-            border-radius: var(--radius-input);
-            transition: border-color var(--transition);
-          }
-
-          .export-input-wrapper:focus-within {
-            border-color: var(--color-border-hover);
-            box-shadow: 0 0 0 1px var(--color-border-hover);
-          }
-
-          .export-text-input {
-            width: 100%;
-            padding: 12px 16px;
-            background: transparent;
-            border: none;
-            outline: none;
-            color: var(--color-text-primary);
-            font-family: var(--font-body);
-            font-size: 14px;
-          }
-
-          .export-text-input::placeholder {
-            color: var(--color-text-placeholder);
-          }
-
-          .export-filename-preview {
-            font-size: 12px;
-            color: var(--color-text-muted);
-            padding-left: 4px;
-          }
-
-          .preview-filename-text {
-            color: var(--color-primary-start);
-            font-family: var(--font-mono);
-            font-weight: 600;
-          }
-
-          .format-toggle-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            background: var(--color-surface-inset);
-            border: 1px solid var(--color-border);
-            border-radius: var(--radius-input);
-            padding: 4px;
-          }
-
-          .format-toggle-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            padding: 10px;
-            background: transparent;
-            border: none;
-            border-radius: var(--radius);
-            color: var(--color-text-secondary);
-            font-family: var(--font-body);
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all var(--transition);
-          }
-
-          .format-toggle-btn:hover:not(:disabled) {
-            color: var(--color-text-primary);
-            background: rgba(255, 255, 255, 0.20);
-          }
-
-          .format-toggle-btn.active {
-            background: var(--gradient-primary);
-            color: var(--color-text-inverse);
-            font-weight: 800;
-            box-shadow: var(--shadow-btn);
-          }
-
-          .format-toggle-btn:disabled {
-            opacity: 0.45;
-            cursor: not-allowed;
-          }
-
-          .export-progress-container {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: rgba(255, 75, 145, 0.04);
-            border: 1px solid rgba(255, 75, 145, 0.20);
-            border-radius: var(--radius);
-            padding: 12px 16px;
-            margin-bottom: 20px;
-            animation: fadeIn 0.2s ease-out;
-          }
-
-          .progress-spinner {
-            color: var(--color-primary-start);
-            flex-shrink: 0;
-          }
-
-          .export-progress-text {
-            font-size: 13px;
-            color: var(--color-text-secondary);
-            line-height: 1.4;
-          }
-
-          .export-modal-footer {
-            display: flex;
-            justify-content: flex-end;
-            gap: 12px;
-            margin-top: 8px;
-          }
-
-          .cancel-export-btn, .start-export-btn {
-            min-width: 100px;
-            justify-content: center;
-          }
-
-          @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(4px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-        `}</style>
-
       </div>
     </div>
   )
