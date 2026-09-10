@@ -216,7 +216,7 @@ export default function HistoryPage() {
           <div className="empty-sparkle-circle">
             <Sparkles size={32} />
           </div>
-          <h2>No Past Generations Found</h2>
+          <h2>No History Found</h2>
           <p>You haven't generated any multi-platform post kits yet.</p>
           <button
             type="button"
