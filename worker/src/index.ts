@@ -32,6 +32,7 @@ import { platformPages } from '../../config/platformPages'
 import { faqEntries } from '../../config/faq'
 import { findMatchingRoute, ROUTE_REGISTRY } from '../../config/routeRegistry'
 import { snapshotAssetPathForRoute, SNAPSHOT_MANIFEST_ASSET_PATH } from '../../config/publicRoutes'
+import { PLATFORM_MAP } from '../../config/platforms'
 export { GroqRateLimiter } from './services/limiter'
 
 class MetaRewriter {
@@ -678,11 +679,97 @@ async function handleSharePageSEO(request: Request, env: Env): Promise<Response>
   }
 }
 
+async function handleSubdomainSPA(request: Request, env: Env, platformId: string): Promise<Response> {
+  let assetResponse: Response | null = null
+  try {
+    const indexRequest = new Request(new URL('/index.html', request.url))
+    assetResponse = await env.ASSETS.fetch(indexRequest)
+    if (!assetResponse.ok) {
+      throw new Error(`ASSETS.fetch returned status ${assetResponse.status}`)
+    }
+  } catch (err) {
+    console.error('Failed to fetch SPA shell index.html for subdomain:', err)
+    return new Response('Asset Not Found', { status: 404 })
+  }
+
+  const platform = PLATFORM_MAP[platformId]
+  const title = platform ? `${platform.name} Tool | PostMaker` : 'PostMaker'
+  const description = platform
+    ? `Create perfect ${platform.name} posts instantly with PostMaker AI.`
+    : 'AI Social Media Content Generator'
+  const domain = 'https://bypostamaker.com'
+  const url = new URL(request.url)
+  const canonicalUrl = `https://${url.hostname}${url.pathname}`
+
+  class SubdomainScriptInjector {
+    private platformId: string
+    constructor(platformId: string) {
+      this.platformId = platformId
+    }
+    element(element: any) {
+      element.append(`<script>window.__SUBDOMAIN_PLATFORM_ID__ = "${this.platformId}";</script>`, { html: true })
+    }
+  }
+
+  try {
+    const headInjector = new HeadInjector(url.pathname, domain)
+    const rewriter = new HTMLRewriter()
+      .on('title', new MetaRewriter(title, description, canonicalUrl, `${domain}/og-image.png`))
+      .on('meta', new MetaRewriter(title, description, canonicalUrl, `${domain}/og-image.png`))
+      .on('head', new SubdomainScriptInjector(platformId))
+      .on('head', headInjector)
+
+    const transformedResponse = rewriter.transform(assetResponse)
+    const newHeaders = new Headers(transformedResponse.headers)
+    newHeaders.set('Cache-Control', 'public, max-age=3600')
+    newHeaders.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload')
+    newHeaders.set('X-Content-Type-Options', 'nosniff')
+    newHeaders.set('X-Frame-Options', 'SAMEORIGIN')
+    newHeaders.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+    newHeaders.set('Content-Security-Policy',
+      "default-src 'self'; " +
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://checkout.razorpay.com https://www.googletagmanager.com; " +
+      "connect-src 'self' https://api.razorpay.com https://*.sentry.io https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://app.posthog.com https://www.google-analytics.com https://analytics.google.com; " +
+      "frame-src 'self' https://checkout.razorpay.com https://www.googletagmanager.com; " +
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+      "font-src 'self' https://fonts.gstatic.com data:; " +
+      "img-src 'self' data: blob: https://lh3.googleusercontent.com https://*.posthog.com https://www.google-analytics.com;"
+    )
+
+    return new Response(transformedResponse.body, {
+      status: 200,
+      headers: newHeaders,
+    })
+  } catch (err) {
+    console.error('HTMLRewriter failed on subdomain SPA:', err)
+    return assetResponse
+  }
+}
+
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const startTime = Date.now()
     const url = new URL(request.url)
     const path = url.pathname
+    const hostname = url.hostname.toLowerCase()
+
+    // Subdomain resolution for platform tool pages (e.g. instagram.bypostamaker.com)
+    // Non-platform subdomains to ignore: www, api, staging, dev, app
+    const isApiRequest = path.startsWith('/api/') || path === '/api'
+    if (!isApiRequest) {
+      const parts = hostname.split('.')
+      let subdomain = ''
+      if (parts.length > 2 && (hostname.endsWith('.bypostamaker.com') || hostname.endsWith('.localhost'))) {
+        subdomain = parts[0]
+      } else if (hostname.includes('localhost') && parts.length > 1 && parts[0] !== 'localhost') {
+        subdomain = parts[0]
+      }
+
+      const nonPlatformSubdomains = new Set(['www', 'api', 'staging', 'dev', 'app', 'localhost'])
+      if (subdomain && !nonPlatformSubdomains.has(subdomain) && PLATFORM_MAP[subdomain]) {
+        return handleSubdomainSPA(request, env, subdomain)
+      }
+    }
 
     // 301 redirect trailing slash URLs for non-API requests (SEO best practice)
     if (!path.startsWith('/api/') && path !== '/' && path.endsWith('/')) {

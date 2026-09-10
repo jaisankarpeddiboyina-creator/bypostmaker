@@ -13,6 +13,14 @@ import { ExportModal } from './components/ExportModal'
 import { AssetPickerModal } from './components/AssetPickerModal'
 import { FeedbackModal } from './components/FeedbackModal'
 import { ShareModal } from './components/ShareModal'
+import { PlatformToolPage } from './components/tools/PlatformToolPage'
+import { PLATFORM_MAP } from '@@config/platforms'
+
+declare global {
+  interface Window {
+    __SUBDOMAIN_PLATFORM_ID__?: string
+  }
+}
 
 const AppPage = lazy(() => import('./pages/AppPage'))
 const LandingPage = lazy(() => import('./pages/LandingPage'))
@@ -231,6 +239,24 @@ export default function App() {
       })
       .finally(() => setAuthReadySnapshot(true))
   }, [addToast])
+
+  const subdomainPlatformId = (() => {
+    if (typeof window === 'undefined') return undefined
+    if (window.__SUBDOMAIN_PLATFORM_ID__ && PLATFORM_MAP[window.__SUBDOMAIN_PLATFORM_ID__]) {
+      return window.__SUBDOMAIN_PLATFORM_ID__
+    }
+    const hostname = window.location.hostname.toLowerCase()
+    const parts = hostname.split('.')
+    if (parts.length > 2) {
+      const sub = parts[0]
+      if (PLATFORM_MAP[sub]) return sub
+    }
+    return undefined
+  })()
+
+  if (subdomainPlatformId) {
+    return <PlatformToolPage platformId={subdomainPlatformId} />
+  }
 
   return (
     <>

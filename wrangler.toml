@@ -115,7 +115,8 @@ new_sqlite_classes = ["GroqRateLimiter"]
 name = "bypostamaker-worker"
 vars = { ENVIRONMENT = "production", DOMAIN = "bypostamaker.com", GROQ_MODEL = "llama-3.3-70b-versatile" }
 routes = [
-  { pattern = "bypostamaker.com", custom_domain = true, zone_name = "bypostamaker.com" }
+  { pattern = "bypostamaker.com", custom_domain = true, zone_name = "bypostamaker.com" },
+  { pattern = "*.bypostamaker.com/*", zone_name = "bypostamaker.com" }
 ]
 
 [[env.production.d1_databases]]
