@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
-  LayoutDashboard, PlusCircle, Bookmark, History, CreditCard, Settings, Zap, X, Shield, LogOut, Plug, Image, MessageSquare
+  LayoutDashboard, PlusCircle, Bookmark, History, CreditCard, Settings, Zap, X, Shield, LogOut, Plug, Image, MessageSquare, Sparkles
 } from 'lucide-react'
 import { useAppStore } from '../store/app'
 import { api } from '../lib/api'
@@ -38,6 +38,7 @@ export function Sidebar({ isOpen, onClose, onUpgradeClick }: SidebarProps) {
     { label: 'Brand Kit', path: '/app/brand-kit', icon: Bookmark },
     { label: 'Media Studio', path: '/app/media', icon: Image },
     { label: 'My Generations', path: '/app/history', icon: History },
+    { label: 'AI Tools', path: '/ai-tools', icon: Sparkles },
     { label: 'Billing', path: '/app/billing', icon: CreditCard },
     { label: 'Settings', path: '/app/settings', icon: Settings },
     ...(user?.role === 'admin' ? [{ label: 'Admin Panel', path: '/admin', icon: Shield }] : [])
