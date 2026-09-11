@@ -240,16 +240,20 @@ export default function App() {
       .finally(() => setAuthReadySnapshot(true))
   }, [addToast])
 
+  const SUBDOMAIN_ALIASES: Record<string, string> = { x: 'twitter' }
+
   const subdomainPlatformId = (() => {
     if (typeof window === 'undefined') return undefined
-    if (window.__SUBDOMAIN_PLATFORM_ID__ && PLATFORM_MAP[window.__SUBDOMAIN_PLATFORM_ID__]) {
-      return window.__SUBDOMAIN_PLATFORM_ID__
+    if (window.__SUBDOMAIN_PLATFORM_ID__) {
+      const resolved = SUBDOMAIN_ALIASES[window.__SUBDOMAIN_PLATFORM_ID__] || window.__SUBDOMAIN_PLATFORM_ID__
+      if (PLATFORM_MAP[resolved]) return resolved
     }
     const hostname = window.location.hostname.toLowerCase()
     const parts = hostname.split('.')
     if (parts.length > 2) {
       const sub = parts[0]
-      if (PLATFORM_MAP[sub]) return sub
+      const resolved = SUBDOMAIN_ALIASES[sub] || sub
+      if (PLATFORM_MAP[resolved]) return resolved
     }
     return undefined
   })()

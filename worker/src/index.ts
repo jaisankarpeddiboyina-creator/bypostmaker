@@ -766,8 +766,12 @@ export default {
       }
 
       const nonPlatformSubdomains = new Set(['www', 'api', 'staging', 'dev', 'app', 'localhost'])
-      if (subdomain && !nonPlatformSubdomains.has(subdomain) && PLATFORM_MAP[subdomain]) {
-        return handleSubdomainSPA(request, env, subdomain)
+      if (subdomain && !nonPlatformSubdomains.has(subdomain)) {
+        const SUBDOMAIN_ALIASES: Record<string, string> = { x: 'twitter' }
+        const resolvedId = SUBDOMAIN_ALIASES[subdomain] || subdomain
+        if (PLATFORM_MAP[resolvedId]) {
+          return handleSubdomainSPA(request, env, resolvedId)
+        }
       }
     }
 
