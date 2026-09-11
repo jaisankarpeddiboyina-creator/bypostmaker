@@ -46,13 +46,13 @@ export function PlatformToolPage({ platformId }: PlatformToolPageProps) {
   const videoInputRef = useRef<HTMLInputElement>(null)
   const plusMenuRef = useRef<HTMLDivElement>(null)
 
-  // BUG FIX: Initialize a fresh empty draft campaign post with status: 'pending' on page mount
+  // BUG FIX: Initialize a fresh empty draft campaign post with status: 'done' on page mount
   useEffect(() => {
     if (!platform) return
     const initialPost: PlatformPost = {
       platformId,
       content: '',
-      status: 'pending',
+      status: 'done',
       edited: false,
     }
     setCampaign({
@@ -99,7 +99,7 @@ export function PlatformToolPage({ platformId }: PlatformToolPageProps) {
   const currentPost: PlatformPost = campaign?.posts[platformId] || {
     platformId,
     content: '',
-    status: 'pending',
+    status: 'done',
     edited: false,
   }
 
@@ -389,6 +389,7 @@ export function PlatformToolPage({ platformId }: PlatformToolPageProps) {
               videoFile={videoFile}
               onOpenRefinement={handleRefineClick}
               isRefining={isRefinement}
+              showHeader={Boolean(currentPost.content)}
             />
           </div>
         </div>

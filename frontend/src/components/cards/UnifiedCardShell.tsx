@@ -14,6 +14,7 @@ export interface UnifiedCardShellProps {
   copied?: boolean
   downloading?: boolean
   isEditing?: boolean
+  showHeader?: boolean
   onRefine?: () => void
   onCopy?: () => void
   onDownload?: () => void
@@ -32,6 +33,7 @@ export function UnifiedCardShell({
   copied = false,
   downloading = false,
   isEditing = false,
+  showHeader = true,
   onRefine,
   onCopy,
   onDownload,
@@ -55,100 +57,102 @@ export function UnifiedCardShell({
   return (
     <div className="uc-card-shell">
       {/* 1. Integrated Header Bar */}
-      <div className="uc-header">
-        <div className="uc-header-brand">
-          <PlatformIcon id={platformId} size={15} color={brandColor} />
-          <span className="uc-brand-title">{platformName}</span>
-          <span className="uc-status-badge">• {status}</span>
-          {edited && <span className="uc-edited-tag">edited</span>}
-        </div>
+      {showHeader && (
+        <div className="uc-header">
+          <div className="uc-header-brand">
+            <PlatformIcon id={platformId} size={15} color={brandColor} />
+            <span className="uc-brand-title">{platformName}</span>
+            <span className="uc-status-badge">• {status}</span>
+            {edited && <span className="uc-edited-tag">edited</span>}
+          </div>
 
-        <div className="uc-header-actions">
-          {onRefine && (
-            <button
-              type="button"
-              className="uc-btn uc-btn-refine"
-              onClick={onRefine}
-              title="Refine with AI"
-            >
-              <Sparkles size={12} color={brandColor} />
-              <span>Refine</span>
-            </button>
-          )}
-
-          {onCopy && (
-            <button
-              type="button"
-              className={`uc-btn ${copied ? 'copied' : ''}`}
-              onClick={onCopy}
-              title="Copy Content"
-            >
-              {copied ? <Check size={12} color="#10B981" /> : <Copy size={12} />}
-              <span>{copied ? 'Copied' : 'Copy'}</span>
-            </button>
-          )}
-
-          {/* More Options Dropdown Menu */}
-          <div className="uc-dropdown-wrapper" ref={menuRef}>
-            <button
-              type="button"
-              className="uc-btn-icon"
-              onClick={() => setMenuOpen(prev => !prev)}
-              title="More Actions"
-            >
-              <MoreHorizontal size={14} />
-            </button>
-
-            {menuOpen && (
-              <div className="uc-dropdown-menu">
-                {onRefine && (
-                  <button
-                    type="button"
-                    className="uc-menu-item"
-                    onClick={() => { setMenuOpen(false); onRefine(); }}
-                  >
-                    <Sparkles size={13} color={brandColor} />
-                    <span>Refine with AI</span>
-                  </button>
-                )}
-                {onCopy && (
-                  <button
-                    type="button"
-                    className="uc-menu-item"
-                    onClick={() => { setMenuOpen(false); onCopy(); }}
-                  >
-                    <Copy size={13} />
-                    <span>Copy Content</span>
-                  </button>
-                )}
-                {onDownload && (
-                  <button
-                    type="button"
-                    className="uc-menu-item"
-                    onClick={() => { setMenuOpen(false); onDownload(); }}
-                    disabled={downloading}
-                  >
-                    <Download size={13} />
-                    <span>Download Kit</span>
-                  </button>
-                )}
-                {shareUrl && (
-                  <a
-                    href={shareUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="uc-menu-item"
-                    onClick={() => setMenuOpen(false)}
-                  >
-                    <ExternalLink size={13} />
-                    <span>Share Post</span>
-                  </a>
-                )}
-              </div>
+          <div className="uc-header-actions">
+            {onRefine && (
+              <button
+                type="button"
+                className="uc-btn uc-btn-refine"
+                onClick={onRefine}
+                title="Refine with AI"
+              >
+                <Sparkles size={12} color={brandColor} />
+                <span>Refine</span>
+              </button>
             )}
+
+            {onCopy && (
+              <button
+                type="button"
+                className={`uc-btn ${copied ? 'copied' : ''}`}
+                onClick={onCopy}
+                title="Copy Content"
+              >
+                {copied ? <Check size={12} color="#10B981" /> : <Copy size={12} />}
+                <span>{copied ? 'Copied' : 'Copy'}</span>
+              </button>
+            )}
+
+            {/* More Options Dropdown Menu */}
+            <div className="uc-dropdown-wrapper" ref={menuRef}>
+              <button
+                type="button"
+                className="uc-btn-icon"
+                onClick={() => setMenuOpen(prev => !prev)}
+                title="More Actions"
+              >
+                <MoreHorizontal size={14} />
+              </button>
+
+              {menuOpen && (
+                <div className="uc-dropdown-menu">
+                  {onRefine && (
+                    <button
+                      type="button"
+                      className="uc-menu-item"
+                      onClick={() => { setMenuOpen(false); onRefine(); }}
+                    >
+                      <Sparkles size={13} color={brandColor} />
+                      <span>Refine with AI</span>
+                    </button>
+                  )}
+                  {onCopy && (
+                    <button
+                      type="button"
+                      className="uc-menu-item"
+                      onClick={() => { setMenuOpen(false); onCopy(); }}
+                    >
+                      <Copy size={13} />
+                      <span>Copy Content</span>
+                    </button>
+                  )}
+                  {onDownload && (
+                    <button
+                      type="button"
+                      className="uc-menu-item"
+                      onClick={() => { setMenuOpen(false); onDownload(); }}
+                      disabled={downloading}
+                    >
+                      <Download size={13} />
+                      <span>Download Kit</span>
+                    </button>
+                  )}
+                  {shareUrl && (
+                    <a
+                      href={shareUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="uc-menu-item"
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      <ExternalLink size={13} />
+                      <span>Share Post</span>
+                    </a>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* 2. Authentic 1:1 Social Card Body */}
       <div className="uc-body">
