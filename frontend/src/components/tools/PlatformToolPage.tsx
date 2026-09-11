@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Sparkles, Copy, Download, Check, Plus, MoreHorizontal, Send, X, Video } from 'lucide-react'
+import { Sparkles, Copy, Download, Check, Plus, MoreHorizontal, X, Video } from 'lucide-react'
 import { PLATFORM_MAP } from '@@config/platforms'
 import { MAX_IMAGE_SIZE_BYTES } from '@@config/limits'
 import { useAppStore, type PlatformPost } from '../../store/app'
@@ -462,9 +462,8 @@ export function PlatformToolPage({ platformId }: PlatformToolPageProps) {
               className={styles.composerTextarea}
             />
 
-            {/* Send / Paperplane Icon & Generate Button */}
+            {/* Generate Button */}
             <div className={styles.composerRightActions}>
-              <Send size={16} className={styles.sendIcon} />
               <button
                 type="button"
                 onClick={handleGenerateOrRefine}

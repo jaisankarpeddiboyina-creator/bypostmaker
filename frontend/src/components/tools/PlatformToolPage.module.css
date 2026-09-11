@@ -359,10 +359,6 @@
   flex-shrink: 0;
 }
 
-.sendIcon {
-  color: var(--color-text-muted);
-}
-
 .generateCtaBtn {
   display: inline-flex;
   align-items: center;
@@ -416,8 +412,5 @@
   .mainContent {
     padding: 20px 12px 32px;
     gap: 16px;
-  }
-  .sendIcon {
-    display: none;
   }
 }
