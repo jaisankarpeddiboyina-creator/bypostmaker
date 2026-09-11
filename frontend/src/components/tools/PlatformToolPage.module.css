@@ -1,0 +1,423 @@
+/* ─────────────────────────────────────────────────────────
+   PlatformToolPage.module.css
+   Colocated CSS Module for PlatformToolPage.
+   Uses PostMaker design tokens from globals.css.
+   ───────────────────────────────────────────────────────── */
+
+.pageContainer {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  position: relative;
+}
+
+.bgCanvas {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at 50% 0%, rgba(247, 37, 133, 0.06) 0%, transparent 60%),
+              radial-gradient(circle at 85% 30%, rgba(56, 189, 248, 0.08) 0%, transparent 50%),
+              linear-gradient(180deg, #F8FAFC 0%, #F1F5F9 100%);
+  pointer-events: none;
+  z-index: -10;
+}
+
+/* ── Top Header ────────────────────────────────────────── */
+.topHeader {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: var(--backdrop-blur);
+  -webkit-backdrop-filter: var(--backdrop-blur);
+  border-bottom: 1px solid var(--color-border);
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.headerLogoLink {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  transition: opacity var(--transition);
+}
+
+.headerLogoLink:hover {
+  opacity: 0.9;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.openAppBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-solid);
+  color: var(--color-text-primary);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all var(--transition);
+}
+
+.openAppBtn:hover {
+  background: #F1F5F9;
+  border-color: var(--color-primary-start);
+  color: var(--color-primary-end);
+}
+
+.userAvatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #E2E8F0;
+  color: var(--color-text-primary);
+  font-weight: 700;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+}
+
+/* ── Main Centered Content Layout ──────────────────────── */
+.mainContent {
+  flex: 1;
+  max-width: 560px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 32px 16px 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+/* Hidden File Input */
+.hiddenFileInput {
+  display: none !important;
+}
+
+/* ── Platform Hero Section ─────────────────────────────── */
+.platformHero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.platformIconBadge {
+  padding: 14px;
+  border-radius: var(--radius-card);
+  background: var(--color-surface-solid);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.platformTitle {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--color-text-primary);
+}
+
+/* ── Native Card Wrapper ───────────────────────────────── */
+.cardWrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.cardContainer {
+  width: 100%;
+  max-width: 480px;
+}
+
+/* ── Char Counter & Share Link Bar ─────────────────────── */
+.metaRow {
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.shareLink {
+  font-weight: 700;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: opacity var(--transition);
+}
+
+.shareLink:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
+/* ── Action Buttons Bar (Image 3 Style) ───────────────── */
+.actionsBar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.actionPillBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-solid);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: all var(--transition);
+}
+
+.actionPillBtn:hover:not(:disabled) {
+  background: #F8FAFC;
+  border-color: var(--color-primary-start);
+  transform: translateY(-1px);
+}
+
+.actionPillBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.actionIconBtn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--color-surface-solid);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: all var(--transition);
+}
+
+.actionIconBtn:hover {
+  background: #F8FAFC;
+  border-color: var(--color-primary-start);
+  color: var(--color-primary-start);
+}
+
+/* ── Floating Composer Container ───────────────────────── */
+.composerSection {
+  width: 100%;
+  max-width: 540px;
+}
+
+/* Attached Media Preview Row */
+.attachedMediaRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding: 8px 12px;
+  background: var(--color-surface-solid);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  overflow-x: auto;
+}
+
+.attachedTile {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 1px solid var(--color-border);
+}
+
+.attachedTile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.attachedRemoveBtn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.8);
+  color: #FFFFFF;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.attachedRemoveBtn:hover {
+  background: #EF4444;
+}
+
+/* Pill Composer Card */
+.composerCard {
+  width: 100%;
+  background: var(--color-surface-solid);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+  padding: 8px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: all var(--transition);
+}
+
+.composerCard:focus-within {
+  border-color: var(--color-primary-start);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2), 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.attachmentPlusBtn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #F1F5F9;
+  border: 1px solid #E2E8F0;
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all var(--transition);
+}
+
+.attachmentPlusBtn:hover:not(:disabled) {
+  background: #E2E8F0;
+  color: var(--color-text-primary);
+  border-color: var(--color-primary-start);
+}
+
+.attachmentPlusBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.composerTextarea {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--color-text-primary);
+  line-height: 1.5;
+  resize: none;
+  padding: 6px 4px;
+  max-height: 96px;
+}
+
+.composerTextarea::placeholder {
+  color: var(--color-text-placeholder);
+}
+
+.composerRightActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.sendIcon {
+  color: var(--color-text-muted);
+}
+
+.generateCtaBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 22px;
+  border-radius: var(--radius-pill);
+  border: none;
+  background: var(--gradient-primary);
+  box-shadow: var(--shadow-btn);
+  color: #FFFFFF;
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+
+.generateCtaBtn:hover:not(:disabled) {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.generateCtaBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Footer ────────────────────────────────────────────── */
+.footer {
+  margin-top: 24px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.footerBrand {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+/* ── Responsive Adjustments ───────────────────────────── */
+@media (max-width: 768px) {
+  .topHeader {
+    padding: 12px 16px;
+  }
+  .mainContent {
+    padding: 20px 12px 32px;
+    gap: 16px;
+  }
+  .sendIcon {
+    display: none;
+  }
+}
