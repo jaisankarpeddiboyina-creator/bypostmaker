@@ -46,13 +46,13 @@ export function PlatformToolPage({ platformId }: PlatformToolPageProps) {
   const videoInputRef = useRef<HTMLInputElement>(null)
   const plusMenuRef = useRef<HTMLDivElement>(null)
 
-  // BUG 1 FIX: Always initialize a fresh empty draft campaign post for platformId on page mount
+  // BUG FIX: Initialize a fresh empty draft campaign post with status: 'pending' on page mount
   useEffect(() => {
     if (!platform) return
     const initialPost: PlatformPost = {
       platformId,
       content: '',
-      status: 'done',
+      status: 'pending',
       edited: false,
     }
     setCampaign({
@@ -99,7 +99,7 @@ export function PlatformToolPage({ platformId }: PlatformToolPageProps) {
   const currentPost: PlatformPost = campaign?.posts[platformId] || {
     platformId,
     content: '',
-    status: 'done',
+    status: 'pending',
     edited: false,
   }
 
