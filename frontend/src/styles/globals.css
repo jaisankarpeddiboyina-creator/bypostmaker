@@ -100,10 +100,11 @@
   --transition-slow: 280ms cubic-bezier(0.16, 1, 0.3, 1);
 
   /* ── Layout ──────────────────────────────────────────────── */
-  --sidebar-width:  230px;
-  --topbar-height:  64px;
-  --content-px:     32px;
-  --content-px-mobile: 16px;
+  --sidebar-width:           230px;
+  --sidebar-collapsed-width: 68px;
+  --topbar-height:           64px;
+  --content-px:              32px;
+  --content-px-mobile:       16px;
 
   /* ── Responsive Fluid Spacing (clamp: min, fluid, max) ─── */
   /* Usage: padding: var(--space-page-x)  → auto-scales 16px→32px */

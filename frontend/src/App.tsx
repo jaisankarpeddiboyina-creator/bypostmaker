@@ -13,6 +13,7 @@ import { ExportModal } from './components/ExportModal'
 import { AssetPickerModal } from './components/AssetPickerModal'
 import { FeedbackModal } from './components/FeedbackModal'
 import { ShareModal } from './components/ShareModal'
+import appStyles from './App.module.css'
 
 const AppPage = lazy(() => import('./pages/AppPage'))
 const LandingPage = lazy(() => import('./pages/LandingPage'))
@@ -56,14 +57,18 @@ function FeedbackModalWrapper() {
 
 function AppShell({ children }: { children: React.ReactNode }) {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
+  const sidebarCollapsed = useAppStore(s => s.sidebarCollapsed)
 
   return (
-    <div className="app-shell-container">
+    <div className={appStyles['app-shell-container']}>
       <div className="app-fixed-bg-canvas" />
       <Sidebar isOpen={isMobileSidebarOpen} onClose={() => setIsMobileSidebarOpen(false)} />
-      <div className="app-shell-content">
+      <div className={[
+        appStyles['app-shell-content'],
+        sidebarCollapsed ? appStyles['sidebar-collapsed'] : ''
+      ].filter(Boolean).join(' ')}>
         <Topbar onMenuClick={() => setIsMobileSidebarOpen(true)} />
-        <main className="app-shell-main">
+        <main className={appStyles['app-shell-main']}>
           {children}
         </main>
       </div>
@@ -71,40 +76,6 @@ function AppShell({ children }: { children: React.ReactNode }) {
       <ExportModalWrapper />
       <ShareModalWrapper />
       <FeedbackModalWrapper />
-
-      <style>{`
-        .app-shell-container {
-          display: flex;
-          width: 100vw;
-          height: 100vh;
-          overflow: hidden;
-          background: transparent;
-        }
-
-        .app-shell-content {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          min-width: 0;
-          height: 100%;
-          overflow: hidden;
-          margin-left: var(--sidebar-width);
-          transition: margin-left var(--transition);
-        }
-
-        .app-shell-main {
-          flex: 1;
-          overflow-y: auto;
-          position: relative;
-          height: calc(100vh - 64px);
-        }
-
-        @media (max-width: 768px) {
-          .app-shell-content {
-            margin-left: 0;
-          }
-        }
-      `}</style>
     </div>
   )
 }
