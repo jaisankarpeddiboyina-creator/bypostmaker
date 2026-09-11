@@ -16,7 +16,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
   const getBreadcrumb = () => {
     const path = location.pathname
     if (path.startsWith('/app/create')) return { section: 'Studio', page: 'New Campaign' }
-    if (path.startsWith('/app/history')) return { section: 'Studio', page: 'Generations Hub' }
+    if (path.startsWith('/app/history')) return { section: 'Studio', page: 'History' }
     if (path.startsWith('/app/brand-kit')) return { section: 'Brand', page: 'Brand Kit Studio' }
     if (path.startsWith('/app/billing')) return { section: 'Account', page: 'Billing & Subscriptions' }
     if (path.startsWith('/app/settings')) return { section: 'Account', page: 'Settings' }

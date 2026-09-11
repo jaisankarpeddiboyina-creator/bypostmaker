@@ -48,7 +48,7 @@ export function Sidebar({ isOpen, onClose, onUpgradeClick }: SidebarProps) {
     { label: 'Create Post', path: '/app/create', icon: PlusCircle, highlight: true },
     { label: 'Brand Kit', path: '/app/brand-kit', icon: Bookmark },
     { label: 'Media Studio', path: '/app/media', icon: Image },
-    { label: 'My Generations', path: '/app/history', icon: History },
+    { label: 'History', path: '/app/history', icon: History },
     { label: 'Billing', path: '/app/billing', icon: CreditCard },
     ...(user?.role === 'admin' ? [{ label: 'Admin Panel', path: '/admin', icon: Shield }] : [])
   ]
