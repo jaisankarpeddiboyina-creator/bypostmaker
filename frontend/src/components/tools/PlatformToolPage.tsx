@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Sparkles, Copy, Download, Check, Plus, MoreHorizontal, X, Video } from 'lucide-react'
+import { Sparkles, Copy, Download, Check, Plus, MoreHorizontal, X, Video, Upload, Image as ImageIcon } from 'lucide-react'
 import { PLATFORM_MAP } from '@@config/platforms'
 import { MAX_IMAGE_SIZE_BYTES } from '@@config/limits'
 import { useAppStore, type PlatformPost } from '../../store/app'
@@ -29,38 +29,64 @@ export function PlatformToolPage({ platformId }: PlatformToolPageProps) {
     removeImageFile,
     videoFile,
     setVideoFile,
+    useBrandKit,
+    setUseBrandKit,
+    openAssetPicker,
   } = useAppStore()
 
   const [promptText, setPromptText] = useState('')
   const [isRefinement, setIsRefinement] = useState(false)
   const [copied, setCopied] = useState(false)
   const [downloading, setDownloading] = useState(false)
+  const [showPlusMenu, setShowPlusMenu] = useState(false)
+  const [brandKitName, setBrandKitName] = useState<string | null>(null)
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
+  const videoInputRef = useRef<HTMLInputElement>(null)
+  const plusMenuRef = useRef<HTMLDivElement>(null)
 
-  // Seed campaign store context if campaign is null or missing platform post entry
+  // BUG 1 FIX: Always initialize a fresh empty draft campaign post for platformId on page mount
   useEffect(() => {
     if (!platform) return
-    const currentCampaign = useAppStore.getState().campaign
-    if (!currentCampaign || !currentCampaign.posts[platformId]) {
-      const initialPost: PlatformPost = {
-        platformId,
-        content: '',
-        status: 'done',
-        edited: false,
-      }
-      setCampaign({
-        id: currentCampaign?.id || '',
-        prompt: currentCampaign?.prompt || '',
-        platforms: Array.from(new Set([...(currentCampaign?.platforms || []), platformId])),
-        posts: { ...(currentCampaign?.posts || {}), [platformId]: initialPost },
-        videoUrl: currentCampaign?.videoUrl || null,
-        imageFiles: currentCampaign?.imageFiles || [],
-        videoFile: currentCampaign?.videoFile || null,
-      })
+    const initialPost: PlatformPost = {
+      platformId,
+      content: '',
+      status: 'done',
+      edited: false,
     }
+    setCampaign({
+      id: '',
+      prompt: '',
+      platforms: [platformId],
+      posts: { [platformId]: initialPost },
+      videoUrl: null,
+      imageFiles: [],
+      videoFile: null,
+    })
   }, [platformId, platform, setCampaign])
+
+  // Fetch brand kit name if user has one configured
+  useEffect(() => {
+    api.brandKit.get()
+      .then(res => {
+        if (res?.brandKit?.name) {
+          setBrandKitName(res.brandKit.name)
+        }
+      })
+      .catch(() => {})
+  }, [])
+
+  // Close plus action popover menu on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (plusMenuRef.current && !plusMenuRef.current.contains(e.target as Node)) {
+        setShowPlusMenu(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   if (!platform) {
     return (
@@ -96,6 +122,31 @@ export function PlatformToolPage({ platformId }: PlatformToolPageProps) {
       addImageFiles(validFiles)
     }
     e.target.value = ''
+  }
+
+  const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 100 * 1024 * 1024) {
+      addToast('Video exceeds 100MB limit.', 'error')
+      e.target.value = ''
+      return
+    }
+    setVideoFile(file)
+    e.target.value = ''
+  }
+
+  const handleOpenAssetPicker = () => {
+    openAssetPicker({
+      accept: ['image'],
+      onSelect: (file) => {
+        if (file.size > MAX_IMAGE_SIZE_BYTES) {
+          addToast(`Image "${file.name}" exceeds the 15MB limit.`, 'error')
+        } else {
+          addImageFiles([file])
+        }
+      }
+    })
   }
 
   const handleCopy = async () => {
@@ -296,15 +347,24 @@ export function PlatformToolPage({ platformId }: PlatformToolPageProps) {
 
       {/* Main Content Area */}
       <main className={styles.mainContent}>
-        {/* Hidden File Input for Image Upload */}
+        {/* Hidden File Inputs */}
         <input
           ref={imageInputRef}
           type="file"
-          accept="image/*,video/*"
+          accept="image/*"
           multiple
           style={{ display: 'none' }}
           className={styles.hiddenFileInput}
           onChange={handleImageSelect}
+          disabled={isGenerating}
+        />
+        <input
+          ref={videoInputRef}
+          type="file"
+          accept="video/*"
+          style={{ display: 'none' }}
+          className={styles.hiddenFileInput}
+          onChange={handleVideoSelect}
           disabled={isGenerating}
         />
 
@@ -430,16 +490,69 @@ export function PlatformToolPage({ platformId }: PlatformToolPageProps) {
 
           {/* Pill Composer Input Container */}
           <div className={styles.composerCard}>
-            {/* Attachment "+" Button */}
-            <button
-              type="button"
-              onClick={() => imageInputRef.current?.click()}
-              disabled={isGenerating}
-              className={styles.attachmentPlusBtn}
-              title="Add image/video attachment"
-            >
-              <Plus size={18} />
-            </button>
+            {/* Attachment "+" Button & Dropdown Menu */}
+            <div className={styles.plusMenuContainer} ref={plusMenuRef}>
+              <button
+                type="button"
+                onClick={() => setShowPlusMenu(!showPlusMenu)}
+                disabled={isGenerating}
+                className={`${styles.attachmentPlusBtn} ${showPlusMenu ? styles.active : ''}`}
+                title="Add media or apply brand kit"
+              >
+                <Plus size={18} />
+              </button>
+
+              {/* Plus Action Popover Menu */}
+              {showPlusMenu && (
+                <div className={styles.plusPopoverMenu}>
+                  <div className={styles.popoverSectionTitle}>
+                    <Sparkles size={12} /> AI & Brand Controls
+                  </div>
+
+                  {/* Brand Kit Toggle */}
+                  <label className={`${styles.popoverItemToggle} ${useBrandKit ? styles.active : ''}`}>
+                    <input
+                      type="checkbox"
+                      checked={useBrandKit}
+                      onChange={e => setUseBrandKit(e.target.checked)}
+                      disabled={isGenerating}
+                    />
+                    <span>Apply Brand Kit {brandKitName ? `(${brandKitName})` : ''}</span>
+                  </label>
+
+                  {/* Media Attachments */}
+                  <div className={styles.popoverSectionTitle} style={{ marginTop: 10 }}>
+                    <Upload size={12} /> Attach Media
+                  </div>
+                  <div className={styles.popoverMediaActions}>
+                    <button
+                      type="button"
+                      className={styles.popoverActionBtn}
+                      onClick={() => { imageInputRef.current?.click(); setShowPlusMenu(false); }}
+                      disabled={isGenerating || imageFiles.length >= 4 || !!videoFile}
+                    >
+                      <ImageIcon size={13} /> Upload Images ({imageFiles.length}/4)
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.popoverActionBtn}
+                      onClick={() => { handleOpenAssetPicker(); setShowPlusMenu(false); }}
+                      disabled={isGenerating || imageFiles.length >= 4 || !!videoFile}
+                    >
+                      <Sparkles size={13} /> Stock Photos Library
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.popoverActionBtn}
+                      onClick={() => { videoInputRef.current?.click(); setShowPlusMenu(false); }}
+                      disabled={isGenerating || !!videoFile || imageFiles.length > 0}
+                    >
+                      <Video size={13} /> Add Video MP4
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Textarea */}
             <textarea

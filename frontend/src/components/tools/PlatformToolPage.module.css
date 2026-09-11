@@ -308,6 +308,12 @@
   box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2), 0 10px 30px rgba(0, 0, 0, 0.1);
 }
 
+.plusMenuContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
 .attachmentPlusBtn {
   width: 36px;
   height: 36px;
@@ -323,14 +329,92 @@
   transition: all var(--transition);
 }
 
-.attachmentPlusBtn:hover:not(:disabled) {
+.attachmentPlusBtn:hover:not(:disabled),
+.attachmentPlusBtn.active {
   background: #E2E8F0;
-  color: var(--color-text-primary);
+  color: var(--color-primary-start);
   border-color: var(--color-primary-start);
 }
 
 .attachmentPlusBtn:disabled {
   opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.plusPopoverMenu {
+  position: absolute;
+  bottom: 48px;
+  left: 0;
+  width: 240px;
+  z-index: 100;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--color-surface-solid);
+  backdrop-filter: var(--backdrop-blur);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.popoverSectionTitle {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.popoverItemToggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  padding: 4px 0;
+  user-select: none;
+}
+
+.popoverItemToggle input[type="checkbox"] {
+  accent-color: var(--color-primary-start);
+  cursor: pointer;
+}
+
+.popoverMediaActions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.popoverActionBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  color: var(--color-text-primary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  transition: all var(--transition);
+}
+
+.popoverActionBtn:hover:not(:disabled) {
+  background: #F1F5F9;
+  border-color: var(--color-primary-start);
+  color: var(--color-primary-end);
+}
+
+.popoverActionBtn:disabled {
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
