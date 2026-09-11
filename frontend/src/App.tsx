@@ -241,6 +241,7 @@ export default function App() {
   }, [addToast])
 
   const SUBDOMAIN_ALIASES: Record<string, string> = { x: 'twitter' }
+  const NON_PLATFORM_SUBDOMAINS = new Set(['www', 'api', 'staging', 'dev', 'app', 'localhost'])
 
   const subdomainPlatformId = (() => {
     if (typeof window === 'undefined') return undefined
@@ -250,9 +251,18 @@ export default function App() {
     }
     const hostname = window.location.hostname.toLowerCase()
     const parts = hostname.split('.')
-    if (parts.length > 2) {
-      const sub = parts[0]
-      const resolved = SUBDOMAIN_ALIASES[sub] || sub
+    let candidate: string | undefined = undefined
+
+    if (hostname.includes('localhost')) {
+      if (parts.length >= 2 && parts[0] !== 'localhost') {
+        candidate = parts[0]
+      }
+    } else if (parts.length > 2) {
+      candidate = parts[0]
+    }
+
+    if (candidate && !NON_PLATFORM_SUBDOMAINS.has(candidate)) {
+      const resolved = SUBDOMAIN_ALIASES[candidate] || candidate
       if (PLATFORM_MAP[resolved]) return resolved
     }
     return undefined

@@ -757,18 +757,21 @@ export default {
     // Non-platform subdomains to ignore: www, api, staging, dev, app
     const isApiRequest = path.startsWith('/api/') || path === '/api'
     if (!isApiRequest) {
+      const nonPlatformSubdomains = new Set(['www', 'api', 'staging', 'dev', 'app', 'localhost'])
       const parts = hostname.split('.')
-      let subdomain = ''
-      if (parts.length > 2 && (hostname.endsWith('.bypostamaker.com') || hostname.endsWith('.localhost'))) {
-        subdomain = parts[0]
-      } else if (hostname.includes('localhost') && parts.length > 1 && parts[0] !== 'localhost') {
-        subdomain = parts[0]
+      let candidate = ''
+
+      if (hostname.includes('localhost')) {
+        if (parts.length >= 2 && parts[0] !== 'localhost') {
+          candidate = parts[0]
+        }
+      } else if (parts.length > 2) {
+        candidate = parts[0]
       }
 
-      const nonPlatformSubdomains = new Set(['www', 'api', 'staging', 'dev', 'app', 'localhost'])
-      if (subdomain && !nonPlatformSubdomains.has(subdomain)) {
+      if (candidate && !nonPlatformSubdomains.has(candidate)) {
         const SUBDOMAIN_ALIASES: Record<string, string> = { x: 'twitter' }
-        const resolvedId = SUBDOMAIN_ALIASES[subdomain] || subdomain
+        const resolvedId = SUBDOMAIN_ALIASES[candidate] || candidate
         if (PLATFORM_MAP[resolvedId]) {
           return handleSubdomainSPA(request, env, resolvedId)
         }
