@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { AlertCircle, Sparkles, RefreshCw, Loader2 } from 'lucide-react'
 import { PlatformIcon } from '../PlatformIcon'
+import { useAppStore } from '../../store/app'
+import { getAvatarUrl } from '../../lib/avatar'
 
 export function CardSkeleton({ statusText }: { statusText?: string }) {
   return (
@@ -48,6 +50,11 @@ export function CardSkeleton({ statusText }: { statusText?: string }) {
 }
 
 export function CardGenerating({ name, statusText }: { name: string; statusText?: string }) {
+  const { user } = useAppStore()
+  const avatarSrc = getAvatarUrl(user?.avatar_url, user?.updated_at)
+  const handleName = user?.name
+    ? user.name.toLowerCase().replace(/\s+/g, '.')
+    : (user?.email ? user.email.split('@')[0] : 'your.brand')
   const platformId = name.toLowerCase().replace(/\s*\(.*?\)\s*/g, '').replace(/[^a-z0-9]/g, '')
 
   return (
@@ -69,10 +76,14 @@ export function CardGenerating({ name, statusText }: { name: string; statusText?
         {/* Profile Row */}
         <div className="cs-profile-row">
           <div className="cs-avatar cs-avatar-placeholder">
-            {name[0]?.toUpperCase() || 'P'}
+            {avatarSrc ? (
+              <img src={avatarSrc} alt="" className="cs-avatar-img" />
+            ) : (
+              handleName[0]?.toUpperCase() || 'Y'
+            )}
           </div>
           <div className="cs-profile-info">
-            <span className="cs-username">postmaker</span>
+            <span className="cs-username">{handleName}</span>
             <span className="cs-time">Just now</span>
           </div>
         </div>
@@ -103,7 +114,7 @@ export function CardGenerating({ name, statusText }: { name: string; statusText?
         {/* Caption Preview Area */}
         <div className="cs-caption-preview">
           <div className="cs-caption-header">
-            <span className="cs-username">postmaker</span>
+            <span className="cs-username">{handleName}</span>
             <div className="cs-caption-status-pill">
               <Loader2 size={11} className="cs-spin-icon" />
               <span>Generating caption...</span>
@@ -170,19 +181,8 @@ export function CardError({ name, message, brandColor, onRetry }: {
         </div>
       </div>
 
-      {/* Body Canvas */}
+      {/* Single Error Body Canvas */}
       <div className="cs-body cs-error-body">
-        {/* Profile Row */}
-        <div className="cs-profile-row">
-          <div className="cs-avatar cs-avatar-placeholder">
-            {name[0]?.toUpperCase() || 'P'}
-          </div>
-          <div className="cs-profile-info">
-            <span className="cs-username">postmaker</span>
-            <span className="cs-time">Just now</span>
-          </div>
-        </div>
-
         {/* Failed Canvas Hero (Rose Gradient Background with Alert Badge Overlay) */}
         <div className="cs-hero-canvas cs-hero-canvas-error">
           <div className="cs-hero-icon-wrapper cs-error-icon-wrapper">
@@ -206,42 +206,6 @@ export function CardError({ name, message, brandColor, onRetry }: {
             </button>
           )}
         </div>
-
-        {/* Caption Area with Error Status */}
-        <div className="cs-caption-preview">
-          <div className="cs-caption-header">
-            <span className="cs-username">postmaker</span>
-            <div className="cs-caption-status-pill cs-status-pill-error">
-              <AlertCircle size={11} />
-              <span>Generation failed</span>
-            </div>
-          </div>
-          <div className="cs-shimmer cs-line cs-line-full" />
-          <div className="cs-shimmer cs-line cs-line-long" />
-
-          {/* Hashtag Pills Skeleton */}
-          <div className="cs-hashtag-pills-row">
-            <div className="cs-shimmer cs-pill-tag" />
-            <div className="cs-shimmer cs-pill-tag" />
-            <div className="cs-shimmer cs-pill-tag" />
-          </div>
-        </div>
-      </div>
-
-      {/* Footer Bar */}
-      <div className="cs-footer cs-footer-error">
-        <span className="cs-char-counter">0 chars</span>
-        {onRetry && (
-          <button
-            type="button"
-            onClick={handleClick}
-            disabled={retrying}
-            className="cs-retry-btn-footer"
-          >
-            <RefreshCw size={13} className={retrying ? 'cs-spin-icon' : ''} />
-            <span>{retrying ? 'Retrying...' : 'Try Again'}</span>
-          </button>
-        )}
       </div>
 
       <style>{cardStatesStyles}</style>
@@ -341,6 +305,13 @@ const cardStatesStyles = `
     height: 32px;
     border-radius: 50%;
     flex-shrink: 0;
+  }
+
+  .cs-avatar-img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
   }
 
   .cs-avatar-placeholder {
