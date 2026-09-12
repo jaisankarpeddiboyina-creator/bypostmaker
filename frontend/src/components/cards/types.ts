@@ -8,5 +8,4 @@ export interface CardProps {
   videoFile: File | null
   onOpenRefinement: () => void
   imageUrls?: string[]
-  showHeader?: boolean
 }

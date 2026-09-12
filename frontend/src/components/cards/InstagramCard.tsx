@@ -46,7 +46,7 @@ function FormattedContent({ content, linkColor }: { content: string; linkColor?:
   return <>{elements}</>
 }
 
-export function InstagramCard({ platformId, post, campaignId, imageFiles, videoFile, onOpenRefinement, showHeader }: CardProps) {
+export function InstagramCard({ platformId, post, campaignId, imageFiles, videoFile, onOpenRefinement }: CardProps) {
   const { user, updatePost, addToast } = useAppStore()
   const avatarSrc = getAvatarUrl(user?.avatar_url, user?.updated_at)
   const platform = PLATFORM_MAP[platformId]
@@ -160,7 +160,6 @@ export function InstagramCard({ platformId, post, campaignId, imageFiles, videoF
       copied={copied}
       downloading={downloading}
       isEditing={isEditing}
-      showHeader={showHeader}
       onRefine={onOpenRefinement}
       onCopy={handleCopy}
       onDownload={handleDownload}

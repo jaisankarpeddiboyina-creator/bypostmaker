@@ -389,7 +389,6 @@ export function PlatformToolPage({ platformId }: PlatformToolPageProps) {
               videoFile={videoFile}
               onOpenRefinement={handleRefineClick}
               isRefining={isRefinement}
-              showHeader={Boolean(currentPost.content)}
             />
           </div>
         </div>

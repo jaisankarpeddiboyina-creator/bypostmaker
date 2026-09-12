@@ -14,7 +14,6 @@ export interface UnifiedCardShellProps {
   copied?: boolean
   downloading?: boolean
   isEditing?: boolean
-  showHeader?: boolean
   onRefine?: () => void
   onCopy?: () => void
   onDownload?: () => void
@@ -33,7 +32,6 @@ export function UnifiedCardShell({
   copied = false,
   downloading = false,
   isEditing = false,
-  showHeader = true,
   onRefine,
   onCopy,
   onDownload,
@@ -57,7 +55,7 @@ export function UnifiedCardShell({
   return (
     <div className="uc-card-shell">
       {/* 1. Integrated Header Bar */}
-      {showHeader && (
+      {charCount > 0 && (
         <div className="uc-header">
           <div className="uc-header-brand">
             <PlatformIcon id={platformId} size={15} color={brandColor} />
