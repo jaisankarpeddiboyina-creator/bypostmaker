@@ -473,20 +473,54 @@
 
 /* ── Footer ────────────────────────────────────────────── */
 .footer {
-  margin-top: 24px;
+  margin-top: 40px;
+  padding-top: 24px;
+  border-top: 1px solid var(--color-border);
   text-align: center;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--color-text-muted);
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
 }
 
-.footerBrand {
-  font-size: 14px;
-  font-weight: 700;
+.footerLogoLink {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+}
+
+.footerLinks {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 18px;
+}
+
+.footerLinks a {
+  color: var(--color-text-muted);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  transition: color var(--transition);
+}
+
+.footerLinks a:hover {
   color: var(--color-text-primary);
 }
+
+.footerTagline {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.footerCopy {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
 
 /* ── Responsive Adjustments ───────────────────────────── */
 @media (max-width: 768px) {

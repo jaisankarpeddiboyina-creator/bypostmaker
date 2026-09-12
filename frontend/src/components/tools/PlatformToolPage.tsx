@@ -14,6 +14,14 @@ export interface PlatformToolPageProps {
   platformId: string
 }
 
+function getRootAppUrl(): string {
+  if (typeof window !== 'undefined' && window.location.hostname.includes('localhost')) {
+    const port = window.location.port ? `:${window.location.port}` : ''
+    return `http://localhost${port}`
+  }
+  return 'https://bypostamaker.com'
+}
+
 export function PlatformToolPage({ platformId }: PlatformToolPageProps) {
   const platform = PLATFORM_MAP[platformId]
   const {
@@ -325,6 +333,8 @@ export function PlatformToolPage({ platformId }: PlatformToolPageProps) {
     }
   }
 
+  const rootUrl = getRootAppUrl()
+
   return (
     <div className={styles.pageContainer}>
       {/* Ambient background canvas */}
@@ -332,11 +342,11 @@ export function PlatformToolPage({ platformId }: PlatformToolPageProps) {
 
       {/* Top Navigation Header */}
       <header className={styles.topHeader}>
-        <a href="/" className={styles.headerLogoLink}>
+        <a href={`${rootUrl}/`} className={styles.headerLogoLink}>
           <PostMakerLogo variant="full" size={26} />
         </a>
         <div className={styles.headerRight}>
-          <a href="/app" className={styles.openAppBtn}>
+          <a href={`${rootUrl}/app`} className={styles.openAppBtn}>
             Open App <span style={{ fontSize: 10 }}>↗</span>
           </a>
           <div className={styles.userAvatar}>
@@ -590,10 +600,25 @@ export function PlatformToolPage({ platformId }: PlatformToolPageProps) {
           </div>
         </div>
 
-        {/* Footer Tagline */}
+        {/* Footer with Legal Links & Branding */}
         <footer className={styles.footer}>
-          <p className={styles.footerBrand}>PostMaker</p>
-          <p>Post once. Be everywhere.</p>
+          <a href={`${rootUrl}/`} className={styles.footerLogoLink}>
+            <PostMakerLogo variant="full" size={22} />
+          </a>
+          <div className={styles.footerLinks}>
+            <a href={`${rootUrl}/tools`}>Post Generators</a>
+            <a href={`${rootUrl}/vs`}>Compare</a>
+            <a href={`${rootUrl}/for`}>Use Cases</a>
+            <a href={`${rootUrl}/privacy`}>Privacy</a>
+            <a href={`${rootUrl}/terms`}>Terms</a>
+            <a href={`${rootUrl}/refund`}>Refund Policy</a>
+            <a href={`${rootUrl}/cookies`}>Cookies</a>
+            <a href={`${rootUrl}/blog`}>Blog</a>
+            <a href="mailto:support@bypostamaker.com">Support</a>
+            <a href={`${rootUrl}/contact`}>Contact</a>
+          </div>
+          <p className={styles.footerTagline}>Post once. Be everywhere.</p>
+          <p className={styles.footerCopy}>© {new Date().getFullYear()} PostMaker. All rights reserved.</p>
         </footer>
       </main>
     </div>
