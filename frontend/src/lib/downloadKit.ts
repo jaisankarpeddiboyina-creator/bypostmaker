@@ -322,6 +322,36 @@ Video: included at root level if under 80MB, otherwise upload directly.`;
 }
 
 /**
+ * Cleans text for jsPDF WinAnsi / Latin-1 standard Helvetica encoding:
+ * - Converts typographic characters (smart quotes, dashes, bullets, ellipsis) to ASCII equivalents
+ * - Replaces common functional emojis with ASCII equivalents (e.g. checkmarks -> [x], crosses -> [ ], arrows -> ->, stars -> *)
+ * - Removes any remaining unencodable emojis, pictographs, and surrogate pairs to prevent garbled box glyphs
+ */
+export function cleanPdfText(text: string): string {
+  if (!text) return '';
+  return text
+    // Typographic replacements
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u201C\u201D]/g, '"')
+    .replace(/[\u2013\u2014]/g, '-')
+    .replace(/[\u2022\u2023\u25E6\u2043\u2219]/g, '*')
+    .replace(/\u2026/g, '...')
+    // Functional emoji replacements (using unicode flag /gu)
+    .replace(/(?:✅|✔️|☑️)/gu, '[x]')
+    .replace(/(?:❌|✖️|❎)/gu, '[ ]')
+    .replace(/(?:👉|➡️|▶️|➔)/gu, '->')
+    .replace(/(?:👈|⬅️|◀️)/gu, '<-')
+    .replace(/(?:⭐|🌟|✨|🔥|💡)/gu, '*')
+    // Unicode Extended Pictographic & Emojis removal
+    .replace(/\p{Extended_Pictographic}/gu, '')
+    // Remove any remaining stray surrogate codepoints
+    .replace(/[\uD800-\uDFFF]/g, '')
+    // Normalize duplicate spaces from stripped standalone emojis
+    .replace(/[ \t]{2,}/g, ' ')
+    .trim();
+}
+
+/**
  * Generates the download kit PDF entirely client-side.
  */
 export async function generateClientPdf(
@@ -340,38 +370,14 @@ export async function generateClientPdf(
 
   const pageW = 210;
   const pageH = 297;
-  const margin = 20;
-  const contentW = pageW - (margin * 2); // 170mm
+  const margin = 16;
+  const contentW = pageW - (margin * 2); // 178mm
 
   // Track warnings
   const warnings: string[] = [];
   let operationCount = 0;
   let resizeCapped = false;
-  const MAX_OPERATIONS = 60; // Same as ZIP
-
-  // Helper to draw text with word wrapping and auto-paging
-  const drawWrappedText = (
-    text: string,
-    startX: number,
-    startY: number,
-    maxWidth: number,
-    lineHeight: number,
-    textColor = [51, 65, 85] // Slate 700 default
-  ): number => {
-    doc.setTextColor(textColor[0], textColor[1], textColor[2]);
-    const lines = doc.splitTextToSize(text, maxWidth);
-    let currentY = startY;
-
-    for (const line of lines) {
-      if (currentY + lineHeight > pageH - margin) {
-        doc.addPage();
-        currentY = margin;
-      }
-      doc.text(line, startX, currentY);
-      currentY += lineHeight;
-    }
-    return currentY;
-  };
+  const MAX_OPERATIONS = 60;
 
   // Helper to convert hex brandColor to RGB
   const hexToRgb = (hex: string): { r: number; g: number; b: number } => {
@@ -380,170 +386,183 @@ export async function generateClientPdf(
       r: parseInt(result[1], 16),
       g: parseInt(result[2], 16),
       b: parseInt(result[3], 16)
-    } : { r: 124, g: 58, b: 237 }; // default violet
+    } : { r: 56, g: 189, b: 248 };
   };
 
-  // ==========================================
-  // PAGE 1: COVER PAGE
-  // ==========================================
-  
-  // Title Accent Band (Violet brand color)
-  doc.setFillColor(124, 58, 237); // #7c3aed
-  doc.rect(margin, 20, contentW, 4, 'F');
+  // Helper to draw text with word wrapping and auto-paging
+  const drawWrappedText = (
+    text: string,
+    startX: number,
+    startY: number,
+    maxWidth: number,
+    lineHeight: number,
+    textColor = [51, 65, 85]
+  ): number => {
+    doc.setTextColor(textColor[0], textColor[1], textColor[2]);
+    const safeText = cleanPdfText(text);
+    const lines = doc.splitTextToSize(safeText, maxWidth);
+    let currentY = startY;
 
-  // Title
+    for (const line of lines) {
+      if (currentY + lineHeight > pageH - margin - 12) {
+        doc.addPage();
+        currentY = margin + 12;
+      }
+      doc.text(line, startX, currentY);
+      currentY += lineHeight;
+    }
+    return currentY;
+  };
+
+  let currentY = margin;
+
+  // ==========================================
+  // PAGE 1: HEADER & COVER
+  // ==========================================
+
+  // Brand Accent Bar (Sky Blue Gradient style)
+  doc.setFillColor(56, 189, 248); // #38BDF8
+  doc.roundedRect(margin, currentY, contentW, 3.5, 1.5, 1.5, 'F');
+  currentY += 10;
+
+  // Header Title & Tagline
   doc.setFont('Helvetica', 'bold');
-  doc.setFontSize(26);
+  doc.setFontSize(22);
   doc.setTextColor(15, 23, 42); // Slate 900
-  doc.text('PostMaker', margin, 35);
+  doc.text('PostMaker', margin, currentY);
 
   doc.setFont('Helvetica', 'normal');
-  doc.setFontSize(14);
-  doc.setTextColor(71, 85, 105); // Slate 600
-  doc.text('Social Media Content Kit', margin, 42);
-
-  // Metadata Block
-  doc.setDrawColor(226, 232, 240); // Slate 200
-  doc.line(margin, 48, margin + contentW, 48);
-
-  doc.setFontSize(10);
+  doc.setFontSize(11);
   doc.setTextColor(100, 116, 139); // Slate 500
-  doc.text(`Campaign ID: ${campaignId}`, margin, 55);
-  doc.text(`Date Generated: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, margin, 60);
+  doc.text('Social Media Campaign Kit', margin, currentY + 5.5);
 
-  doc.line(margin, 65, margin + contentW, 65);
+  // Top-right Metadata Badge
+  const dateStr = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  doc.setFontSize(8.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text(`Campaign: ${campaignId.slice(0, 18)}`, pageW - margin, currentY - 1, { align: 'right' });
+  doc.text(`Date: ${dateStr}`, pageW - margin, currentY + 4, { align: 'right' });
 
-  // Prompt Section
+  currentY += 14;
+
+  // Divider Line
+  doc.setDrawColor(226, 232, 240); // Slate 200
+  doc.line(margin, currentY, margin + contentW, currentY);
+  currentY += 8;
+
+  // Prompt Section (Enclosed in a styled card)
   doc.setFont('Helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.setTextColor(15, 23, 42);
-  doc.text('Campaign Prompt:', margin, 73);
+  doc.setFontSize(9);
+  doc.setTextColor(100, 116, 139); // Slate 500
+  doc.text('CAMPAIGN PROMPT', margin, currentY);
+  currentY += 4;
+
+  const safePrompt = cleanPdfText(prompt);
+  const promptLines = doc.splitTextToSize(safePrompt, contentW - 12);
+  const promptBoxH = Math.max(16, promptLines.length * 4.8 + 8);
+
+  doc.setFillColor(248, 250, 252); // Slate 50
+  doc.setDrawColor(226, 232, 240); // Slate 200
+  doc.roundedRect(margin, currentY, contentW, promptBoxH, 2.5, 2.5, 'FD');
 
   doc.setFont('Helvetica', 'normal');
-  doc.setFontSize(10.5);
-  let promptY = drawWrappedText(prompt, margin, 79, contentW, 5.5, [71, 85, 105]);
+  doc.setFontSize(10);
+  doc.setTextColor(30, 41, 59); // Slate 800
+
+  let pY = currentY + 6;
+  for (const line of promptLines) {
+    doc.text(line, margin + 6, pY);
+    pY += 4.8;
+  }
+
+  currentY += promptBoxH + 8;
 
   // Video Section (if exists)
   if (videoFile) {
     const videoSizeMB = (videoFile.size / (1024 * 1024)).toFixed(1);
-    promptY += 8;
-    if (promptY > pageH - 50) {
-      doc.addPage();
-      promptY = margin;
-    }
-    doc.setFont('Helvetica', 'bold');
-    doc.setFontSize(12);
-    doc.setTextColor(15, 23, 42);
-    doc.text('Media Assets (Video):', margin, promptY);
-    promptY += 6;
-
-    doc.setDrawColor(254, 243, 199); // Amber 100
     doc.setFillColor(255, 251, 235); // Amber 50
-    doc.rect(margin, promptY, contentW, 20, 'F');
-    doc.rect(margin, promptY, contentW, 20, 'S');
+    doc.setDrawColor(253, 230, 138); // Amber 200
+    doc.roundedRect(margin, currentY, contentW, 16, 2, 2, 'FD');
 
-    doc.setFont('Helvetica', 'normal');
-    doc.setFontSize(9.5);
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(9);
     doc.setTextColor(180, 83, 9); // Amber 700
-    doc.text(`- Filename: ${videoFile.name} (${videoSizeMB} MB)`, margin + 5, promptY + 6);
-    doc.text('- Note: Video files cannot be embedded inside PDF documents.', margin + 5, promptY + 11);
-    doc.text('  Please upload the video file directly to your target platforms.', margin + 5, promptY + 16);
-    promptY += 24;
+    doc.text(`MEDIA ATTACHMENT (VIDEO): ${cleanPdfText(videoFile.name)} (${videoSizeMB} MB)`, margin + 6, currentY + 6);
+    doc.setFont('Helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(146, 64, 14); // Amber 800
+    doc.text('Video files cannot be embedded directly in PDF. Please upload the raw file to target platforms.', margin + 6, currentY + 11);
+    currentY += 22;
   }
 
-  // Platform Summary Table
-  promptY += 8;
-  if (promptY > pageH - 60) {
-    doc.addPage();
-    promptY = margin;
-  }
-
+  // ==========================================
+  // PLATFORM SUMMARY TABLE
+  // ==========================================
   doc.setFont('Helvetica', 'bold');
-  doc.setFontSize(12);
+  doc.setFontSize(11);
   doc.setTextColor(15, 23, 42);
-  doc.text('Generated Platforms:', margin, promptY);
-  promptY += 6;
+  doc.text(`Campaign Overview (${posts.length} Platforms)`, margin, currentY);
+  currentY += 5;
 
   // Table Header
-  doc.setFillColor(248, 250, 252); // Slate 50
-  doc.rect(margin, promptY, contentW, 8, 'F');
-  doc.setDrawColor(226, 232, 240);
-  doc.line(margin, promptY, margin + contentW, promptY);
-  doc.line(margin, promptY + 8, margin + contentW, promptY + 8);
+  const colW = { platform: 60, chars: 42, limit: 42, media: 34 };
+  doc.setFillColor(15, 23, 42); // Slate 900
+  doc.roundedRect(margin, currentY, contentW, 7.5, 1.5, 1.5, 'F');
 
   doc.setFont('Helvetica', 'bold');
-  doc.setFontSize(9);
-  doc.setTextColor(71, 85, 105);
-  doc.text('Platform', margin + 4, promptY + 5.5);
-  doc.text('Char Count', margin + 65, promptY + 5.5);
-  doc.text('Limit', margin + 115, promptY + 5.5);
-  doc.text('Images', margin + 150, promptY + 5.5);
+  doc.setFontSize(8.5);
+  doc.setTextColor(255, 255, 255);
+  doc.text('PLATFORM', margin + 4, currentY + 5);
+  doc.text('CHARACTERS', margin + colW.platform + 4, currentY + 5);
+  doc.text('LIMIT', margin + colW.platform + colW.chars + 4, currentY + 5);
+  doc.text('ASSETS', margin + colW.platform + colW.chars + colW.limit + 4, currentY + 5);
 
-  promptY += 8;
-  doc.setFont('Helvetica', 'normal');
-  doc.setTextColor(51, 65, 85);
+  currentY += 7.5;
 
-  for (const post of posts) {
+  // Table Rows with alternating background
+  posts.forEach((post, index) => {
     const platform = PLATFORM_MAP[post.platformId];
-    if (!platform) continue;
+    if (!platform) return;
 
-    if (promptY + 8 > pageH - margin) {
+    if (currentY + 7 > pageH - margin - 15) {
       doc.addPage();
-      promptY = margin;
-      // Redraw Table Header on new page
-      doc.setFillColor(248, 250, 252);
-      doc.rect(margin, promptY, contentW, 8, 'F');
-      doc.setFont('Helvetica', 'bold');
-      doc.text('Platform', margin + 4, promptY + 5.5);
-      doc.text('Char Count', margin + 65, promptY + 5.5);
-      doc.text('Limit', margin + 115, promptY + 5.5);
-      doc.text('Images', margin + 150, promptY + 5.5);
-      promptY += 8;
-      doc.setFont('Helvetica', 'normal');
+      currentY = margin + 12;
     }
 
-    const name = platform.name;
-    const charCount = post.content.length;
-    const limit = platform.charLimit ? String(platform.charLimit) : 'No limit';
-    const numImages = imageFiles.length > 0 ? String(Math.min(imageFiles.length, platform.maxImages)) : '0';
+    const rowBg = index % 2 === 0 ? [255, 255, 255] : [248, 250, 252];
+    doc.setFillColor(rowBg[0], rowBg[1], rowBg[2]);
+    doc.rect(margin, currentY, contentW, 7, 'F');
+    doc.setDrawColor(241, 245, 249);
+    doc.line(margin, currentY + 7, margin + contentW, currentY + 7);
 
-    doc.text(name, margin + 4, promptY + 5.5);
-    doc.text(String(charCount), margin + 65, promptY + 5.5);
-    doc.text(limit, margin + 115, promptY + 5.5);
-    doc.text(numImages, margin + 150, promptY + 5.5);
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(30, 41, 59);
+    doc.text(platform.name, margin + 4, currentY + 4.8);
 
-    doc.line(margin, promptY + 8, margin + contentW, promptY + 8);
-    promptY += 8;
-  }
+    doc.setFont('Helvetica', 'normal');
+    doc.setTextColor(71, 85, 105);
+    doc.text(String(post.content.length), margin + colW.platform + 4, currentY + 4.8);
+    doc.text(platform.charLimit ? `${platform.charLimit} chars` : 'No limit', margin + colW.platform + colW.chars + 4, currentY + 4.8);
+    doc.text(imageFiles.length > 0 ? `${Math.min(imageFiles.length, platform.maxImages)} img` : '0 img', margin + colW.platform + colW.chars + colW.limit + 4, currentY + 4.8);
 
-  // Footer on cover
-  doc.setFontSize(8.5);
-  doc.setTextColor(148, 163, 184); // Slate 400
-  doc.text('Generated by PostMaker - bypostamaker.com', margin, pageH - 12);
+    currentY += 7;
+  });
+
+  currentY += 10;
 
   // ==========================================
-  // PAGES 2+: PLATFORM SECTIONS
+  // PLATFORM DETAIL POST CARDS
   // ==========================================
   for (const post of posts) {
     const platform = PLATFORM_MAP[post.platformId];
     if (!platform) continue;
 
-    doc.addPage();
-    let y = 20;
-
-    // Platform Header Bar (in Platform's brand color)
     const rgb = hexToRgb(platform.brandColor);
-    doc.setFillColor(rgb.r, rgb.g, rgb.b);
-    doc.rect(margin, y, contentW, 12, 'F');
-
-    doc.setFont('Helvetica', 'bold');
-    doc.setFontSize(12.5);
-    doc.setTextColor(255, 255, 255); // White
-    doc.text(platform.name.toUpperCase(), margin + 4, y + 7.5);
-
-    y += 18;
-
-    // Extra fields warning/info (e.g. Subreddit)
+    const safeContent = cleanPdfText(post.content);
+    const textLines = doc.splitTextToSize(safeContent, contentW - 12);
+    
+    // Parse extra fields
     let extraFields: Record<string, string> = {};
     if (post.extraFields) {
       try {
@@ -555,106 +574,123 @@ export async function generateClientPdf(
       }
     }
 
-    if (extraFields && Object.keys(extraFields).length > 0) {
+    const extraFieldCount = Object.keys(extraFields).filter(k => extraFields[k]).length;
+    const postBodyHeight = (textLines.length * 4.8) + (extraFieldCount * 5) + 26;
+
+    // Check if card fits on current page, otherwise start clean page
+    if (currentY + postBodyHeight > pageH - margin - 15) {
+      doc.addPage();
+      currentY = margin + 12;
+    }
+
+    // Platform Header Bar
+    doc.setFillColor(rgb.r, rgb.g, rgb.b);
+    doc.roundedRect(margin, currentY, contentW, 9, 2, 2, 'F');
+
+    doc.setFont('Helvetica', 'bold');
+    doc.setFontSize(10.5);
+    doc.setTextColor(255, 255, 255);
+    doc.text(platform.name.toUpperCase(), margin + 6, currentY + 6.2);
+
+    // Right-aligned Character count badge
+    doc.setFontSize(8.5);
+    doc.setFont('Helvetica', 'normal');
+    const countBadge = platform.charLimit
+      ? `${post.content.length} / ${platform.charLimit} chars`
+      : `${post.content.length} chars`;
+    doc.text(countBadge, pageW - margin - 6, currentY + 6.2, { align: 'right' });
+
+    currentY += 9;
+
+    // Card Body Box
+    const cardTopY = currentY;
+    doc.setFillColor(252, 253, 255);
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(margin, cardTopY, contentW, postBodyHeight - 9, 2, 2, 'FD');
+
+    let bodyY = cardTopY + 6;
+
+    // Render extra fields if present
+    if (extraFieldCount > 0) {
       doc.setFont('Helvetica', 'bold');
-      doc.setFontSize(9.5);
+      doc.setFontSize(8.5);
       doc.setTextColor(71, 85, 105);
       for (const [key, value] of Object.entries(extraFields)) {
         if (value) {
-          doc.text(`${key}: ${value}`, margin, y);
-          y += 5;
+          doc.text(`${cleanPdfText(key)}: `, margin + 6, bodyY);
+          const keyWidth = doc.getTextWidth(`${cleanPdfText(key)}: `);
+          doc.setFont('Helvetica', 'normal');
+          doc.setTextColor(15, 23, 42);
+          doc.text(cleanPdfText(String(value)), margin + 6 + keyWidth, bodyY);
+          doc.setFont('Helvetica', 'bold');
+          doc.setTextColor(71, 85, 105);
+          bodyY += 5;
         }
       }
-      y += 3;
+      bodyY += 2;
     }
 
-    // Post Text Content
+    // Render post content lines
     doc.setFont('Helvetica', 'normal');
-    doc.setFontSize(10.5);
+    doc.setFontSize(9.5);
     doc.setTextColor(30, 41, 59); // Slate 800
 
-    // Split text by lines to preserve breaks
-    const textLines = post.content.split('\n');
-    for (const rawLine of textLines) {
-      // splitTextToSize wraps long lines
-      const wrapped = doc.splitTextToSize(rawLine || ' ', contentW);
-      for (const wl of wrapped) {
-        if (y + 5.5 > pageH - margin - 15) { // Leave room for footer/images
-          doc.addPage();
-          y = margin;
-        }
-        doc.text(wl, margin, y);
-        y += 5.5;
+    for (const line of textLines) {
+      if (bodyY + 4.8 > pageH - margin - 15) {
+        doc.addPage();
+        bodyY = margin + 12;
       }
+      doc.text(line, margin + 6, bodyY);
+      bodyY += 4.8;
     }
 
-    y += 6;
+    bodyY += 4;
 
-    // Platform limits info
-    const charCount = post.content.length;
-    doc.setFont('Helvetica', 'italic');
-    doc.setFontSize(8.5);
-    doc.setTextColor(100, 116, 139);
-    if (platform.charLimit) {
-      doc.text(`Character Count: ${charCount} / ${platform.charLimit}`, margin, y);
-    } else {
-      doc.text(`Character Count: ${charCount}`, margin, y);
-    }
-    y += 5;
-
-    // Clickable Share URL
+    // Clickable direct share link
     const shareUrl = platform.shareUrl(post.content, extraFields);
     if (shareUrl && shareUrl !== 'https://www.threads.net' && !shareUrl.startsWith('javascript:')) {
       doc.setFont('Helvetica', 'bold');
-      doc.setTextColor(rgb.r, rgb.g, rgb.b); // Accent color
-      doc.textWithLink('Click here to share directly', margin, y, { url: shareUrl });
-      y += 8;
-    } else {
-      y += 4;
+      doc.setFontSize(8.5);
+      doc.setTextColor(rgb.r, rgb.g, rgb.b);
+      doc.textWithLink(`-> Open in ${platform.name} to Share Directly`, margin + 6, bodyY, { url: shareUrl });
     }
 
-    // Horizontal divider
-    doc.setDrawColor(241, 245, 249); // Slate 100
-    doc.line(margin, y, margin + contentW, y);
-    y += 8;
+    currentY = cardTopY + postBodyHeight - 9 + 8;
 
-    // Process platform-specific images
+    // Resized Image Attachments for this platform
     if (imageFiles.length > 0 && platform.imageDimensions.length > 0) {
       const imagesToProcess = imageFiles.slice(0, platform.maxImages);
 
       doc.setFont('Helvetica', 'bold');
-      doc.setFontSize(10);
+      doc.setFontSize(9);
       doc.setTextColor(71, 85, 105);
-      doc.text('Resized Image Attachments:', margin, y);
-      y += 6;
+      doc.text(`Image Assets for ${platform.name}:`, margin, currentY);
+      currentY += 5;
 
       for (let imgIndex = 0; imgIndex < imagesToProcess.length; imgIndex++) {
         const imgFile = imagesToProcess[imgIndex];
         const imageMimeType = imgFile.type || 'image/jpeg';
 
-        // Check if file is too large
         if (imgFile.size > MAX_IMAGE_SIZE_BYTES) {
-          const skipMsg = `[WARNING] Image "${imgFile.name}" exceeds 15MB and was skipped to prevent memory crash.`;
+          const skipMsg = `[WARNING] Image "${cleanPdfText(imgFile.name)}" exceeds 15MB and was skipped to prevent memory crash.`;
           warnings.push(`[${platform.name}] ${skipMsg}`);
           
           doc.setFont('Helvetica', 'normal');
-          doc.setFontSize(9);
-          doc.setTextColor(239, 68, 68); // Red 500
-          doc.text(skipMsg, margin, y);
-          y += 5;
+          doc.setFontSize(8.5);
+          doc.setTextColor(239, 68, 68);
+          doc.text(skipMsg, margin, currentY);
+          currentY += 5;
           continue;
         }
 
         for (const dim of platform.imageDimensions) {
-          // Check operation cap
           if (operationCount >= MAX_OPERATIONS) {
             resizeCapped = true;
-
             doc.setFont('Helvetica', 'normal');
-            doc.setFontSize(9);
+            doc.setFontSize(8.5);
             doc.setTextColor(239, 68, 68);
-            doc.text(`[Resize Capped] ${dim.label} (${dim.width}x${dim.height})`, margin, y);
-            y += 5;
+            doc.text(`[Resize Capped] ${cleanPdfText(dim.label)} (${dim.width}x${dim.height})`, margin, currentY);
+            currentY += 5;
             continue;
           }
 
@@ -662,7 +698,6 @@ export async function generateClientPdf(
           onProgress(`Processing image ${imgIndex + 1}/${imagesToProcess.length} for ${platform.name} (${dim.label})...`);
 
           try {
-            // Resize image client-side via canvas
             const resizedBlob = await resizeImage(
               imgFile,
               dim.width,
@@ -670,7 +705,6 @@ export async function generateClientPdf(
               imageMimeType
             );
 
-            // Convert resized Blob to Base64
             const reader = new FileReader();
             const base64Promise = new Promise<string>((resolve) => {
               reader.onloadend = () => resolve(reader.result as string);
@@ -678,7 +712,6 @@ export async function generateClientPdf(
             });
             const base64 = await base64Promise;
 
-            // Draw image on PDF. Ensure it fits page boundaries
             const imgAspect = dim.width / dim.height;
             let drawW = 55;
             let drawH = drawW / imgAspect;
@@ -687,75 +720,98 @@ export async function generateClientPdf(
               drawW = drawH * imgAspect;
             }
 
-            if (y + drawH > pageH - margin) {
+            if (currentY + drawH + 8 > pageH - margin - 15) {
               doc.addPage();
-              y = margin + 5;
+              currentY = margin + 12;
             }
 
-            // Draw small label
             doc.setFont('Helvetica', 'normal');
-            doc.setFontSize(8.5);
+            doc.setFontSize(8);
             doc.setTextColor(100, 116, 139);
-            doc.text(`${dim.label} (${dim.width}x${dim.height})`, margin, y);
-            y += 2.5;
+            doc.text(`${cleanPdfText(dim.label)} (${dim.width}x${dim.height})`, margin, currentY);
+            currentY += 2.5;
 
-            // Add image with 0.8 JPEG quality compression (jspdf uses 'FAST' compression + jpeg type)
-            doc.addImage(base64, 'JPEG', margin, y, drawW, drawH, undefined, 'FAST');
-            y += drawH + 6;
+            doc.addImage(base64, 'JPEG', margin, currentY, drawW, drawH, undefined, 'FAST');
+            currentY += drawH + 6;
 
           } catch (err: any) {
             console.warn(`PDF Image processing error for ${platform.name}:`, err);
-            const errMsg = `[WARNING] Failed to resize image for ${dim.label} (${dim.width}x${dim.height}).`;
+            const errMsg = `[WARNING] Failed to resize image for ${cleanPdfText(dim.label)} (${dim.width}x${dim.height}).`;
             warnings.push(`[${platform.name}] ${errMsg} Error: ${err?.message || 'Unknown'}`);
 
             doc.setFont('Helvetica', 'normal');
-            doc.setFontSize(9);
+            doc.setFontSize(8.5);
             doc.setTextColor(239, 68, 68);
-            doc.text(errMsg, margin, y);
-            y += 5;
+            doc.text(errMsg, margin, currentY);
+            currentY += 5;
           }
         }
       }
     }
 
-    // Platform Page Footer
-    doc.setFont('Helvetica', 'normal');
-    doc.setFontSize(8.5);
-    doc.setTextColor(148, 163, 184);
-    doc.text(`PostMaker - ${platform.name} Kit`, margin, pageH - 12);
+    currentY += 4;
   }
 
   if (resizeCapped) {
     warnings.push(`[WARNING] Image resizing was capped at ${MAX_OPERATIONS} operations to prevent browser memory exhaustion. Some platform dimensions were skipped.`);
   }
 
-  // Draw warnings on a separate appendix page if any warnings were found
+  // Draw warnings on a separate appendix page if any warnings were logged
   if (warnings.length > 0) {
     doc.addPage();
-    
     doc.setFont('Helvetica', 'bold');
-    doc.setFontSize(14);
-    doc.setTextColor(15, 23, 42);
-    doc.text('Warnings & Generation Notes:', margin, 20);
-    
-    let warnY = 28;
-    doc.setFont('Helvetica', 'normal');
-    doc.setFontSize(9.5);
+    doc.setFontSize(12);
     doc.setTextColor(239, 68, 68);
+    doc.text('Warnings & Generation Notes:', margin, margin + 12);
+    
+    let warnY = margin + 20;
+    doc.setFont('Helvetica', 'normal');
+    doc.setFontSize(8.5);
+    doc.setTextColor(185, 28, 28);
     
     for (const w of warnings) {
-      if (warnY + 8 > pageH - margin) {
+      if (warnY + 8 > pageH - margin - 15) {
         doc.addPage();
-        warnY = margin;
+        warnY = margin + 12;
       }
-      const wrappedW = doc.splitTextToSize(w, contentW);
+      const safeW = cleanPdfText(w);
+      const wrappedW = doc.splitTextToSize(safeW, contentW);
       for (const ww of wrappedW) {
         doc.text(ww, margin, warnY);
-        warnY += 5;
+        warnY += 4.5;
       }
       warnY += 2;
     }
   }
 
+  // ==========================================
+  // GLOBAL HEADERS & "PAGE X OF Y" FOOTERS
+  // ==========================================
+  const totalPages = doc.getNumberOfPages();
+  for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+    doc.setPage(pageNum);
+
+    // Header on pages 2+
+    if (pageNum > 1) {
+      doc.setFont('Helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(148, 163, 184); // Slate 400
+      doc.text(`PostMaker · Content Kit · ID: ${campaignId.slice(0, 18)}`, margin, margin + 4);
+      doc.setDrawColor(241, 245, 249);
+      doc.line(margin, margin + 6, margin + contentW, margin + 6);
+    }
+
+    // Bottom Footer on all pages
+    doc.setDrawColor(226, 232, 240); // Slate 200
+    doc.line(margin, pageH - 14, margin + contentW, pageH - 14);
+
+    doc.setFont('Helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(148, 163, 184); // Slate 400
+    doc.text('PostMaker · Social Media Content Kit · bypostamaker.com', margin, pageH - 9);
+    doc.text(`Page ${pageNum} of ${totalPages}`, pageW - margin, pageH - 9, { align: 'right' });
+  }
+
   return doc.output('blob');
 }
+
