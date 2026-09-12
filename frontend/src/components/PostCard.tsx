@@ -131,23 +131,6 @@ function PostCardBase(props: PostCardProps) {
   const platform = PLATFORM_MAP[props.platformId]
   const brandColor = platform?.brandColor || '#F72585'
 
-  if (post.status === 'pending') {
-    return <CardSkeleton statusText={post.statusText} />
-  }
-  if (post.status === 'generating') {
-    return <CardGenerating name={platform?.name ?? props.platformId} statusText={post.statusText} />
-  }
-  if (post.status === 'error') {
-    return (
-      <CardError
-        name={platform?.name ?? props.platformId}
-        message={post.errorMessage ?? 'Generation failed'}
-        brandColor={brandColor}
-        onRetry={handleRetry}
-      />
-    )
-  }
-
   const CardComponent = cardMap[props.platformId] || StandardCardLazy
 
   const imageFiles = props.imageFiles.length > 0
@@ -161,10 +144,28 @@ function PostCardBase(props: PostCardProps) {
       })
 
   return (
-    <div className={`post-card ${props.isRefining ? 'is-refining' : ''}`}>
+    <div className={`post-card ${props.isRefining ? 'is-refining' : ''}`} style={{ position: 'relative' }}>
       <Suspense fallback={<CardFallback />}>
         <CardComponent {...props} imageFiles={imageFiles} />
       </Suspense>
+
+      {post.status === 'generating' && (
+        <CardGenerating
+          platformId={props.platformId}
+          name={platform?.name ?? props.platformId}
+          statusText={post.statusText}
+        />
+      )}
+
+      {post.status === 'error' && (
+        <CardError
+          platformId={props.platformId}
+          name={platform?.name ?? props.platformId}
+          message={post.errorMessage ?? 'Generation failed'}
+          brandColor={brandColor}
+          onRetry={handleRetry}
+        />
+      )}
     </div>
   )
 }
