@@ -303,6 +303,7 @@ export default function App() {
           <Route path="/cookies"  element={<LegalPage page="cookies" />} />
           <Route path="/shipping" element={<LegalPage page="shipping" />} />
           <Route path="/contact"  element={<LegalPage page="contact" />} />
+          <Route path="/about"    element={<LegalPage page="about" />} />
           <Route path="/pricing" element={<Navigate to="/#pricing" replace />} />
 
           <Route path="*" element={<Navigate to="/" replace />} />

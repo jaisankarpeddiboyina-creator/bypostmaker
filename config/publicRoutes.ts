@@ -42,6 +42,7 @@ const STATIC_PUBLIC_PATHS = [
   '/cookies',
   '/shipping',
   '/contact',
+  '/about',
 ] as const
 
 /**

@@ -594,6 +594,7 @@ export default function LandingPage() {
             <a href="/cookies">Cookies</a>
             <a href="/blog">Blog</a>
             <a href="mailto:support@bypostamaker.com">Support</a>
+            <a href="/about">About</a>
             <a href="/contact">Contact</a>
           </div>
           <div className="footer-copy">© {new Date().getFullYear()} PostMaker. All rights reserved.</div>

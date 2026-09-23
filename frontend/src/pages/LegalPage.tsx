@@ -214,9 +214,36 @@ India
 We respond to all queries within 24 hours on business days. Formal requests (data access/deletion, billing disputes) may take longer, as noted in our Privacy and Refund policies.
     `,
   },
+
+  about: {
+    title: 'About PostMaker',
+    body: `
+Last updated: ${UPDATED}
+
+## What We Do
+
+PostMaker turns a single prompt — and, optionally, a photo — into ready-to-post captions tailored for 30+ social platforms, including LinkedIn, X/Twitter, Instagram, TikTok, and Reddit. Instead of rewriting the same idea by hand for every platform's tone and format, you write it once and get a full content kit back in seconds.
+
+## How It Works
+
+When you upload an image, our AI analyzes it once, then generates platform-specific captions in parallel for every platform you select — so a single generation request produces content matched to each platform's style, length, and conventions.
+
+## Why We Built It
+
+Anyone who posts on more than one platform knows the drill: the same announcement needs a different voice on LinkedIn than it does on X or Instagram. We built PostMaker to remove that repetitive work, so more time goes into the idea and less into reformatting it six different ways.
+
+## Our Approach
+
+We don't sell your data, and we don't share it with third parties for advertising purposes — see our Privacy Policy for the full detail. Our goal is a tool that's fast, genuinely useful, and respects the content you put into it.
+
+## Contact
+
+${EMAIL}
+    `,
+  },
 }
 
-export default function LegalPage({ page }: { page: 'privacy' | 'terms' | 'refund' | 'cookies' | 'shipping' | 'contact' }) {
+export default function LegalPage({ page }: { page: 'privacy' | 'terms' | 'refund' | 'cookies' | 'shipping' | 'contact' | 'about' }) {
   const navigate = useNavigate()
   const content = CONTENT[page]
   if (!content) return null
