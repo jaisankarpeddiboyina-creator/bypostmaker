@@ -159,6 +159,9 @@ interface AppStore {
   viewMode: 'create' | 'results'
   setViewMode: (v: 'create' | 'results') => void
 
+  resultsFilterGroup: string
+  setResultsFilterGroup: (g: string) => void
+
   showExportModal: boolean
   setShowExportModal: (v: boolean) => void
   exportPayload: ExportPayload | null
@@ -306,6 +309,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   showFeedbackModal: false,
   setShowFeedbackModal: (v) => set({ showFeedbackModal: v }),
+
+  resultsFilterGroup: 'all',
+  setResultsFilterGroup: (g) => set({ resultsFilterGroup: g }),
 
   sidebarCollapsed: typeof window !== 'undefined' ? localStorage.getItem('pm_sidebar_collapsed') === 'true' : false,
   setSidebarCollapsed: (v) => {
