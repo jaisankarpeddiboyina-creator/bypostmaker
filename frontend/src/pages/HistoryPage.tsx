@@ -361,6 +361,9 @@ export default function HistoryPage() {
       {/* ── HISTORY HEADER BAR ──────────────────────────────────────────── */}
       <div className="hx-bar">
 
+        {/* Row 1: controls */}
+        <div className="hx-bar-row-1">
+
         {/* Left group: Search + Generation Kit pager */}
         <div className="hx-bar-left">
 
@@ -474,43 +477,9 @@ export default function HistoryPage() {
           </div>
         </div>
 
-        {/* Right group: platform icon rail + dropdowns */}
+        {/* Right group: dropdowns */}
         <div className="hx-bar-right">
 
-          {/* Platform icon chips rail */}
-          <div className="hx-platform-rail">
-            {visiblePlatforms.map(id => (
-              <button
-                key={id}
-                type="button"
-                className="hx-chip-btn"
-                title={`Jump to ${PLATFORM_MAP[id]?.name || id}`}
-                onClick={() => scrollToCard(id)}
-              >
-                <PlatformIcon id={id} size={15} />
-              </button>
-            ))}
-            {!showAllPlatforms && hiddenCount > 0 && (
-              <button
-                type="button"
-                className="hx-chip-more"
-                onClick={() => setShowAllPlatforms(true)}
-              >
-                +{hiddenCount}
-              </button>
-            )}
-            {showAllPlatforms && generatedPlatformsList.length > 12 && (
-              <button
-                type="button"
-                className="hx-chip-more"
-                onClick={() => setShowAllPlatforms(false)}
-              >
-                less
-              </button>
-            )}
-          </div>
-
-          {/* Platforms dropdown (category filter) */}
           <div className="hx-drop-root" ref={platformsRef}>
             <button
               type="button"
@@ -658,6 +627,44 @@ export default function HistoryPage() {
             )}
           </div>
         </div>
+        </div>{/* end hx-bar-row-1 */}
+
+        {/* ── Row 2: Full-width platform icon rail ─────────────────────── */}
+        {generatedPlatformsList.length > 0 && (
+          <div className="hx-icon-row">
+            <div className="hx-platform-rail">
+              {visiblePlatforms.map(id => (
+                <button
+                  key={id}
+                  type="button"
+                  className="hx-chip-btn"
+                  title={`Jump to ${PLATFORM_MAP[id]?.name || id}`}
+                  onClick={() => scrollToCard(id)}
+                >
+                  <PlatformIcon id={id} size={15} />
+                </button>
+              ))}
+              {!showAllPlatforms && hiddenCount > 0 && (
+                <button
+                  type="button"
+                  className="hx-chip-more"
+                  onClick={() => setShowAllPlatforms(true)}
+                >
+                  +{hiddenCount}
+                </button>
+              )}
+              {showAllPlatforms && generatedPlatformsList.length > 12 && (
+                <button
+                  type="button"
+                  className="hx-chip-more"
+                  onClick={() => setShowAllPlatforms(false)}
+                >
+                  less
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── MAIN BODY ──────────────────────────────────────────────────── */}
@@ -724,17 +731,24 @@ export default function HistoryPage() {
         /* ── History Header Bar ──────────────────────────────────────────── */
         .hx-bar {
           display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 10px;
-          padding: 10px 20px;
+          flex-direction: column;
+          padding: 0;
           background: var(--color-surface);
           border-bottom: 1px solid var(--color-border);
           position: sticky;
           top: 0;
           z-index: 30;
           box-shadow: var(--shadow-card);
-          flex-wrap: wrap;
+        }
+
+        /* Row 1: search + pager on the left, dropdowns on the right */
+        .hx-bar-row-1 {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 10px;
+          padding: 10px 20px;
+          width: 100%;
         }
 
         .hx-bar-left {
@@ -751,6 +765,14 @@ export default function HistoryPage() {
           gap: 8px;
           flex-shrink: 0;
           flex-wrap: wrap;
+        }
+
+        /* Row 2: full-width platform icon strip */
+        .hx-icon-row {
+          width: 100%;
+          border-top: 1px solid var(--color-border);
+          padding: 7px 20px;
+          background: var(--color-surface);
         }
 
         /* ── Search ──────────────────────────────────────────────────────── */
@@ -954,7 +976,6 @@ export default function HistoryPage() {
           flex-wrap: nowrap;
           overflow-x: auto;
           scrollbar-width: none;
-          max-width: 320px;
         }
 
         .hx-platform-rail::-webkit-scrollbar { display: none; }

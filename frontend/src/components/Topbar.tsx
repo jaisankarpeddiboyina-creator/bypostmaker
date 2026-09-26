@@ -38,7 +38,8 @@ export function Topbar({ onMenuClick }: TopbarProps) {
   const location  = useLocation()
   const navigate  = useNavigate()
 
-  const isCreatePage = location.pathname.startsWith('/app/create')
+  const isCreatePage   = location.pathname.startsWith('/app/create')
+  const isHistoryPage  = location.pathname.startsWith('/app/history')
 
   // ── Breadcrumb ────────────────────────────────────────────────────────────
   const getBreadcrumb = () => {
@@ -339,6 +340,10 @@ export function Topbar({ onMenuClick }: TopbarProps) {
               </div>
             )}
           </>
+        ) : isHistoryPage ? (
+          // History page owns its own full-width control bar below —
+          // suppress all default right-side controls here so there's no double bar.
+          <></>
         ) : (
           <>
             {/* Command Palette Shortcut Hint */}
