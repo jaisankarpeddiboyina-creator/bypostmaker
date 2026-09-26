@@ -157,6 +157,9 @@ export function Topbar({ onMenuClick }: TopbarProps) {
     setExportOpen(false)
   }
 
+  // History page owns its own full header — suppress shared Topbar entirely
+  if (isHistoryPage) return null
+
   // ─────────────────────────────────────────────────────────────────────────
   return (
     <header className="app-topbar glass-card">

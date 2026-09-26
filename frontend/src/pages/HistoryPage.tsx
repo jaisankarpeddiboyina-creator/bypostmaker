@@ -767,12 +767,11 @@ export default function HistoryPage() {
           flex-wrap: wrap;
         }
 
-        /* Row 2: full-width platform icon strip */
+        /* Row 2: platform icon strip — visually part of hx-bar, not a new bar */
         .hx-icon-row {
           width: 100%;
           border-top: 1px solid var(--color-border);
-          padding: 7px 20px;
-          background: var(--color-surface);
+          padding: 6px 20px;
         }
 
         /* ── Search ──────────────────────────────────────────────────────── */
