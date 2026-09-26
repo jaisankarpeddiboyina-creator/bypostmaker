@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   ChevronLeft,
@@ -12,7 +12,12 @@ import {
   Layers,
   ChevronDown,
   Search,
-  Filter
+  Filter,
+  Share2,
+  Archive,
+  FileText,
+  LayoutGrid,
+  Info,
 } from 'lucide-react'
 import { api } from '../lib/api'
 import { useAppStore } from '../store/app'
@@ -39,20 +44,77 @@ interface HistoryCampaign {
   }>
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Category filter groups
+// ─────────────────────────────────────────────────────────────────────────────
+const FILTER_CATEGORIES = [
+  { id: 'all',          label: 'All Platforms' },
+  { id: 'shortform',   label: 'Social & Shortform' },
+  { id: 'professional',label: 'Professional' },
+  { id: 'video',       label: 'Video & Media' },
+  { id: 'community',   label: 'Community' },
+  { id: 'longform',    label: 'Longform' },
+] as const
+
 export default function HistoryPage() {
-  const { addToast, setPrompt, setSelectedPlatforms, openExport } = useAppStore()
+  const { addToast, setPrompt, setSelectedPlatforms, openExport, openShare } = useAppStore()
   const navigate = useNavigate()
 
   const [campaigns, setCampaigns] = useState<HistoryCampaign[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedIndex, setSelectedIndex] = useState<number>(0)
-  const [downloading, setDownloading] = useState(false)
+  const [downloading] = useState(false)
   const [showDropdown, setShowDropdown] = useState(false)
   const [showAllPlatforms, setShowAllPlatforms] = useState(false)
 
   // Interactive Platform Filter & Search
   const [categoryFilter, setCategoryFilter] = useState<string>('all')
   const [platformSearch, setPlatformSearch] = useState<string>('')
+
+  // Dropdown open state
+  const [platformsDropOpen, setPlatformsDropOpen] = useState(false)
+  const [detailsDropOpen, setDetailsDropOpen] = useState(false)
+  const [exportDropOpen, setExportDropOpen] = useState(false)
+
+  // Refs for click-outside
+  const pickerRef     = useRef<HTMLDivElement>(null)
+  const platformsRef  = useRef<HTMLDivElement>(null)
+  const detailsRef    = useRef<HTMLDivElement>(null)
+  const exportRef     = useRef<HTMLDivElement>(null)
+
+  // Close all dropdowns on outside click
+  useEffect(() => {
+    function handle(e: MouseEvent) {
+      if (showDropdown && pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
+        setShowDropdown(false)
+      }
+      if (platformsDropOpen && platformsRef.current && !platformsRef.current.contains(e.target as Node)) {
+        setPlatformsDropOpen(false)
+      }
+      if (detailsDropOpen && detailsRef.current && !detailsRef.current.contains(e.target as Node)) {
+        setDetailsDropOpen(false)
+      }
+      if (exportDropOpen && exportRef.current && !exportRef.current.contains(e.target as Node)) {
+        setExportDropOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handle)
+    return () => document.removeEventListener('mousedown', handle)
+  }, [showDropdown, platformsDropOpen, detailsDropOpen, exportDropOpen])
+
+  // Escape key closes all
+  useEffect(() => {
+    function handle(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        setShowDropdown(false)
+        setPlatformsDropOpen(false)
+        setDetailsDropOpen(false)
+        setExportDropOpen(false)
+      }
+    }
+    document.addEventListener('keydown', handle)
+    return () => document.removeEventListener('keydown', handle)
+  }, [])
 
   const loadHistory = async () => {
     setLoading(true)
@@ -99,6 +161,20 @@ export default function HistoryPage() {
       videoFile: null,
       defaultFilename: `postmaker_${campaign.id}`
     })
+    setExportDropOpen(false)
+  }
+
+  const handleShareCampaign = (campaign: HistoryCampaign) => {
+    const donePosts = campaign.posts.map(post => ({
+      platformId: post.platform_id,
+      content: post.content,
+      edited: Boolean(post.edited),
+    }))
+    openShare({
+      campaignId: campaign.id,
+      posts: donePosts,
+    })
+    setExportDropOpen(false)
   }
 
   const formatDate = (unix: number) => {
@@ -162,6 +238,8 @@ export default function HistoryPage() {
     if (!selectedCampaign) return []
     return selectedCampaign.posts.map(p => p.platform_id)
   }, [selectedCampaign])
+
+  const activeCatLabel = FILTER_CATEGORIES.find(c => c.id === categoryFilter)?.label ?? 'All Platforms'
 
   if (loading) {
     return (
@@ -274,238 +352,325 @@ export default function HistoryPage() {
   }
 
   const mediaUrls = selectedCampaign.image_fetch_url ? [selectedCampaign.image_fetch_url] : []
-  const visiblePlatforms = showAllPlatforms ? generatedPlatformsList : generatedPlatformsList.slice(0, 8)
-  const hiddenCount = generatedPlatformsList.length - 8
+  const visiblePlatforms = showAllPlatforms ? generatedPlatformsList : generatedPlatformsList.slice(0, 12)
+  const hiddenCount = generatedPlatformsList.length - 12
 
   return (
     <div className="history-hub-wrapper animate-fade-in">
-      {/* SINGLE NON-REDUNDANT GENERATION SELECTOR BAR */}
-      <div className="gen-hub-header-bar">
-        {/* Campaign Picker Dropdown */}
-        <div className="gen-picker-wrapper">
-          <button
-            type="button"
-            className="gen-picker-trigger"
-            onClick={() => setShowDropdown(p => !p)}
-          >
-            <div className="picker-trigger-content">
-              <span className="picker-label">SELECT GENERATION KIT ({selectedIndex + 1} of {campaigns.length})</span>
-              <span className="picker-title truncate">"{selectedCampaign.prompt}"</span>
-            </div>
-            <ChevronDown size={18} className={`picker-arrow ${showDropdown ? 'open' : ''}`} />
-          </button>
 
-          {/* Dropdown Menu */}
-          {showDropdown && (
-            <div className="gen-picker-dropdown">
-              <div className="dropdown-scroll-list">
-                {campaigns.map((c, idx) => (
-                  <div
-                    key={c.id}
-                    className={`dropdown-item ${idx === selectedIndex ? 'active' : ''}`}
-                    onClick={() => {
-                      setSelectedIndex(idx)
-                      setShowDropdown(false)
-                      setCategoryFilter('all')
-                      setPlatformSearch('')
-                    }}
-                  >
-                    <div className="item-thumb-mini">
-                      {c.has_image === 1 && c.image_fetch_url ? (
-                        <img src={c.image_fetch_url} alt="" loading="lazy" />
-                      ) : (
-                        <Sparkles size={14} />
-                      )}
-                    </div>
-                    <div className="item-details">
-                      <span className="item-prompt truncate">"{c.prompt}"</span>
-                      <span className="item-meta">
-                        {formatDate(c.created_at)} • {c.posts.length} generated posts
-                      </span>
-                    </div>
-                    {idx === selectedIndex && (
-                      <CheckCircle2 size={16} className="item-active-check" />
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+      {/* ── HISTORY HEADER BAR ──────────────────────────────────────────── */}
+      <div className="hx-bar">
 
-        {/* Stepper Navigation */}
-        <div className="gen-stepper-group">
-          <button
-            type="button"
-            className="btn btn-ghost btn-icon"
-            disabled={selectedIndex === 0}
-            onClick={() => {
-              setSelectedIndex(i => Math.max(0, i - 1))
-              setCategoryFilter('all')
-              setPlatformSearch('')
-            }}
-            title="Previous Generation"
-          >
-            <ChevronLeft size={16} />
-          </button>
-          <span className="stepper-text">
-            {selectedIndex + 1} / {campaigns.length}
-          </span>
-          <button
-            type="button"
-            className="btn btn-ghost btn-icon"
-            disabled={selectedIndex === campaigns.length - 1}
-            onClick={() => {
-              setSelectedIndex(i => Math.min(campaigns.length - 1, i + 1))
-              setCategoryFilter('all')
-              setPlatformSearch('')
-            }}
-            title="Next Generation"
-          >
-            <ChevronRight size={16} />
-          </button>
-        </div>
+        {/* Row 1: controls */}
+        <div className="hx-bar-row-1">
 
-        {/* Metadata Badges */}
-        <div className="gen-meta-pills">
-          <span className="badge badge-completed">
-            <CheckCircle2 size={12} />
-            Completed
-          </span>
-          <span className="gen-pill-meta">
-            <Calendar size={12} />
-            {formatDate(selectedCampaign.created_at)}
-          </span>
-          <span className="gen-pill-meta highlight">
-            <Layers size={12} />
-            {selectedCampaign.posts.length} generated posts
-          </span>
-        </div>
+        {/* Left group: Search + Generation Kit pager */}
+        <div className="hx-bar-left">
 
-        {/* Action Group */}
-        <div className="gen-actions-group">
-          <button
-            type="button"
-            className="btn btn-ghost btn-sm"
-            onClick={() => handleReuse(selectedCampaign)}
-          >
-            <RefreshCw size={13} />
-            <span>Re-use Prompt</span>
-          </button>
-          <button
-            type="button"
-            className="btn btn-primary btn-sm"
-            onClick={() => handleDownloadKit(selectedCampaign)}
-            disabled={downloading}
-          >
-            {downloading ? (
-              <>
-                <Loader2 size={13} className="spin" />
-                <span>Downloading...</span>
-              </>
-            ) : (
-              <>
-                <Download size={13} />
-                <span>Download Kit ZIP</span>
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* MAIN CONTAINER */}
-      <main className="history-hub-main-container">
-        {/* Campaign Platform Header */}
-        <div className="hub-grid-header">
-          <div className="hub-header-left">
-            <h2 className="hub-grid-title">Generated Post Kit</h2>
-            <span className="hub-grid-sub">
-              Showing {filteredPosts.length} of {selectedCampaign.posts.length} posts
-            </span>
-          </div>
-
-          {/* Platform Rail */}
-          <div className="hub-platform-chips-row">
-            {visiblePlatforms.map(id => (
-              <button
-                key={id}
-                type="button"
-                className="hub-chip-circle-btn"
-                title={`Jump to ${PLATFORM_MAP[id]?.name || id} card`}
-                onClick={() => scrollToCard(id)}
-              >
-                <PlatformIcon id={id} size={14} />
-              </button>
-            ))}
-            {!showAllPlatforms && hiddenCount > 0 && (
-              <button
-                type="button"
-                className="hub-chip-extra-btn"
-                onClick={() => setShowAllPlatforms(true)}
-              >
-                +{hiddenCount} more
-              </button>
-            )}
-            {showAllPlatforms && (
-              <button
-                type="button"
-                className="hub-chip-extra-btn"
-                onClick={() => setShowAllPlatforms(false)}
-              >
-                Show less
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* CATEGORY FILTER & SEARCH TOOLBAR */}
-        <div className="hub-filter-toolbar">
-          <div className="hub-search-box">
-            <Search size={14} className="hub-search-icon" />
+          {/* Search */}
+          <div className="hx-search-box">
+            <Search size={14} className="hx-search-icon" />
             <input
+              id="history-search"
               type="text"
-              placeholder="Search posts by platform or content..."
+              placeholder="Search posts..."
               value={platformSearch}
               onChange={e => setPlatformSearch(e.target.value)}
-              className="hub-search-input"
+              className="hx-search-input"
+              aria-label="Search posts by platform or content"
             />
             {platformSearch && (
               <button
                 type="button"
-                className="hub-search-clear"
+                className="hx-search-clear"
                 onClick={() => setPlatformSearch('')}
-              >
-                ×
-              </button>
+                aria-label="Clear search"
+              >×</button>
             )}
           </div>
 
-          <div className="platform-filter-bar">
-            {[
-              { id: 'all', label: 'All Platforms' },
-              { id: 'shortform', label: 'Social & Shortform' },
-              { id: 'professional', label: 'Professional' },
-              { id: 'video', label: 'Video & Media' },
-              { id: 'community', label: 'Community' },
-              { id: 'longform', label: 'Longform' }
-            ].map(cat => {
-              const count = categoryCounts[cat.id] || 0
-              if (cat.id !== 'all' && count === 0) return null
-              return (
-                <button
-                  key={cat.id}
-                  className={`platform-filter-tab ${categoryFilter === cat.id ? 'active' : ''}`}
-                  onClick={() => setCategoryFilter(cat.id)}
-                >
-                  <span>{cat.label}</span>
-                  <span className="tab-count-badge">{count}</span>
-                </button>
-              )
-            })}
+          {/* Generation Kit picker + pager */}
+          <div className="hx-pager-group" ref={pickerRef}>
+            <button
+              type="button"
+              id="hx-kit-picker-btn"
+              className={`hx-kit-label ${showDropdown ? 'open' : ''}`}
+              onClick={() => setShowDropdown(v => !v)}
+              aria-haspopup="listbox"
+              aria-expanded={showDropdown}
+            >
+              <span className="hx-kit-text">Generation Kit ({selectedIndex + 1} of {campaigns.length})</span>
+              <ChevronDown size={13} className={`hx-chevron ${showDropdown ? 'flipped' : ''}`} />
+            </button>
+
+            {/* Campaign picker dropdown */}
+            {showDropdown && (
+              <div className="hx-picker-dropdown" role="listbox" aria-labelledby="hx-kit-picker-btn">
+                <div className="hx-dropdown-scroll">
+                  {campaigns.map((c, idx) => (
+                    <div
+                      key={c.id}
+                      role="option"
+                      aria-selected={idx === selectedIndex}
+                      className={`hx-dropdown-item ${idx === selectedIndex ? 'active' : ''}`}
+                      onClick={() => {
+                        setSelectedIndex(idx)
+                        setShowDropdown(false)
+                        setCategoryFilter('all')
+                        setPlatformSearch('')
+                      }}
+                    >
+                      <div className="hx-item-thumb">
+                        {c.has_image === 1 && c.image_fetch_url ? (
+                          <img src={c.image_fetch_url} alt="" loading="lazy" />
+                        ) : (
+                          <Sparkles size={14} />
+                        )}
+                      </div>
+                      <div className="hx-item-details">
+                        <span className="hx-item-prompt truncate">"{c.prompt}"</span>
+                        <span className="hx-item-meta">
+                          {formatDate(c.created_at)} · {c.posts.length} posts
+                        </span>
+                      </div>
+                      {idx === selectedIndex && (
+                        <CheckCircle2 size={15} className="hx-item-check" />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Prev / N / Next stepper */}
+            <div className="hx-stepper">
+              <button
+                type="button"
+                className="btn btn-ghost btn-icon hx-step-btn"
+                disabled={selectedIndex === 0}
+                onClick={() => {
+                  setSelectedIndex(i => Math.max(0, i - 1))
+                  setCategoryFilter('all')
+                  setPlatformSearch('')
+                }}
+                aria-label="Previous generation"
+              >
+                <ChevronLeft size={14} />
+              </button>
+              <span className="hx-stepper-text">
+                {selectedIndex + 1} / {campaigns.length}
+              </span>
+              <button
+                type="button"
+                className="btn btn-ghost btn-icon hx-step-btn"
+                disabled={selectedIndex === campaigns.length - 1}
+                onClick={() => {
+                  setSelectedIndex(i => Math.min(campaigns.length - 1, i + 1))
+                  setCategoryFilter('all')
+                  setPlatformSearch('')
+                }}
+                aria-label="Next generation"
+              >
+                <ChevronRight size={14} />
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* FULL 1:1 NATIVE POSTCARD GRID */}
+        {/* Right group: dropdowns */}
+        <div className="hx-bar-right">
+
+          <div className="hx-drop-root" ref={platformsRef}>
+            <button
+              type="button"
+              className={`hx-drop-btn ${platformsDropOpen ? 'open' : ''}`}
+              onClick={() => { setPlatformsDropOpen(v => !v); setDetailsDropOpen(false); setExportDropOpen(false) }}
+              aria-haspopup="listbox"
+              aria-expanded={platformsDropOpen}
+            >
+              <LayoutGrid size={13} />
+              <span>{activeCatLabel}</span>
+              <ChevronDown size={12} className={`hx-chevron ${platformsDropOpen ? 'flipped' : ''}`} />
+            </button>
+
+            {platformsDropOpen && (
+              <div className="hx-drop-panel" role="listbox">
+                {FILTER_CATEGORIES.map(cat => {
+                  const count = categoryCounts[cat.id] ?? 0
+                  if (cat.id !== 'all' && count === 0) return null
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      role="option"
+                      aria-selected={categoryFilter === cat.id}
+                      className={`hx-drop-item ${categoryFilter === cat.id ? 'active' : ''}`}
+                      onClick={() => {
+                        setCategoryFilter(cat.id)
+                        setPlatformsDropOpen(false)
+                      }}
+                    >
+                      <span className="hx-drop-item-label">{cat.label}</span>
+                      <span className="hx-drop-item-count">{count}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Details dropdown (meta info) */}
+          <div className="hx-drop-root" ref={detailsRef}>
+            <button
+              type="button"
+              className={`hx-drop-btn ${detailsDropOpen ? 'open' : ''}`}
+              onClick={() => { setDetailsDropOpen(v => !v); setPlatformsDropOpen(false); setExportDropOpen(false) }}
+              aria-haspopup="menu"
+              aria-expanded={detailsDropOpen}
+            >
+              <Info size={13} />
+              <span>Details</span>
+              <ChevronDown size={12} className={`hx-chevron ${detailsDropOpen ? 'flipped' : ''}`} />
+            </button>
+
+            {detailsDropOpen && (
+              <div className="hx-drop-panel hx-details-panel" role="menu">
+                <div className="hx-detail-row">
+                  <CheckCircle2 size={14} className="hx-detail-icon success" />
+                  <span className="hx-detail-label">Status</span>
+                  <span className="hx-detail-val">Completed</span>
+                </div>
+                <div className="hx-detail-row">
+                  <Calendar size={14} className="hx-detail-icon" />
+                  <span className="hx-detail-label">Created</span>
+                  <span className="hx-detail-val">{formatDate(selectedCampaign.created_at)}</span>
+                </div>
+                <div className="hx-detail-row">
+                  <Layers size={14} className="hx-detail-icon" />
+                  <span className="hx-detail-label">Posts</span>
+                  <span className="hx-detail-val hx-detail-accent">{selectedCampaign.posts.length} generated</span>
+                </div>
+                <div className="hx-detail-divider" />
+                <button
+                  type="button"
+                  className="hx-detail-reuse-btn"
+                  onClick={() => { handleReuse(selectedCampaign); setDetailsDropOpen(false) }}
+                >
+                  <RefreshCw size={13} />
+                  Re-use Prompt
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Export & Share combined dropdown */}
+          <div className="hx-drop-root" ref={exportRef}>
+            <button
+              type="button"
+              className={`btn btn-primary btn-sm hx-export-btn ${exportDropOpen ? 'open' : ''}`}
+              onClick={() => { setExportDropOpen(v => !v); setPlatformsDropOpen(false); setDetailsDropOpen(false) }}
+              aria-haspopup="menu"
+              aria-expanded={exportDropOpen}
+            >
+              <Download size={13} />
+              <span>Export &amp; Share</span>
+              <ChevronDown size={12} className={`hx-chevron ${exportDropOpen ? 'flipped' : ''}`} />
+            </button>
+
+            {exportDropOpen && (
+              <div className="hx-drop-panel hx-export-panel" role="menu">
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="hx-export-item"
+                  onClick={() => handleDownloadKit(selectedCampaign)}
+                  disabled={downloading}
+                >
+                  <Archive size={15} className="hx-export-icon" />
+                  <span className="hx-export-text">
+                    <span className="hx-export-title">
+                      {downloading ? 'Downloading…' : 'Download Content Kit (ZIP)'}
+                    </span>
+                    <span className="hx-export-sub">All posts, media &amp; assets</span>
+                  </span>
+                  {downloading && <Loader2 size={13} className="hx-spin" />}
+                </button>
+
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="hx-export-item"
+                  onClick={() => handleDownloadKit(selectedCampaign)}
+                >
+                  <FileText size={15} className="hx-export-icon" />
+                  <span className="hx-export-text">
+                    <span className="hx-export-title">Download as PDF</span>
+                    <span className="hx-export-sub">Campaign summary (PDF)</span>
+                  </span>
+                </button>
+
+                <div className="hx-export-divider" role="separator" />
+
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="hx-export-item"
+                  onClick={() => handleShareCampaign(selectedCampaign)}
+                >
+                  <Share2 size={15} className="hx-export-icon" />
+                  <span className="hx-export-text">
+                    <span className="hx-export-title">Share Campaign</span>
+                    <span className="hx-export-sub">Get a shareable link</span>
+                  </span>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+        </div>{/* end hx-bar-row-1 */}
+
+        {/* ── Row 2: Full-width platform icon rail ─────────────────────── */}
+        {generatedPlatformsList.length > 0 && (
+          <div className="hx-icon-row">
+            <div className="hx-platform-rail">
+              {visiblePlatforms.map(id => (
+                <button
+                  key={id}
+                  type="button"
+                  className="hx-chip-btn"
+                  title={`Jump to ${PLATFORM_MAP[id]?.name || id}`}
+                  onClick={() => scrollToCard(id)}
+                >
+                  <PlatformIcon id={id} size={15} />
+                </button>
+              ))}
+              {!showAllPlatforms && hiddenCount > 0 && (
+                <button
+                  type="button"
+                  className="hx-chip-more"
+                  onClick={() => setShowAllPlatforms(true)}
+                >
+                  +{hiddenCount}
+                </button>
+              )}
+              {showAllPlatforms && generatedPlatformsList.length > 12 && (
+                <button
+                  type="button"
+                  className="hx-chip-more"
+                  onClick={() => setShowAllPlatforms(false)}
+                >
+                  less
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── MAIN BODY ──────────────────────────────────────────────────── */}
+      <main className="history-hub-main-container">
+
+        {/* Empty filter result */}
         {filteredPosts.length === 0 ? (
           <div className="no-posts-filtered">
             <Filter size={24} />
@@ -554,6 +719,7 @@ export default function HistoryPage() {
       </main>
 
       <style>{`
+        /* ── Wrapper ─────────────────────────────────────────────────────── */
         .history-hub-wrapper {
           height: 100%;
           overflow-y: auto;
@@ -561,196 +727,261 @@ export default function HistoryPage() {
           display: flex;
           flex-direction: column;
         }
-        .gen-hub-header-bar {
+
+        /* ── History Header Bar ──────────────────────────────────────────── */
+        .hx-bar {
           display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: var(--space-4) var(--space-8);
+          flex-direction: column;
+          padding: 0;
           background: var(--color-surface);
           border-bottom: 1px solid var(--color-border);
           position: sticky;
           top: 0;
           z-index: 30;
-          gap: var(--space-4);
           box-shadow: var(--shadow-card);
         }
-        .gen-picker-wrapper {
-          position: relative;
-          flex: 1;
-          max-width: 480px;
-        }
-        .gen-picker-trigger {
-          width: 100%;
+
+        /* Row 1: search + pager on the left, dropdowns on the right */
+        .hx-bar-row-1 {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 8px 14px;
+          gap: 10px;
+          padding: 10px 20px;
+          width: 100%;
+        }
+
+        .hx-bar-left {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          min-width: 0;
+          flex: 1;
+        }
+
+        .hx-bar-right {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex-shrink: 0;
+          flex-wrap: wrap;
+        }
+
+        /* Row 2: platform icon strip — visually part of hx-bar, not a new bar */
+        .hx-icon-row {
+          width: 100%;
+          border-top: 1px solid var(--color-border);
+          padding: 6px 20px;
+        }
+
+        /* ── Search ──────────────────────────────────────────────────────── */
+        .hx-search-box {
+          position: relative;
+          width: 180px;
+          flex-shrink: 0;
+        }
+
+        .hx-search-icon {
+          position: absolute;
+          left: 10px;
+          top: 50%;
+          transform: translateY(-50%);
+          color: var(--color-text-muted);
+          pointer-events: none;
+        }
+
+        .hx-search-input {
+          width: 100%;
+          padding: 7px 28px 7px 30px;
+          background: var(--color-bg);
+          border: 1px solid var(--color-border-input);
+          border-radius: var(--radius-pill);
+          font-size: 12.5px;
+          color: var(--color-text-primary);
+          outline: none;
+          transition: border-color var(--transition);
+          font-family: var(--font-body);
+        }
+
+        .hx-search-input::placeholder { color: var(--color-text-placeholder); }
+        .hx-search-input:focus { border-color: var(--color-primary-start); }
+
+        .hx-search-clear {
+          position: absolute;
+          right: 8px;
+          top: 50%;
+          transform: translateY(-50%);
+          background: none;
+          border: none;
+          font-size: 15px;
+          color: var(--color-text-muted);
+          cursor: pointer;
+          line-height: 1;
+        }
+
+        /* ── Generation Kit pager ────────────────────────────────────────── */
+        .hx-pager-group {
+          position: relative;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          flex-shrink: 0;
+        }
+
+        .hx-kit-label {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          padding: 6px 12px;
           background: var(--color-bg);
           border: 1px solid var(--color-border-input);
           border-radius: var(--radius-card);
           cursor: pointer;
           transition: all var(--transition);
-          text-align: left;
+          white-space: nowrap;
         }
-        .gen-picker-trigger:hover {
+
+        .hx-kit-label:hover,
+        .hx-kit-label.open {
           border-color: var(--color-primary-start);
           background: var(--color-surface);
         }
-        .picker-trigger-content {
-          display: flex;
-          flex-direction: column;
-          min-width: 0;
-          gap: 2px;
-        }
-        .picker-label {
-          font-size: 10.5px;
-          font-weight: 700;
-          color: var(--color-primary-start);
-          letter-spacing: 0.04em;
-        }
-        .picker-title {
-          font-size: 13.5px;
+
+        .hx-kit-text {
+          font-size: 12.5px;
           font-weight: 700;
           color: var(--color-text-primary);
         }
-        .picker-arrow {
+
+        .hx-chevron {
           color: var(--color-text-secondary);
-          transition: transform var(--transition);
+          transition: transform 0.18s ease;
           flex-shrink: 0;
-          margin-left: 8px;
         }
-        .picker-arrow.open {
-          transform: rotate(180deg);
-        }
-        .gen-picker-dropdown {
+
+        .hx-chevron.flipped { transform: rotate(180deg); }
+
+        /* Campaign picker dropdown */
+        .hx-picker-dropdown {
           position: absolute;
           top: calc(100% + 6px);
           left: 0;
-          right: 0;
+          min-width: 340px;
           background: var(--color-surface);
-          backdrop-filter: var(--backdrop-blur);
-          -webkit-backdrop-filter: var(--backdrop-blur);
           border: 1px solid var(--color-border);
           border-radius: var(--radius-card);
           box-shadow: var(--shadow-modal);
-          z-index: 100;
+          z-index: 200;
           overflow: hidden;
-          animation: slideIn 150ms ease forwards;
+          animation: hxDropIn 0.12s ease;
         }
-        .dropdown-scroll-list {
-          max-height: 340px;
+
+        .hx-dropdown-scroll {
+          max-height: 320px;
           overflow-y: auto;
-          display: flex;
-          flex-direction: column;
         }
-        .dropdown-item {
+
+        .hx-dropdown-item {
           display: flex;
           align-items: center;
-          gap: var(--space-3);
-          padding: var(--space-3) var(--space-4);
+          gap: 10px;
+          padding: 10px 14px;
           border-bottom: 1px solid var(--color-border);
           cursor: pointer;
           transition: background var(--transition);
         }
-        .dropdown-item:last-child { border-bottom: none; }
-        .dropdown-item:hover { background: var(--color-nav-active-bg); }
-        .dropdown-item.active { background: var(--color-nav-active-bg); }
-        .item-thumb-mini {
-          width: 36px;
-          height: 36px;
+
+        .hx-dropdown-item:last-child { border-bottom: none; }
+
+        .hx-dropdown-item:hover { background: var(--color-nav-active-bg); }
+        .hx-dropdown-item.active { background: var(--color-nav-active-bg); }
+
+        .hx-item-thumb {
+          width: 34px;
+          height: 34px;
           border-radius: var(--radius-sm);
-          overflow: hidden;
           background: var(--color-border);
           flex-shrink: 0;
           display: flex;
           align-items: center;
           justify-content: center;
+          overflow: hidden;
           color: var(--color-primary-start);
         }
-        .item-thumb-mini img { width: 100%; height: 100%; object-fit: cover; }
-        .item-details { display: flex; flex-direction: column; min-width: 0; flex: 1; }
-        .item-prompt { font-size: 13px; font-weight: 600; color: var(--color-text-primary); }
-        .item-meta { font-size: 11px; color: var(--color-text-secondary); }
-        .item-active-check { color: var(--color-primary-start); flex-shrink: 0; }
 
-        .gen-stepper-group {
+        .hx-item-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+        .hx-item-details {
+          display: flex;
+          flex-direction: column;
+          min-width: 0;
+          flex: 1;
+          gap: 2px;
+        }
+
+        .hx-item-prompt {
+          font-size: 13px;
+          font-weight: 600;
+          color: var(--color-text-primary);
+          display: block;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .hx-item-meta {
+          font-size: 11px;
+          color: var(--color-text-secondary);
+        }
+
+        .hx-item-check {
+          color: var(--color-primary-start);
+          flex-shrink: 0;
+        }
+
+        /* Stepper */
+        .hx-stepper {
           display: flex;
           align-items: center;
-          gap: var(--space-2);
+          gap: 4px;
           background: var(--color-bg);
-          padding: 4px 10px;
+          padding: 3px 6px;
           border-radius: var(--radius-pill);
           border: 1px solid var(--color-border);
+          flex-shrink: 0;
         }
-        .stepper-text {
+
+        .hx-step-btn {
+          width: 26px !important;
+          height: 26px !important;
+          min-width: unset !important;
+          padding: 0 !important;
+        }
+
+        .hx-stepper-text {
           font-size: 12px;
-          font-weight: 600;
+          font-weight: 700;
           color: var(--color-text-secondary);
           font-family: var(--font-mono);
           white-space: nowrap;
-        }
-        .gen-meta-pills {
-          display: flex;
-          align-items: center;
-          gap: var(--space-3);
-        }
-        .gen-pill-meta {
-          display: inline-flex;
-          align-items: center;
-          gap: 5px;
-          font-size: 12px;
-          font-weight: 500;
-          color: var(--color-text-secondary);
-        }
-        .gen-pill-meta.highlight {
-          color: var(--color-primary-start);
-          font-weight: 700;
-        }
-        .gen-actions-group {
-          display: flex;
-          align-items: center;
-          gap: var(--space-3);
+          padding: 0 2px;
         }
 
-        .history-hub-main-container {
-          padding: var(--space-8);
-          max-width: 1600px;
-          margin: 0 auto;
-          width: 100%;
-          display: flex;
-          flex-direction: column;
-          gap: var(--space-6);
-        }
-        .hub-grid-header {
+        /* ── Platform icon rail ──────────────────────────────────────────── */
+        .hx-platform-rail {
           display: flex;
           align-items: center;
-          justify-content: space-between;
-          padding-bottom: var(--space-2);
-          border-bottom: 1px solid var(--color-border);
+          gap: 4px;
+          flex-wrap: nowrap;
+          overflow-x: auto;
+          scrollbar-width: none;
         }
-        .hub-header-left {
-          display: flex;
-          align-items: baseline;
-          gap: var(--space-3);
-        }
-        .hub-grid-title {
-          font-size: 18px;
-          font-weight: 700;
-          color: var(--color-text-primary);
-        }
-        .hub-grid-sub {
-          font-size: 13px;
-          color: var(--color-text-secondary);
-        }
-        .hub-platform-chips-row {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          flex-wrap: wrap;
-        }
-        .hub-chip-circle-btn {
-          width: 30px;
-          height: 30px;
+
+        .hx-platform-rail::-webkit-scrollbar { display: none; }
+
+        .hx-chip-btn {
+          width: 28px;
+          height: 28px;
           border-radius: 50%;
           background: var(--color-surface);
           border: 1px solid var(--color-border);
@@ -759,67 +990,283 @@ export default function HistoryPage() {
           justify-content: center;
           cursor: pointer;
           transition: all var(--transition);
+          flex-shrink: 0;
         }
-        .hub-chip-circle-btn:hover {
+
+        .hx-chip-btn:hover {
           border-color: var(--color-primary-start);
           background: var(--color-nav-active-bg);
-          transform: scale(1.15);
+          transform: scale(1.12);
         }
-        .hub-chip-extra-btn {
-          font-size: 11.5px;
+
+        .hx-chip-more {
+          font-size: 11px;
           font-weight: 700;
           color: var(--color-primary-start);
           background: var(--color-nav-active-bg);
-          padding: 4px 10px;
+          padding: 3px 8px;
           border-radius: var(--radius-pill);
           border: none;
           cursor: pointer;
           transition: background var(--transition);
-        }
-        .hub-chip-extra-btn:hover {
-          background: rgba(255, 75, 145, 0.16);
+          white-space: nowrap;
+          flex-shrink: 0;
         }
 
-        .hub-filter-toolbar {
+        .hx-chip-more:hover { background: rgba(255, 75, 145, 0.16); }
+
+        /* ── Shared dropdown root + button ──────────────────────────────── */
+        .hx-drop-root {
+          position: relative;
+          flex-shrink: 0;
+        }
+
+        .hx-drop-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 6px 12px;
+          background: var(--color-bg);
+          border: 1px solid var(--color-border-input);
+          border-radius: var(--radius-pill);
+          font-size: 12.5px;
+          font-weight: 600;
+          color: var(--color-text-primary);
+          cursor: pointer;
+          transition: all var(--transition);
+          white-space: nowrap;
+          font-family: var(--font-body);
+        }
+
+        .hx-drop-btn:hover,
+        .hx-drop-btn.open {
+          border-color: var(--color-primary-start);
+          background: var(--color-surface);
+        }
+
+        /* Shared dropdown panel */
+        .hx-drop-panel {
+          position: absolute;
+          top: calc(100% + 6px);
+          right: 0;
+          min-width: 190px;
+          background: var(--color-surface);
+          border: 1px solid var(--color-border);
+          border-radius: var(--radius-card);
+          box-shadow: var(--shadow-modal);
+          z-index: 200;
+          overflow: hidden;
+          padding: 4px;
+          animation: hxDropIn 0.12s ease;
+        }
+
+        @keyframes hxDropIn {
+          from { opacity: 0; transform: translateY(-4px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Platform / category dropdown items */
+        .hx-drop-item {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: var(--space-4);
-          flex-wrap: wrap;
-        }
-        .hub-search-box {
-          position: relative;
-          flex: 1;
-          max-width: 320px;
-        }
-        .hub-search-icon {
-          position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--color-text-muted);
-        }
-        .hub-search-input {
           width: 100%;
-          padding: 8px 30px 8px 34px;
-          background: var(--color-surface);
-          border: 1px solid var(--color-border-input);
-          border-radius: var(--radius-pill);
+          padding: 8px 12px;
+          border: none;
+          background: transparent;
+          border-radius: var(--radius-sm);
+          cursor: pointer;
+          font-family: var(--font-body);
           font-size: 13px;
+          font-weight: 500;
           color: var(--color-text-primary);
-          outline: none;
-          transition: border-color var(--transition);
-        }
-        .hub-search-input:focus { border-color: var(--color-primary-start); }
-        .hub-search-clear {
-          position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
-          background: none; border: none; font-size: 16px; color: var(--color-text-muted); cursor: pointer;
+          transition: background var(--transition);
+          text-align: left;
         }
 
-        .tab-count-badge {
-          font-size: 10px;
+        .hx-drop-item:hover { background: var(--color-border); }
+
+        .hx-drop-item.active {
+          background: var(--color-nav-active-bg);
+          color: var(--color-nav-active-text);
+          font-weight: 700;
+        }
+
+        .hx-drop-item-label { flex: 1; }
+
+        .hx-drop-item-count {
+          font-size: 11px;
+          font-weight: 700;
           padding: 1px 6px;
           border-radius: 99px;
-          background: rgba(0, 0, 0, 0.08);
-          margin-left: 4px;
+          background: rgba(0, 0, 0, 0.07);
+          margin-left: 8px;
+          flex-shrink: 0;
         }
 
+        .hx-drop-item.active .hx-drop-item-count {
+          background: rgba(255, 255, 255, 0.20);
+        }
+
+        /* ── Details panel ───────────────────────────────────────────────── */
+        .hx-details-panel {
+          min-width: 230px;
+          padding: 8px;
+        }
+
+        .hx-detail-row {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 6px 4px;
+        }
+
+        .hx-detail-icon { color: var(--color-text-secondary); flex-shrink: 0; }
+        .hx-detail-icon.success { color: var(--color-success); }
+
+        .hx-detail-label {
+          font-size: 12px;
+          font-weight: 500;
+          color: var(--color-text-secondary);
+          flex: 1;
+        }
+
+        .hx-detail-val {
+          font-size: 12px;
+          font-weight: 700;
+          color: var(--color-text-primary);
+        }
+
+        .hx-detail-accent { color: var(--color-primary-start); }
+
+        .hx-detail-divider {
+          height: 1px;
+          background: var(--color-border);
+          margin: 6px 0;
+        }
+
+        .hx-detail-reuse-btn {
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          width: 100%;
+          padding: 8px 4px;
+          border: none;
+          background: transparent;
+          border-radius: var(--radius-sm);
+          font-family: var(--font-body);
+          font-size: 13px;
+          font-weight: 600;
+          color: var(--color-text-primary);
+          cursor: pointer;
+          transition: background var(--transition);
+        }
+
+        .hx-detail-reuse-btn:hover { background: var(--color-border); }
+
+        /* ── Export & Share panel ────────────────────────────────────────── */
+        .hx-export-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          white-space: nowrap;
+        }
+
+        .hx-export-panel {
+          min-width: 260px;
+          right: 0;
+        }
+
+        .hx-export-item {
+          display: flex;
+          align-items: flex-start;
+          gap: 10px;
+          width: 100%;
+          padding: 10px 12px;
+          border: none;
+          background: transparent;
+          border-radius: var(--radius-sm);
+          cursor: pointer;
+          transition: background var(--transition);
+          font-family: var(--font-body);
+          text-align: left;
+        }
+
+        .hx-export-item:hover { background: var(--color-border); }
+        .hx-export-item:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .hx-export-icon {
+          margin-top: 1px;
+          flex-shrink: 0;
+          color: var(--color-text-secondary);
+        }
+
+        .hx-export-text {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+          flex: 1;
+        }
+
+        .hx-export-title {
+          font-size: 13px;
+          font-weight: 600;
+          color: var(--color-text-primary);
+        }
+
+        .hx-export-sub {
+          font-size: 11px;
+          font-weight: 400;
+          color: var(--color-text-secondary);
+        }
+
+        .hx-export-divider {
+          height: 1px;
+          background: var(--color-border);
+          margin: 4px 0;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .hx-spin { animation: spin 0.9s linear infinite; }
+
+        /* ── Main container ──────────────────────────────────────────────── */
+        .history-hub-main-container {
+          padding: 24px 20px;
+          max-width: 1600px;
+          margin: 0 auto;
+          width: 100%;
+          display: flex;
+          flex-direction: column;
+          gap: var(--space-6);
+          flex: 1;
+        }
+
+        /* ── Card grid ───────────────────────────────────────────────────── */
+        .native-postcard-full-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+          justify-content: center;
+          gap: 20px;
+          align-items: flex-start;
+        }
+
+        .postcard-grid-cell {
+          width: 100%;
+          transition: transform var(--transition);
+        }
+
+        @keyframes cardPulseHighlight {
+          0% { box-shadow: 0 0 0 4px var(--color-primary-start); transform: scale(1.02); }
+          50% { box-shadow: 0 0 0 8px rgba(247, 37, 133, 0.4); transform: scale(1.02); }
+          100% { box-shadow: 0 0 0 0 transparent; transform: scale(1); }
+        }
+
+        .postcard-highlight {
+          animation: cardPulseHighlight 1.5s ease forwards;
+          border-radius: var(--radius-card);
+        }
+
+        /* No results */
         .no-posts-filtered {
           display: flex;
           flex-direction: column;
@@ -833,98 +1280,60 @@ export default function HistoryPage() {
           color: var(--color-text-secondary);
         }
 
-        .native-postcard-full-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 470px));
-          justify-content: center;
-          gap: var(--space-8);
-          align-items: flex-start;
-        }
-        .postcard-grid-cell {
-          width: 100%;
-          transition: transform var(--transition);
-        }
-
-        @keyframes cardPulseHighlight {
-          0% { box-shadow: 0 0 0 4px var(--color-primary-start); transform: scale(1.02); }
-          50% { box-shadow: 0 0 0 8px rgba(247, 37, 133, 0.4); transform: scale(1.02); }
-          100% { box-shadow: 0 0 0 0 transparent; transform: scale(1); }
-        }
-        .postcard-highlight {
-          animation: cardPulseHighlight 1.5s ease forwards;
-          border-radius: var(--radius-card);
-        }
-
-        /* ── RESPONSIVE MEDIA QUERIES (MOBILE, TABLET, DESKTOP) ── */
+        /* ── Responsive ──────────────────────────────────────────────────── */
         @media (max-width: 900px) {
-          .gen-hub-header-bar {
+          .hx-bar {
+            gap: 8px;
+          }
+          .hx-bar-left {
             flex-wrap: wrap;
-            padding: var(--space-4);
-            gap: var(--space-3);
           }
-          .gen-picker-wrapper {
-            max-width: 100%;
-            order: 1;
-            flex-basis: 100%;
-          }
-          .gen-stepper-group {
-            order: 2;
-          }
-          .gen-meta-pills {
-            order: 3;
-          }
-          .gen-actions-group {
-            order: 4;
-            margin-left: auto;
+          .hx-platform-rail {
+            max-width: 220px;
           }
         }
 
-        @media (max-width: 640px) {
-          .history-hub-main-container {
-            padding: var(--space-4) var(--space-3);
-          }
-          .native-postcard-full-grid {
-            grid-template-columns: 1fr;
-            gap: var(--space-5);
-          }
-          .gen-meta-pills {
-            display: none;
-          }
-          .hub-filter-toolbar {
+        @media (max-width: 768px) {
+          .hx-bar {
+            padding: 8px 12px;
             flex-direction: column;
             align-items: stretch;
           }
-          .hub-search-box {
-            max-width: 100%;
-          }
-          /* Make filter tabs horizontally scrollable instead of wrapping */
-          .platform-filter-bar {
-            display: flex;
-            flex-wrap: nowrap;
-            overflow-x: auto;
-            gap: 6px;
-            padding-bottom: 4px;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none;
-          }
-          .platform-filter-bar::-webkit-scrollbar { display: none; }
-          .platform-filter-tab {
-            white-space: nowrap;
-            flex-shrink: 0;
-          }
-          /* Collapse action buttons to icon-only on very small screens */
-          .gen-actions-group {
+          .hx-bar-left,
+          .hx-bar-right {
             flex-wrap: wrap;
+            gap: 6px;
           }
-          .gen-actions-group .btn span {
-            display: none;
+          .hx-search-box {
+            width: 100%;
+          }
+          .hx-platform-rail {
+            max-width: 100%;
+            overflow-x: auto;
+          }
+          .native-postcard-full-grid {
+            grid-template-columns: 1fr;
+          }
+          .history-hub-main-container {
+            padding: 16px 12px;
           }
         }
 
+        @media (max-width: 480px) {
+          .hx-bar-right {
+            justify-content: flex-start;
+          }
+          /* Show icons only on export btn */
+          .hx-export-btn span:not(.hx-chevron) { display: none; }
+          .hx-drop-btn span:not(.hx-chevron)   { display: none; }
+          /* Only collapse kit label text */
+          .hx-kit-text { display: none; }
+        }
+
         @media (max-width: ${BREAKPOINT_MOBILE}) {
-          .gen-stepper-group .btn-icon {
-            width: 44px;
-            height: 44px;
+          .hx-step-btn {
+            width: 36px !important;
+            height: 36px !important;
           }
         }
       `}</style>
